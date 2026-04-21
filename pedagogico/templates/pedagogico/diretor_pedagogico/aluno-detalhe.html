@@ -1,0 +1,513 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Aluno {{ aluno.nome_completo }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Pedagógico</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+        <a href="{% url 'pedagogico:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'pedagogico:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'pedagogico:alunos_lista' %}" class="active">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'pedagogico:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'pedagogico:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'pedagogico:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'pedagogico:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'pedagogico:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+    <h3 class="page-title w-100"><i class="fas fa-user-graduate me-2"></i>Detalhes do aluno(a) - <b>{{ aluno.nome_completo }}</b></h3>
+    <hr>
+
+    <div class="row mb-4">
+        <div class="col-md-6 position-relative">
+          <form method="POST" action="{% url 'pedagogico:upload_foto_aluno' aluno.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="position-relative d-inline-block" style="width: 150px; height: 150px;">
+              <!-- Imagem do aluno -->
+              <img id="preview-imagem" 
+                  src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}{% static 'imgs/blank-profile-picture-973460_1280.png' %}{% endif %}" 
+                  alt="Imagem do aluno" 
+                  class="img-thumbnail" 
+                  style="width: 150px; height: 150px; object-fit: cover;">
+
+              <!-- Botão de upload -->
+              <label for="input-foto" 
+                    class="btn btn-sm btn-success position-absolute bottom-0 start-0 m-1"
+                    style="cursor: pointer;">
+                    Carregar Imagem
+              </label>
+
+              <input type="file" id="input-foto" name="foto" accept="image/*" class="d-none" onchange="this.form.submit(); previewImagem(this)">
+            </div>
+          </form>
+
+            <!-- Informações do aluno -->
+            <p class="mt-3"><strong>Número Mecanográfico:</strong> {{ aluno.numero_mecanografico }}</p>
+            <p><strong>BI:</strong> {{ aluno.bi }}</p>
+            <p><strong>Gênero:</strong> {{ aluno.get_genero_display }}</p>
+        </div>
+
+        {% if ultima_reconfirmacao %}
+        <div class="col-md-6">
+        <p><strong>Ano Letivo Atual:</strong> {{ ultima_reconfirmacao.ano_letivo }}</p>
+        <p><strong>Classe:</strong> 
+           {% if ultima_reconfirmacao.classe.numero == 0 %}
+              Iniciação
+            {% else %}
+             {{ ultima_reconfirmacao.classe.numero }}ª
+            {% endif %}
+        </p>
+        <p><strong>Turma:</strong> {{ ultima_reconfirmacao.turma.nome }}</p>
+        <p><strong>Sala:</strong> {{ ultima_reconfirmacao.sala.nome }}</p>
+        <p><strong>Curso:</strong> {{ ultima_reconfirmacao.curso.nome }}</p>
+        <p><strong>Turno:</strong> {{ ultima_reconfirmacao.turno }}</p>
+        <p>
+          <strong>Estado:</strong> 
+          {% if ultima_reconfirmacao.estado == "Adimplente" %}
+            <span class="badge bg-success">{{ ultima_reconfirmacao.estado }}</span>
+          {% elif ultima_reconfirmacao.estado == "Inadimplente" %}
+            <span class="badge bg-danger">{{ ultima_reconfirmacao.estado }}</span>
+          {% endif %}
+        </p>
+        <p>
+          <strong>Estado da Classe:</strong> 
+          {% if ultima_reconfirmacao.estadoClasse == "Aprovado" %}
+            <span class="badge bg-success">{{ ultima_reconfirmacao.estadoClasse }}</span>
+          {% elif ultima_reconfirmacao.estadoClasse == "Reprovado" %}
+            <span class="badge bg-danger">{{ ultima_reconfirmacao.estadoClasse }}</span>
+          {% elif ultima_reconfirmacao.estadoClasse == "Pendente" %}
+            <span class="badge bg-warning">{{ ultima_reconfirmacao.estadoClasse }}</span>
+          {% endif %}
+        </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-4">
+        <h5>Histórico Acadêmico</h5>
+        <button class="btn btn-secondary mb-3" data-bs-toggle="modal" data-bs-target="#modalLancamentoNotas">
+          Lançamento de notas
+        </button> 
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+
+        {% for ano, disciplinas in medias.items %}
+          <div class="card mb-3">
+              <div class="card-header text-secondary">
+                  {% if ano == 0 %}
+                      | Classe Iniciação
+                  {% else %}
+                      | {{ ano }}ª Classe
+                  {% endif %}
+              </div>
+              <div class="card-body">
+                  <div class="table-responsive" style="overflow-x: auto;">
+                      <table class="table table-bordered table-striped">
+                          <thead>
+                              <tr>
+                                  <th class="text-dark">Disciplina</th>
+                                  <th class="text-dark">1º Tri</th>
+                                  <th class="text-dark">2º Tri</th>
+                                  <th class="text-dark">3º Tri</th>
+                                  <th class="text-dark">Exame</th>
+                                  <th class="text-dark">Result.</th>
+                                  <th class="text-dark">Ações</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% for nome, dados in disciplinas.items %}
+                                  <tr>
+                                      <td><strong>{{ nome }}</strong></td>
+                                      
+                                      <!-- 1º Trimestre -->
+                                      <td>
+                                          {% if dados.notas.1 %}
+                                              <div class="d-flex justify-content-between align-items-center">
+                                                  <span>{{ dados.notas.1 }}</span>
+                                                  <button class="btn btn-sm btn-danger ms-2" 
+                                                          onclick="deletarNota('{{ dados.nota_ids.1 }}', '{{ nome }}', 1, '{{ dados.notas.1 }}')"
+                                                          data-bs-toggle="modal" 
+                                                          data-bs-target="#deleteModal"
+                                                          title="Deletar nota">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                      </svg>
+                                                  </button>
+                                              </div>
+                                          {% else %}
+                                              --
+                                          {% endif %}
+                                      </td>
+                                      
+                                      <!-- 2º Trimestre -->
+                                      <td>
+                                          {% if dados.notas.2 %}
+                                              <div class="d-flex justify-content-between align-items-center">
+                                                  <span>{{ dados.notas.2 }}</span>
+                                                  <button class="btn btn-sm btn-danger ms-2" 
+                                                          onclick="deletarNota('{{ dados.nota_ids.2 }}', '{{ nome }}', 2, '{{ dados.notas.2 }}')"
+                                                          data-bs-toggle="modal" 
+                                                          data-bs-target="#deleteModal"
+                                                          title="Deletar nota">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                      </svg>
+                                                  </button>
+                                              </div>
+                                          {% else %}
+                                              --
+                                          {% endif %}
+                                      </td>
+                                      
+                                      <!-- 3º Trimestre -->
+                                      <td>
+                                          {% if dados.notas.3 %}
+                                              <div class="d-flex justify-content-between align-items-center">
+                                                  <span>{{ dados.notas.3 }}</span>
+                                                  <button class="btn btn-sm btn-danger ms-2" 
+                                                          onclick="deletarNota('{{ dados.nota_ids.3 }}', '{{ nome }}', 3, '{{ dados.notas.3 }}')"
+                                                          data-bs-toggle="modal" 
+                                                          data-bs-target="#deleteModal"
+                                                          title="Deletar nota">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                      </svg>
+                                                  </button>
+                                              </div>
+                                          {% else %}
+                                              --
+                                          {% endif %}
+                                      </td>
+                                      
+                                      <!-- Exame -->
+                                      <td>
+                                          {% if dados.notas.4 %}
+                                              <div class="d-flex justify-content-between align-items-center">
+                                                  <span>{{ dados.notas.4 }}</span>
+                                                  <button class="btn btn-sm btn-danger ms-2" 
+                                                          onclick="deletarNota('{{ dados.nota_ids.4 }}', '{{ nome }}', 4, '{{ dados.notas.4 }}')"
+                                                          data-bs-toggle="modal" 
+                                                          data-bs-target="#deleteModal"
+                                                          title="Deletar nota">
+                                                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                                          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                      </svg>
+                                                  </button>
+                                              </div>
+                                          {% else %}
+                                              --
+                                          {% endif %}
+                                      </td>
+                                      
+                                      <td><strong>{{ dados.media }}</strong></td>
+                                      <td>
+                                          <button class="btn btn-warning btn-sm" 
+                                                  onclick="abrirModalTrimestre('{{ nome }}', '{{ aluno.id }}', '{{ aluno.classe.id }}')"
+                                                  data-bs-toggle="modal" 
+                                                  data-bs-target="#trimestreModal"
+                                                  title="Editar/Adicionar nota">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill" viewBox="0 0 16 16">
+                                                  <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
+                                              </svg>
+                                          </button>
+                                      </td>
+                                  </tr>
+                              {% endfor %}
+                          </tbody>
+                      </table>
+                  </div>
+              </div>
+          </div>
+      {% empty %}
+          <div class="alert alert-info">
+              <p class="mb-0">Sem histórico de notas.</p>
+          </div>
+      {% endfor %}
+
+      <!-- Modal de confirmação para deletar -->
+      <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="deleteModalLabel">Confirmar Exclusão</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                      <p>Tem certeza que deseja deletar a nota <strong id="notaValor"></strong> da disciplina <strong id="disciplinaNome"></strong> no <strong id="trimestreTexto"></strong>?</p>
+                      <p class="text-danger">Esta ação não pode ser desfeita.</p>
+                  </div>
+                  <div class="modal-footer">
+                      <form id="deleteForm" method="POST" action="{% url 'core:deletar_nota' %}">
+                          {% csrf_token %}
+                          <input type="hidden" name="nota_id" id="notaId">
+                          <input type="hidden" name="trimestre" id="trimestre">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                          <button type="submit" class="btn btn-danger">Deletar</button>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+    </div>
+    <!-- Modal PARA ESCOLHER TRIMESTRE PARA ALTERAR A NOTA -->
+    <div class="modal fade" id="trimestreModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Escolher Trimestre</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>Escolha o trimestre para editar a nota de <b id="disciplinaSelecionada"></b>.</p>
+            <input type="hidden" id="alunoIdHidden">
+            <input type="hidden" id="disciplinaNomeHidden">
+            <input type="hidden" id="classeIdHidden">
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" onclick="abrirFormularioNota(1)">1º Trimestre</button>
+              <button class="btn btn-primary" onclick="abrirFormularioNota(2)">2º Trimestre</button>
+              <button class="btn btn-primary" onclick="abrirFormularioNota(3)">3º Trimestre</button>
+              <button class="btn btn-primary" onclick="abrirFormularioNota(4)">Exame</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- MODAL PARA EDITAR NOTA -->
+    <div class="modal fade" id="editarNotaModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="post" action="{% url 'pedagogico:editar_nota' %}">
+            {% csrf_token %}
+            <div class="modal-header">
+              <h5 class="modal-title">Editar Nota</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" name="aluno_id" id="formAlunoId">
+              <input type="hidden" name="disciplina_nome" id="formDisciplinaNome">
+              <input type="hidden" name="trimestre" id="formTrimestre">
+              <input type="hidden" name="classe_id" id="formClasseId">
+              <label for="notaValor" class="form-label">Nova Nota:</label>
+              <input type="number" class="form-control" name="valor" id="notaValor" min="0" max="20" step="0.01" required>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success">Salvar Alteração</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal LANÇAMENTO DE NOTAS-->
+    <div class="modal fade" id="modalLancamentoNotas" tabindex="-1" aria-labelledby="modalLancamentoNotasLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalLancamentoNotasLabel">Lançamento de Notas - <b>{{ aluno.nome_completo }}</b></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <!-- Formulário de lançamento de notas -->
+            <form method="post" action="{% url 'pedagogico:lancar_nota' %}">
+              {% csrf_token %}
+              <input type="hidden" name="aluno_id" value="{{ aluno.id }}">
+              <input type="hidden" name="classe_id" value="{{ ultima_reconfirmacao.classe.id }}">
+
+              <div class="mb-3">
+                <label for="disciplina" class="form-label">Disciplina</label>
+                <select class="form-select" id="disciplina" name="disciplina_id" required>
+                  <option value="">Selecione...</option> 
+                  {% for d in disc %}
+                    <option value="{{ d.id }}">{{ d.nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="trimestre" class="form-label">Época</label>
+                <select class="form-select" id="trimestre" name="trimestre" required>
+                  <option value="">Selecione...</option>
+                  <option value="1">I Trimestre</option>
+                  <option value="2">II Trimestre</option>
+                  <option value="3">III Trimestre</option>
+                  <option value="4">Exame</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label for="nota" class="form-label">Nota</label>
+                <input type="number" class="form-control" name="valor" id="valor" min="0" max="20" required>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Nota</button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <br><br>
+    </div>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+      function previewImagem(input) {
+          const file = input.files[0];
+          if (file) {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                  document.getElementById('preview-imagem').src = e.target.result;
+              }
+              reader.readAsDataURL(file);
+          }
+      }
+      function abrirModalTrimestre(disciplina, alunoId, classeId) {
+        document.getElementById('disciplinaSelecionada').textContent = disciplina;
+        document.getElementById('disciplinaNomeHidden').value = disciplina;
+        document.getElementById('alunoIdHidden').value = alunoId;
+        document.getElementById('classeIdHidden').value = classeId;
+      }
+
+       function abrirFormularioNota(trimestre) {
+            const alunoId = document.getElementById('alunoIdHidden').value;
+            const disciplina = document.getElementById('disciplinaNomeHidden').value;
+            const classeId = document.getElementById('classeIdHidden').value;
+
+            document.getElementById('formAlunoId').value = alunoId;
+            document.getElementById('formDisciplinaNome').value = disciplina;
+            document.getElementById('formClasseId').value = classeId;
+            document.getElementById('formTrimestre').value = trimestre;
+
+            const trimestreModal = bootstrap.Modal.getInstance(document.getElementById('trimestreModal'));
+            trimestreModal.hide();
+
+            new bootstrap.Modal(document.getElementById('editarNotaModal')).show();
+          }
+          function toggleSidebar() {
+            document.getElementById("sidebar").classList.toggle("active");
+          }
+          function deletarNota(notaId, disciplinaNome, trimestre, valorNota) {
+        if (!notaId) {
+            alert('ID da nota não encontrado');
+            return;
+        }
+        
+        // Preencher os dados no modal
+        document.getElementById('notaId').value = notaId;
+        document.getElementById('trimestre').value = trimestre;
+        document.getElementById('notaValor').innerText = valorNota;
+        document.getElementById('disciplinaNome').innerText = disciplinaNome;
+        
+        // Definir o texto do trimestre
+        let trimestreTexto = '';
+        switch(parseInt(trimestre)) {
+            case 1:
+                trimestreTexto = '1º Trimestre';
+                break;
+            case 2:
+                trimestreTexto = '2º Trimestre';
+                break;
+            case 3:
+                trimestreTexto = '3º Trimestre';
+                break;
+            case 4:
+                trimestreTexto = 'Exame';
+                break;
+            default:
+                trimestreTexto = 'Trimestre ' + trimestre;
+        }
+        document.getElementById('trimestreTexto').innerText = trimestreTexto;
+    }
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+      }
+    </script>
+</body>
+</html>

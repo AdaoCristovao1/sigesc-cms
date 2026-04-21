@@ -1,0 +1,232 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Coordenações</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}" class="active">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+            <h2 class="page-title"><i class="fas fa-user-cog me-2"></i> Gestão de Coordenações</h2>
+            <hr>
+
+            <!-- Botão criar -->
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalCriar">
+                <i class="bi bi-plus-circle"></i> Nova Coordenação
+            </button>
+
+            <!-- Tabela -->
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th class="text-dark">Funcionário</th>
+                            <th class="text-dark">Tipo</th>
+                            <th class="text-dark">Turma</th>
+                            <th class="text-dark">Disciplina</th>
+                            <th class="text-dark">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coord in coordenacoes %}
+                        <tr>
+                            <td>{{ coord.funcionario.nome }}</td>
+                            <td>{{ coord.get_tipo_display }}</td>
+                            <td>{{ coord.turma|default:"-" }}</td>
+                            <td>{{ coord.disciplina|default:"-" }}</td>
+                            <td>
+                             <!--  <button class="btn btn-sm btn-warning"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEditar{{ coord.id }}">
+                                    Editar
+                                </button>-->
+
+                                <button class="btn btn-sm btn-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalExcluir{{ coord.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                                      <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"/>
+                                    </svg>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal editar -->
+                        <div class="modal fade" id="modalEditar{{ coord.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <form method="post" action="{% url 'core:editar_coordenacao' coord.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Editar Coordenação</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            {% include "core/partials/form_coordenacao.html" with coord=coord %}
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-success">Salvar</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Modal excluir -->
+                        <div class="modal fade" id="modalExcluir{{ coord.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <form method="post" action="{% url 'core:eliminar_coordenacao' coord.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Confirmar exclusão</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            Tem certeza que deseja excluir <strong>{{ coord }}</strong>?
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <button type="submit" class="btn btn-danger">Excluir</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Modal criar -->
+        <div class="modal fade" id="modalCriar" tabindex="-1">
+            <div class="modal-dialog">
+                <form method="post" action="{% url 'core:criar_coordenacao' %}">
+                    {% csrf_token %}
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Nova Coordenação</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            {% include "pedagogico/partials/form_coordenacao.html" %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <br><br>
+    </div>
+    <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+      }
+    </script>
+    </body>
+</html>

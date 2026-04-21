@@ -1,0 +1,559 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Matrículas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+      /* Estilos customizados */
+    .bg-gradient-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .modal-content {
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    
+    .section-icon {
+      transition: transform 0.3s;
+    }
+    
+    .section-icon:hover {
+      transform: scale(1.1);
+    }
+    
+    .input-group-text {
+      min-width: 45px;
+      justify-content: center;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Animação de loading no botão */
+    .btn-loading {
+      position: relative;
+      color: transparent !important;
+    }
+    
+    .btn-loading:after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Secretário Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+      <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}" class="active">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="page-title w-100"><i class="fas fa-clipboard-list me-2"></i> Matrículas</h2>
+    </div>
+    
+    <div class="card mt-3">
+        <div class="card-body">
+          <h5 class="card-title">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMatricula">
+              Nova Matrícula
+            </button>
+          </h5>
+          <p class="card-text">Clicar  no botão acima para inserir os dados de um novo aluno</p>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-body">
+          <h5 class="card-title">
+            <a href="{% url 'core:reconfirmacao' %}" class="btn btn-success">
+              Reconfirmar Matrícula
+            </a>
+          </h5>
+          <p class="card-text">Clicar no botão acima para reconfirmar a matrícula de um aluno</p>
+        </div>
+    </div>
+    <!-- Modal de Matrícula -->
+  <div class="modal fade" id="modalMatricula" tabindex="-1" aria-labelledby="modalMatriculaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content border-0 shadow-lg">
+        <form method="POST" action="" target="_blank">
+          {% csrf_token %}
+          
+          <!-- Header com gradiente -->
+          <div class="modal-header bg-gradient-primary text-white">
+            <div class="d-flex align-items-center w-100">
+              <div class="modal-icon me-3">
+                <i class="fas fa-user-graduate fa-2x"></i>
+              </div>
+              <div>
+                <h5 class="modal-title fw-bold mb-0" id="modalMatriculaLabel">NOVA MATRÍCULA</h5>
+                <p class="mb-0 small opacity-75">Preencha os dados do aluno para realizar a matrícula</p>
+              </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          
+          <!-- Body com seções organizadas -->
+          <div class="modal-body p-4">
+            
+            <!-- Seção 1: Dados Pessoais -->
+            <div class="mb-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="section-icon bg-primary bg-opacity-10 p-2 rounded me-2">
+                  <i class="fas fa-user text-primary"></i>
+                </div>
+                <h6 class="mb-0 fw-bold text-primary">DADOS PESSOAIS</h6>
+              </div>
+              
+              <div class="row g-3">
+                <!-- Nome Completo -->
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-signature me-1 text-muted"></i>
+                    Nome Completo
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user text-muted"></i>
+                    </span>
+                    <input type="text" name="nome_completo" class="form-control" placeholder="Digite o nome completo" required>
+                  </div>
+                </div>
+                
+                <!-- BI e Gênero -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-id-card me-1 text-muted"></i>
+                    BI / Nº Documento
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-id-card text-muted"></i>
+                    </span>
+                    <input type="text" name="bi" class="form-control" placeholder="Ex: 123456789LA123" maxlength="14">
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-venus-mars me-1 text-muted"></i>
+                    Gênero
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user text-muted"></i>
+                    </span>
+                    <select name="genero" class="form-select" required>
+                      <option value="" disabled selected>Selecione o gênero</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Feminino</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Naturalidade -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                    Naturalidade
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-globe-africa text-muted"></i>
+                    </span>
+                    <input type="text" name="naturalidade" class="form-control" placeholder="Ex: Luanda, Benguela, Huíla...">
+                  </div>
+                </div>
+                
+                <!-- Data de Nascimento -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-birthday-cake me-1 text-muted"></i>
+                    Data de Nascimento
+                  </label>
+                  <div class="row g-2">
+                    <div class="col-4">
+                      <div class="input-group">
+                        <span class="input-group-text bg-light">Dia</span>
+                        <select name="dia_nasc" class="form-select">
+                          <option value="">DD</option>
+                          {% for dia in "1"|rjust:"31" %}
+                            <option value="{{ forloop.counter }}">{{ forloop.counter|stringformat:"02d" }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="input-group">
+                        <span class="input-group-text bg-light">Mês</span>
+                        <select name="mes_nasc" class="form-select">
+                          <option value="">MM</option>
+                          <option value="Janeiro">Janeiro</option>
+                          <option value="Fevereiro">Fevereiro</option>
+                          <option value="Março">Março</option>
+                          <option value="Abril">Abril</option>
+                          <option value="Maio">Maio</option>
+                          <option value="Junho">Junho</option>
+                          <option value="Julho">Julho</option>
+                          <option value="Agosto">Agosto</option>
+                          <option value="Setembro">Setembro</option>
+                          <option value="Outubro">Outubro</option>
+                          <option value="Novembro">Novembro</option>
+                          <option value="Dezembro">Dezembro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="input-group">
+                        <span class="input-group-text bg-light">Ano</span>
+                        <input type="number" name="ano_nasc" class="form-control" placeholder="AAAA" min="1900" max="{% now 'Y' %}">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Nomes dos Pais -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-male me-1 text-muted"></i>
+                    Nome do Pai
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user-tie text-muted"></i>
+                    </span>
+                    <input type="text" name="nome_pai" class="form-control" placeholder="Nome completo do pai">
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-female me-1 text-muted"></i>
+                    Nome da Mãe
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user-tie text-muted"></i>
+                    </span>
+                    <input type="text" name="nome_mae" class="form-control" placeholder="Nome completo da mãe">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Divisor -->
+            <hr class="my-4">
+            
+            <!-- Seção 2: Informações Acadêmicas -->
+            <div class="mb-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="section-icon bg-success bg-opacity-10 p-2 rounded me-2">
+                  <i class="fas fa-graduation-cap text-success"></i>
+                </div>
+                <h6 class="mb-0 fw-bold text-success">INFORMAÇÕES ACADÊMICAS</h6>
+              </div>
+              
+              <div class="row g-3">
+                <!-- Classe e Turma -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-chalkboard-teacher me-1 text-muted"></i>
+                    Classe
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-layer-group text-muted"></i>
+                    </span>
+                    <select id="selClasse" name="classe" class="form-select" required>
+                      <option value="" disabled selected>Selecione a classe</option>
+                      {% for classe in classes %}
+                        <option value="{{ classe.id }}">{{ classe.numero }}ª Classe</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-users me-1 text-muted"></i>
+                    Turma
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user-friends text-muted"></i>
+                    </span>
+                    <select id="selTurma" name="turma" class="form-select" required disabled>
+                      <option value="" disabled selected>Primeiro selecione a classe</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Curso -->
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-book me-1 text-muted"></i>
+                    Curso
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-book-open text-muted"></i>
+                    </span>
+                    <input type="text" id="cursoNome" class="form-control" placeholder="Selecione a turma para ver o curso" readonly style="cursor: not-allowed; background-color: #f8f9fa;">
+                    <input type="hidden" id="cursoInfo" name="curso">
+                  </div>
+                </div>
+                
+                <!-- Sala e Turno -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-door-open me-1 text-muted"></i>
+                    Sala
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-school text-muted"></i>
+                    </span>
+                    <input type="text" id="salaNome" class="form-control" placeholder="Sala automática" readonly style="background-color: #f8f9fa;">
+                    <input type="hidden" id="salaInfo" name="sala">
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-clock me-1 text-muted"></i>
+                    Turno
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-sun text-muted"></i>
+                    </span>
+                    <input type="text" id="turnoNome" class="form-control" placeholder="Turno automático" readonly style="background-color: #f8f9fa;">
+                    <input type="hidden" id="turnoInfo" name="turno">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Aviso Informativo -->
+            <div class="alert alert-info alert-dismissible fade show mt-3" role="alert">
+              <div class="d-flex">
+                <i class="fas fa-info-circle me-2 mt-1"></i>
+                <div>
+                  <strong>Informação:</strong> O número mecanográfico será gerado automaticamente após a submissão do formulário.
+                </div>
+              </div>
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          </div>
+          
+          <!-- Footer com botões destacados -->
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-success px-4" id="submitBtn">
+              <i class="fas fa-check-circle me-2"></i>
+              Confirmar Matrícula
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  </div>
+  <script id="turmas-json" type="application/json">
+    {{ turmas_json|safe }}
+  </script>
+
+  <script>
+    const turmasData = JSON.parse(document.getElementById('turmas-json').textContent);
+
+    const selClasse = document.getElementById('selClasse');
+  const selTurma = document.getElementById('selTurma');
+  const cursoInfo = document.getElementById('cursoInfo');
+  const cursoNome = document.getElementById('cursoNome');
+  const salaInfo = document.getElementById('salaInfo');
+  const salaNome = document.getElementById('salaNome');
+  const turnoInfo = document.getElementById('turnoInfo');
+  const turnoNome = document.getElementById('turnoNome');
+
+  selClasse.addEventListener('change', function() {
+    const classeId = parseInt(this.value);
+    selTurma.innerHTML = '<option value="">Selecione</option>';
+    selTurma.disabled = true;
+
+    cursoInfo.value = cursoNome.value = '';
+    salaInfo.value = salaNome.value = '';
+    turnoInfo.value = turnoNome.value = '';
+
+    const turmasFiltradas = turmasData.filter(t => t.classe === classeId);
+    if (turmasFiltradas.length) {
+      selTurma.disabled = false;
+      turmasFiltradas.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.text = t.nome;
+        selTurma.appendChild(opt);
+      });
+    }
+  });
+
+  selTurma.addEventListener('change', function () {
+    const turmaId = parseInt(this.value);
+    const turma = turmasData.find(t => t.id === turmaId);
+
+    if (turma) {
+      cursoInfo.value = turma.curso_id;
+      cursoNome.value = turma.curso_nome;
+
+      salaInfo.value = turma.sala_id || '';
+      salaNome.value = turma.sala_nome;
+
+      turnoInfo.value = turma.turno;
+      turnoNome.value = turma.turno.charAt(0).toUpperCase() + turma.turno.slice(1);
+    }
+  });
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+  }
+  // Script para melhorar a experiência do usuário
+  document.addEventListener('DOMContentLoaded', function() {
+    const submitBtn = document.getElementById('submitBtn');
+    const form = submitBtn.closest('form');
+    
+    // Prevenir múltiplos cliques
+    submitBtn.addEventListener('click', function(e) {
+      if (form.checkValidity()) {
+        this.classList.add('btn-loading');
+        this.disabled = true;
+        form.submit();
+      } else {
+        // Scroll para o primeiro campo inválido
+        const invalidField = form.querySelector(':invalid');
+        if (invalidField) {
+          invalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          invalidField.focus();
+        }
+      }
+    });
+    
+    // Adicionar placeholders dinâmicos
+    const nomeInput = document.querySelector('input[name="nome_completo"]');
+    const biInput = document.querySelector('input[name="bi"]');
+    
+    nomeInput.addEventListener('focus', function() {
+      this.setAttribute('placeholder', 'Ex: João Carlos da Silva');
+    });
+    
+    biInput.addEventListener('focus', function() {
+      this.setAttribute('placeholder', 'Ex: 123456789LA123');
+    });
+    
+    // Máscara para ano de nascimento
+    const anoInput = document.querySelector('input[name="ano_nasc"]');
+    const currentYear = new Date().getFullYear();
+    anoInput.setAttribute('max', currentYear);
+  });
+  </script>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

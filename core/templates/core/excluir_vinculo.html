@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmar Exclusão</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card shadow">
+                    <div class="card-header bg-danger text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Confirmar Exclusão
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger">
+                            <h5 class="alert-heading">Atenção!</h5>
+                            <p>Tem certeza que deseja excluir permanentemente este vínculo?</p>
+                        </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h6>Detalhes do Vínculo</h6>
+                                <p class="mb-1"><strong>Professor:</strong> {{ vinculo.professor.nome }}</p>
+                                <p class="mb-1"><strong>Disciplina:</strong> {{ vinculo.disciplina.nome }}</p>
+                                <p class="mb-1"><strong>Turma:</strong> {{ vinculo.turma.nome }}</p>
+                                <p class="mb-1"><strong>Classe:</strong> {{ vinculo.turma.classe.numero }}ª</p>
+                                <p class="mb-1"><strong>Curso:</strong> {{ vinculo.turma.curso.nome }}</p>
+                                <p class="mb-1"><strong>Turno:</strong> {{ vinculo.turma.turno }}</p>
+                                <p class="mb-0"><strong>Horários:</strong> {{ vinculo.horarios.count }}</p>
+                            </div>
+                        </div>
+                        
+                        <p class="text-danger">
+                            <i class="fas fa-exclamation-circle me-1"></i>
+                            Todos os {{ vinculo.horarios.count }} horários associados também serão excluídos!
+                        </p>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{% url 'core:docentes' %}" class="btn btn-secondary me-md-2">
+                                    <i class="fas fa-times me-1"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-1"></i> Excluir Permanentemente
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

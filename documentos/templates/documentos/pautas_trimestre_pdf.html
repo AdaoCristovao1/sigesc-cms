@@ -1,0 +1,344 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>.</title>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <style>
+    @media print {
+      .page-break { page-break-before: always; }
+      thead.bg-primary {
+        background-color: #0b1179 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      thead.bg-primary th {
+        color: white !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .badge {
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: bold;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .bg-success { background-color: #28a745 !important; color: white !important; }
+      .bg-danger { background-color: #dc3545 !important; color: white !important; }
+      .bg-warning { background-color: #ffc107 !important; color: black !important; }
+    }
+    @page {
+       
+            size: A4 landscape;
+            margin: 2cm;
+            @top-left {
+                content: "";
+            }
+            @top-center {
+                content: "";
+            }
+            @top-right {
+                content: "";
+            }
+            @bottom-center {
+                content: "";
+                font-size: 10px;
+                color: #666;
+                font-family: 'Helvetica';
+            }
+            @bottom-left {
+                content: "";
+                font-size: 10px;
+                color: #666;
+                font-family: 'Helvetica';
+            }
+            @bottom-right {
+                content: "";
+                font-size: 10px;
+                color: #666;
+                font-family: 'Helvetica';
+            }
+        }
+        
+        /* Esconder cabeçalhos do navegador no PDF */
+        @page :first {
+            @top-left { content: none; }
+            @top-center { content: none; }
+            @top-right { content: none; }
+        }
+        
+        @page {
+            @top-left { content: none; }
+            @top-center { content: none; }
+            @top-right { content: none; }
+        }
+        
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.2;
+            margin: 1cm;
+            padding: 0;
+        }
+        
+        /* Resto do seu CSS permanece igual */
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 15px;
+    }
+
+    .header img.logo {
+      display: block;
+      margin: 0 auto 10px;
+      width: 80px;
+      height: auto;
+    }
+
+    .header h3 {
+      margin: 5px 0;
+      font-size: 18px;
+    }
+
+    .header h5 {
+      margin: 10px 0 5px;
+      font-size: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 10px;
+    }
+
+    table, th, td {
+      border: 1px solid #333;
+    }
+
+    th, td {
+      padding: 4px 3px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .turma-title {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      background-color: #f8f9fa;
+      padding: 6px;
+      border-radius: 3px;
+    }
+
+    .disciplina-header {
+      min-width: 70px;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .aluno-name {
+      text-align: left;
+      min-width: 180px;
+      padding-left: 8px;
+    }
+
+    .assinatura {
+      margin-top: 40px;
+      text-align: center;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+    }
+
+    .assinatura p {
+      margin: 5px 0;
+      line-height: 1.2;
+    }
+
+    .rodape {
+      margin-top: 30px;
+      font-size: 9px;
+      color: #666;
+      text-align: center;
+    }
+
+    .nota-cell {
+      font-weight: normal;
+    }
+
+    .nota-nao-disponivel {
+      color: #999;
+      font-style: italic;
+    }
+
+    /* Para manter cabeçalhos em todas as páginas impressas */
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    tr { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+<div class="no-print mb-3">
+  <button class="btn btn-primary" onclick="window.print()">
+    <i class="bi bi-printer-fill"></i> Imprimir
+  </button>
+</div>
+
+{% for turma, dados_turma in turmas_agrupadas.items %}
+  <div class="page-break">
+    <div class="header">
+      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 80px; height: auto;">
+      <h3>Complexo Escolar Veredas Encantadas</h3>
+      {% if texto %}
+         <h5>Pauta de Exame - Ano Letivo {{ ano_lectivo }}</h5>
+      {% else %}
+        <h5>PAUTA DO {{ trimestre }}º TRIMESTRE - Ano Letivo {{ ano_lectivo }}</h5>
+      {% endif %}
+      <p><small>Documento gerado em: {{ data|date:"d/m/Y" }}</small></p>
+    </div>
+
+    <div class="turma-title">{{ turma }}</div>
+
+    <table>
+      <thead class="bg-primary text-white">
+        <tr>
+          <th style="width: 30px;">#</th>
+          <th class="aluno-name">Nome do Aluno</th>
+          {% for disciplina in dados_turma.disciplinas %}
+            <th class="disciplina-header" title="{{ disciplina.nome }}">
+              {{ disciplina.nome|truncatechars:20 }}
+            </th>
+          {% endfor %}
+          <th style="width: 70px;">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for aluno_data in dados_turma.alunos %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td class="aluno-name">{{ aluno_data.aluno }}</td>
+          
+          {% for nota in aluno_data.notas %}
+            <td class="nota-cell">
+              {% if nota is not None %}
+                {{ nota }}
+              {% else %}
+                <span class="nota-nao-disponivel">--</span>
+              {% endif %}
+            </td>
+          {% endfor %}
+          
+          <td>
+            {% if aluno_data.estado == 'Aprovado' %}
+              <span class="badge bg-success">Aprovado</span>
+            {% elif aluno_data.estado == 'Reprovado' %}
+              <span class="badge bg-danger">Reprovado</span>
+            {% else %}
+              <span class="badge bg-warning">Pendente</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr style="background-color: #f8f9fa;">
+          <td colspan="2" style="text-align: right; font-weight: bold;">Resumo:</td>
+          {% for disciplina in dados_turma.disciplinas %}
+            <td style="font-size: 9px; color: #666;">
+              {% with total=dados_turma.alunos|length %}
+                {% if total > 0 %}
+                  {% with aprovados=0 %}
+                    {% for aluno_data in dados_turma.alunos %}
+                      {% for nota in aluno_data.notas %}
+                        {% if forloop.counter == forloop.parentloop.counter %}
+                          {% if nota and nota >= 10 %}
+                            {% widthratio aprovados|add:1 1 1 as aprovados %}
+                          {% endif %}
+                        {% endif %}
+                      {% endfor %}
+                    {% endfor %}
+                    {{ aprovados }}/{{ total }}
+                  {% endwith %}
+                {% endif %}
+              {% endwith %}
+            </td>
+          {% endfor %}
+          <td style="font-size: 9px; color: #666;">
+            {% with total=dados_turma.alunos|length %}
+              {% if total > 0 %}
+                {% with aprovados=0 reprovados=0 pendentes=0 %}
+                  {% for aluno_data in dados_turma.alunos %}
+                    {% if aluno_data.estado == 'Aprovado' %}
+                      {% widthratio aprovados|add:1 1 1 as aprovados %}
+                    {% elif aluno_data.estado == 'Reprovado' %}
+                      {% widthratio reprovados|add:1 1 1 as reprovados %}
+                    {% else %}
+                      {% widthratio pendentes|add:1 1 1 as pendentes %}
+                    {% endif %}
+                  {% endfor %}
+                  A:{{ aprovados }} R:{{ reprovados }}
+                {% endwith %}
+              {% endif %}
+            {% endwith %}
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+    
+    <div class="assinatura">
+      <p>O Director Geral</p>
+      <p>______________________________</p>
+      <p><strong>{{ diretor.nome }}</strong></p>
+    </div>
+    
+    <div class="rodape">
+      <hr style="border-top: 1px solid #ddd; margin: 20px 0;">
+      <p><small>© {{ data|date:"Y" }} Documento gerado pelo sistema SIGESC - Complexo Escolar Veredas Encantadas</small></p>
+    </div>
+  </div>
+{% endfor %}
+
+<script>
+  // Script para melhorar a experiência de impressão
+  window.onbeforeprint = function() {
+    // Remove o botão de impressão
+    document.querySelector('.no-print').style.display = 'none';
+    
+    // Adiciona informações extras para impressão
+    const pages = document.querySelectorAll('.page-break');
+    pages.forEach((page, index) => {
+      const footer = page.querySelector('.rodape p');
+      if (footer) {
+        const pageNumber = index + 1;
+        const totalPages = pages.length;
+        footer.innerHTML = `© {{ data|date:"Y" }} Documento gerado pelo sistema SIGESC`;
+      }
+    });
+  };
+  
+  window.onafterprint = function() {
+    // Restaura o botão de impressão
+    document.querySelector('.no-print').style.display = 'block';
+  };
+</script>
+</body>
+</html>

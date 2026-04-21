@@ -1,0 +1,133 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de alunos</title>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <style>
+    @media print {
+      .page-break { page-break-before: always; }
+      thead.bg-primary {
+        background-color: #0d6efd !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      thead.bg-primary th {
+        color: white !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      @page {
+        margin: 0.5cm; /* Margem reduzida para impressão */
+        size: A4;
+      }
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 2cm;
+    }
+
+    .header {
+    text-align: center;
+    margin-bottom: 20px;
+    }
+
+    .header img.logo {
+    display: block;
+    margin: 0 auto;
+    width: 80px;
+    height: auto;
+    }
+
+    .header h1, .header h2, .header h3 {
+    margin: 0;
+    padding: 3px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 5px;
+      text-align: center;
+    }
+
+    .assinatura {
+      margin-top: 50px;
+      text-align: right;
+    }
+
+    .turma-title {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div class="no-print mb-3">
+  <button class="btn btn-primary" onclick="window.print()">
+    <i class="bi bi-printer-fill"></i> Imprimir
+  </button>
+</div>
+{% for turma, alunos in turmas_agrupadas.items %}
+  <div class="page-break">
+    <div class="header">
+      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
+      <h3>Complexo Escolar Veredas Encantadas</h3>
+      <h5>Lista de Alunos Matriculados - Ano Lectivo: {{ano_letivo}}</h5>
+    </div>
+
+    <div class="turma-title">{{ turma }}</div>
+
+    <table>
+      <thead class="bg-primary text-white text-center">
+              <tr>
+                <th>Ord.</th>
+                <th>Nome Completo</th>
+                <th>Nº Mecanográfico</th>
+                <th>Gênero</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for aluno in alunos %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ aluno.nome_completo }}</td>
+                <td>{{ aluno.numero_mecanografico }}</td>
+                <td>{{ aluno.get_genero_display }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+    <div class="assinatura" style="text-align: center;">
+        <p>O Director Geral</p>
+        <p>______________________________</p>
+        <p><strong>{{ diretor.nome }}</strong></p>
+    </div>
+    <div class="rodape mt-5">
+        <hr>
+        <p><small>© {{ data|date:"Y" }} Documento gerado pelo sistema SIGEsc</small></p> 
+    </div>
+  </div>
+{% endfor %}
+
+</body>
+</html>

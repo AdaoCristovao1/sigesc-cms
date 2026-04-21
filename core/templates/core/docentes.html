@@ -1,0 +1,756 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel | Diretor Pedagógico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+    /* ===== BARRA DE PESQUISA ===== */
+    .main-content form[method="GET"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    
+    .main-content form[method="GET"] .form-control {
+        border: none;
+        padding: 15px 20px;
+        font-size: 16px;
+        border-radius: 10px 0 0 10px;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .main-content form[method="GET"] .form-control:focus {
+        background: white;
+        box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.15), 0 0 0 3px rgba(102, 126, 234, 0.2);
+        transform: translateY(-1px);
+    }
+    
+    .main-content form[method="GET"] button[type="submit"] {
+        border: none;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 15px 30px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 0 10px 10px 0;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.3);
+    }
+    
+    .main-content form[method="GET"] button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+    }
+    
+    .main-content form[method="GET"] button[type="submit"] svg {
+        margin-right: 8px;
+    }
+    
+    /* ===== TÍTULO DA PÁGINA ===== */
+    .main-content .page-title {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        font-size: 24px;
+        font-weight: 600;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-content .page-title:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    .main-content .page-title i {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 10px;
+        border-radius: 10px;
+        margin-right: 15px;
+    }
+    
+    /* ===== ALERTAS DE MENSAGENS ===== */
+    .main-content .alert {
+        border: none;
+        border-radius: 10px;
+        padding: 20px 25px;
+        margin-bottom: 25px;
+        font-size: 16px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #28a745;
+        animation: slideIn 0.5s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* ===== TABELA ===== */
+    .main-content .table-responsive {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+    
+    .main-content .table {
+        margin-bottom: 0;
+        background: white;
+    }
+    
+    .main-content .table thead {
+        background: linear-gradient(135deg, #2c3e50 0%, #4a6491 100%);
+    }
+    
+    .main-content .table thead th {
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 20px 15px;
+        border: none;
+        font-size: 14px;
+        position: relative;
+    }
+    
+    .main-content .table thead th:not(:last-child):after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 20%;
+        height: 60%;
+        width: 1px;
+        background: rgba(255, 255, 255, 0.29);
+    }
+    
+    .main-content .table tbody tr {
+        transition: all 0.3s ease;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .main-content .table tbody tr:hover {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        transform: scale(1.01);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        z-index: 1;
+        position: relative;
+    }
+    
+    .main-content .table tbody td {
+        padding: 18px 15px;
+        vertical-align: middle;
+        border: none;
+        font-size: 15px;
+        position: relative;
+    }
+    
+    .main-content .table tbody td:first-child {
+        font-weight: 600;
+        color: #2c3e50;
+        background: rgba(52, 152, 219, 0.05);
+        border-right: 2px solid rgba(52, 152, 219, 0.1);
+    }
+    
+    .main-content .table tbody td:nth-child(2) {
+        font-weight: 500;
+        color: #34495e;
+        font-size: 16px;
+    }
+    
+    .main-content .table tbody td:nth-child(3),
+    .main-content .table tbody td:nth-child(4),
+    .main-content .table tbody td:nth-child(5) {
+        color: #7f8c8d;
+    }
+    
+    /* ===== ESTILOS ESPECÍFICOS POR COLUNA ===== */
+    /* Coluna Identidade */
+    .main-content .table tbody td:nth-child(3) {
+        font-family: 'Courier New', monospace;
+        background: rgba(241, 196, 15, 0.05);
+        color: rgba(20, 20, 20, 0.96);
+        border-left: 2px solid rgba(241, 196, 15, 0.2);
+        border-right: 2px solid rgba(241, 196, 15, 0.2);
+    }
+    
+    /* Coluna Gênero */
+    .main-content .table tbody td:nth-child(4) {
+        background: rgba(155, 89, 182, 0.05);
+        border-left: 2px solid rgba(155, 89, 182, 0.2);
+        border-right: 2px solid rgba(155, 89, 182, 0.2);
+        color: rgba(20, 20, 20, 0.96);
+    }
+    
+    /* Coluna Telefone */
+    .main-content .table tbody td:nth-child(5) {
+        background: rgba(46, 204, 113, 0.05);
+        border-left: 2px solid rgba(46, 204, 113, 0.2);
+        border-right: 2px solid rgba(46, 204, 113, 0.2);
+        color: rgba(20, 20, 20, 0.96);
+    }
+    
+    /* ===== BOTÕES DE AÇÃO ===== */
+    .main-content .table tbody td:last-child {
+        text-align: center;
+        background: rgba(52, 152, 219, 0.05);
+        border-left: 2px solid rgba(52, 152, 219, 0.2);
+    }
+    
+    .main-content .table tbody td .btn {
+        padding: 0;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-content .table tbody td .btn svg {
+        transition: all 0.3s ease;
+    }
+    
+    .main-content .table tbody td .btn:hover {
+        transform: translateY(-3px) scale(1.1);
+        box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+    }
+    
+    .main-content .table tbody td .btn:hover svg {
+        transform: scale(1.2);
+    }
+    
+    .main-content .table tbody td .btn:before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    .main-content .table tbody td .btn:hover:before {
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* ===== ESTADO VAZIO ===== */
+    .main-content .table tbody tr:only-child td {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    .main-content .table tbody tr:only-child td:after {
+        content: '📋';
+        font-size: 40px;
+        display: block;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    /* ===== EFEITOS ADICIONAIS ===== */
+    /* Linhas zebradas */
+    .main-content .table tbody tr:nth-child(even) {
+        background: rgba(0, 0, 0, 0.01);
+    }
+    
+    .main-content .table tbody tr:nth-child(even):hover {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    /* Borda inferior elegante */
+    .main-content .table tbody tr:not(:last-child) td {
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Sombra interna na tabela */
+    .main-content .table-responsive:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 10px;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.1), transparent);
+        border-radius: 15px 15px 0 0;
+        z-index: 2;
+    }
+    
+    /* ===== ANIMAÇÕES ===== */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .main-content .table tbody tr {
+        animation: fadeInUp 0.5s ease forwards;
+        opacity: 0;
+    }
+    
+    .main-content .table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+    .main-content .table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+    .main-content .table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+    .main-content .table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+    .main-content .table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+    .main-content .table tbody tr:nth-child(6) { animation-delay: 0.6s; }
+    .main-content .table tbody tr:nth-child(7) { animation-delay: 0.7s; }
+    .main-content .table tbody tr:nth-child(8) { animation-delay: 0.8s; }
+    .main-content .table tbody tr:nth-child(9) { animation-delay: 0.9s; }
+    .main-content .table tbody tr:nth-child(10) { animation-delay: 1s; }
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 20px;
+    }
+    /* ===== RESPONSIVIDADE ===== */
+    @media (max-width: 768px) {
+        .main-content form[method="GET"] {
+            padding: 15px;
+        }
+        
+        .main-content form[method="GET"] .form-control,
+        .main-content form[method="GET"] button[type="submit"] {
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .main-content .table thead th,
+        .main-content .table tbody td {
+            padding: 12px 8px;
+            font-size: 14px;
+        }
+        
+        .main-content .table tbody td .btn {
+            width: 40px;
+            height: 40px;
+        }
+    }
+    
+    /* ===== EFEITO DE FOCO ===== */
+    .main-content .table tbody tr:focus-within {
+        outline: 2px solid #3498db;
+        outline-offset: 2px;
+    }
+    
+    /* ===== DESTAQUE DE TEXTO NA PESQUISA ===== */
+    .main-content .table tbody td mark {
+        background: linear-gradient(120deg, rgba(255, 255, 0, 0.3) 0%, rgba(255, 255, 0, 0.1) 100%);
+        padding: 2px 5px;
+        border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+      <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}" class="active">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+        <form method="GET" class="row g-3 mt-3 mb-4">
+            <div class="col-md-8">
+                <input type="text" name="q" class="form-control" placeholder="Pesquise aqui!..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+                    Pesquisar
+                </button>
+            </div>
+        </form>
+       <div id="lista-outros" class="table-responsive">
+      <h2 class="page-title"><i class="fas fa-chalkboard-teacher me-2"></i> Lista de Professores</h2>
+      <a href="{% url 'documentos:gerar_horario_completo' %}" class="btn btn-primary mb-3">Gerar Horário Completo</a>
+      {% if messages %}
+            <div class="mt-3">
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+            </div>
+      {% endif %}
+      <div style="overflow-x: auto;">
+        <table class="table table-bordered table-striped table-hover table-responsive">
+        <thead class="table-primary">
+          <tr>
+            <th class="text-dark">Ordem</th>
+            <th class="text-dark">Nome Completo</th>
+            <th class="text-dark">Identidade</th>
+            <th class="text-dark">Gênero</th>
+            <th class="text-dark">Telefone</th> 
+            <th class="text-dark">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for funcionario in funcionarios %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ funcionario.nome }}</td>
+            <td>{{ funcionario.bi }}</td>
+            <td>{{ funcionario.get_genero_display }}</td>
+            <td>{{ funcionario.telefone }}</td>
+            <td><button class="btn ver-professor" data-id="{{ funcionario.id }}"><svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-eye-fill text-primary" viewBox="0 0 16 16">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                </svg></button>
+                </td>
+            </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center">Nenhum Funcionário encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      
+    </div>
+    </div>
+  </div>
+   <!-- Modal Detalhes Professor -->
+<div class="modal fade" id="modalDetalhesProfessor" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    Detalhes do Professor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Informações Básicas -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="fas fa-user-graduate me-2"></i>
+                                    Informações Acadêmicas
+                                </h6>
+                                <p class="mb-1"><strong>Nome:</strong> <span id="nomeProfessor">---</span></p>
+                                <p class="mb-1"><strong>Nível Acadêmico:</strong> <span id="nivel_academico">---</span></p>
+                                <p class="mb-0"><strong>Área de Formação:</strong> <span id="area_formacao">---</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Horários -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Horário de Aulas
+                        </h6>
+                        <a id="vinculoBtn" href="#" class="btn btn-light btn-sm">
+                            <i class="fas fa-link me-1"></i>
+                            Gerenciar Vínculos
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Disciplina</th>
+                                        <th>Turma</th>
+                                        <th>Classe</th>
+                                        <th>Curso</th>
+                                        <th>Turno</th>
+                                        <th>Tempo</th>
+                                        <th>Dia da Semana</th>
+                                        <th>Início</th>
+                                        <th>Fim</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaVinculos">
+                                    <!-- Os dados serão inseridos aqui via JavaScript -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="9" class="text-end small text-muted">
+                                            Total de horários: <span id="totalHorarios" class="badge bg-info">0</span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".ver-professor").forEach(button => {
+            button.addEventListener("click", function() {
+                const id = this.getAttribute("data-id");
+                const tbody = document.getElementById('tabelaVinculos');
+                
+                // Mostrar loading
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            Carregando horários do professor...
+                        </td>
+                    </tr>
+                `;
+
+                fetch(`/pedagogico/docente/${id}/detalhes/`)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Erro ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Atualizar informações básicas
+                        document.getElementById("vinculoBtn").href = `/professor/${id}/vinculo/`;
+                        document.getElementById('nomeProfessor').textContent = data.nome || "---";
+                        document.getElementById('nivel_academico').textContent = data.nivel_academico || "---";
+                        document.getElementById('area_formacao').textContent = data.area_formacao || "---";
+
+                        // Limpar e preencher tabela
+                        tbody.innerHTML = "";
+
+                        if (data.horario_completo && data.horario_completo.length > 0) {
+                            data.horario_completo.forEach((horario, index) => {
+                                const row = document.createElement('tr');
+                                
+                                // Diferentes cores para dias diferentes (opcional)
+                                const diaCores = {
+                                    'Segunda-feira': 'table-primary',
+                                    'Terça-feira': 'table-info',
+                                    'Quarta-feira': 'table-warning',
+                                    'Quinta-feira': 'table-success',
+                                    'Sexta-feira': 'table-danger',
+                                    'Sábado': 'table-secondary'
+                                };
+                                
+                                row.className = diaCores[horario.dia] || '';
+                                
+                                row.innerHTML = `
+                                    <td><strong>${horario.disciplina}</strong></td>
+                                    <td>${horario.turma}</td>
+                                    <td><span class="badge bg-dark">${horario.classe}</span></td>
+                                    <td>${horario.curso}</td>
+                                    <td>
+                                        <span class="badge bg-${
+                                            horario.turno === 'Manhã' ? 'warning' :
+                                            horario.turno === 'Tarde' ? 'info' : 'secondary'
+                                        }">
+                                            ${horario.turno}
+                                        </span>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">${horario.tempo}</span></td>
+                                    <td><strong>${horario.dia}</strong></td>
+                                    <td>${horario.inicio}</td>
+                                    <td>${horario.fim}</td>
+
+                                    <!-- AÇÕES -->
+                                    <td class="text-center">
+                                        <a href="/professor/${id}/vincular/editar/${horario.vinculo_id}/"
+                                        class="btn btn-sm btn-outline-primary me-1"
+                                        title="Editar vínculo">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <a href="/professor-vinculo/excluir/${horario.vinculo_id}/"
+                                        class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </td>
+                                `;
+
+                                
+                                tbody.appendChild(row);
+                            });
+                            
+                            // Atualizar contador
+                            document.getElementById('totalHorarios').textContent = data.horario_completo.length;
+                        } else {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="9" class="text-center py-4 text-muted">
+                                        <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                                        <p class="mb-0">Nenhum horário cadastrado.</p>
+                                        <small>Clique em "Gerenciar Vínculos" para adicionar.</small>
+                                    </td>
+                                </tr>
+                            `;
+                            document.getElementById('totalHorarios').textContent = '0';
+                        }
+
+                        // Mostrar modal
+                        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesProfessor'));
+                        modal.show();
+                    })
+                    .catch(error => {
+                        console.error("Erro:", error);
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Erro ao carregar: ${error.message}
+                                </td>
+                            </tr>
+                        `;
+                        
+                        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesProfessor'));
+                        modal.show();
+                    });
+            });
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const vinculoBtn = document.getElementById('vinculoBtn');
+        if (vinculoBtn) {
+        vinculoBtn.addEventListener('click', function () {
+            const professorId = this.getAttribute('data-id');
+            if (professorId) {
+            const url = `/pedagogico/professor/${professorId}/vinculo/`;
+            window.location.href = url;
+            }
+        });
+        }
+    });
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+</script>
+
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

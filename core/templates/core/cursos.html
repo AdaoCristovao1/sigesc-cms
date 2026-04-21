@@ -1,0 +1,235 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Cursos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+      <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}" class="active">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <h2 class="page-title"><i class="fas fa-book me-2"></i> Cursos</h2>
+      <div class="">
+        <!-- Botões de ação -->
+        <div class="mb-3">
+        <button class="btn btn-success" onclick="mostrarFormularioCriar()">Novo Curso</button>
+        </div>
+
+        <!-- Formulário de criação -->
+        <form method="POST" id="formCriar" style="display:none;" action="{% url 'core:criar_curso' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="nome" class="form-label">Nome do Curso</label>
+            <input type="text" class="form-control" name="nome" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="ocultarFormularios()">Cancelar</button>
+        </form>
+
+        <!-- Formulário de edição -->
+        <form method="POST" id="formEditar" style="display:none;" action="{% url 'core:atualizar_curso' %}">
+        {% csrf_token %}
+        <input type="hidden" name="id" id="edit_id">
+        <div class="mb-3">
+            <label class="form-label">Nome do Curso</label>
+            <input type="text" class="form-control" name="nome" id="edit_nome" required>
+        </div>
+        <button type="submit" class="btn btn-warning text-light">Atualizar</button>
+        <button type="button" class="btn btn-secondary text-light" onclick="ocultarFormularios()">Cancelar</button>
+        </form>
+
+        <hr>
+
+        <!-- Lista de classes -->
+        <table class="table table-bordered table-hover">
+        <thead class="table-primary">
+            <tr>
+            <th class="text-dark">Ordem</th>
+            <th class="text-dark">Nome do Curso</th>
+            <th class="text-dark">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for curso in cursos %}
+            <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ curso.nome }}</td>
+            <td>
+                <button class="btn btn-sm btn-warning" onclick="editarClasse('{{ curso.id }}', '{{ curso.nome }}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill text-light" viewBox="0 0 16 16">
+                  <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
+                </svg>
+                </button>
+                <a href="#" class="btn btn-sm btn-danger"
+                  onclick="openDeleteModal('{{ curso.id }}', '{{ curso.nome }}')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill text-light" viewBox="0 0 16 16">
+                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
+                  </svg>
+                </a>
+            </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center">Nenhum curso cadastrado.</td></tr>
+            {% endfor %}
+        </tbody>
+        </table>
+
+      </div>
+    </div>
+   <!-- Modal Exclusão -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <form method="POST" id="deleteForm">
+        {% csrf_token %}
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Confirmar Exclusão</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <div class="modal-body">
+            <p>Tem certeza de que deseja apagar o curso de <strong id="cursoNome"></strong>?</p>
+            <p class="text-danger">Essa ação é irreversível.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger">Apagar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  </div>
+  <script>
+    function mostrarFormularioCriar() {
+      document.getElementById('formCriar').style.display = 'block';
+      document.getElementById('formEditar').style.display = 'none';
+    }
+
+    function editarClasse(id, nome) {
+      document.getElementById('formCriar').style.display = 'none';
+      document.getElementById('formEditar').style.display = 'block';
+      document.getElementById('edit_id').value = id;
+      document.getElementById('edit_nome').value = nome;
+
+    }
+
+    function ocultarFormularios() {
+      document.getElementById('formCriar').style.display = 'none';
+      document.getElementById('formEditar').style.display = 'none';
+    }
+    function openDeleteModal(cursoId, nomeCurso) {
+        // Atualiza o nome do curso na modal
+        document.getElementById('cursoNome').textContent = nomeCurso;
+
+        // Define dinamicamente a URL do formulário com o ID do curso
+        const form = document.getElementById('deleteForm');
+        form.action = `/cursos/eliminar/${cursoId}/`;
+
+        // Abre a modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        modal.show();
+    }
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+      }
+  </script>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

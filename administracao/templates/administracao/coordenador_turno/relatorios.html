@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatórios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .sidebar {
+      height: 100vh;
+      width: 250px;
+      position: fixed;
+      background-color: #3885f8;
+      color: white;
+      padding-top: 20px;
+    }
+
+    .sidebar a {
+      padding: 12px 20px;
+      display: block;
+      color: white;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover {
+      background-color: #073a88;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      height: 100vh;
+    }
+
+    .topbar {
+      background-color: #3885f8;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar h5 {
+      margin: 0;
+    }
+
+    .logout {
+      color: white;
+      text-decoration: none;
+    }
+
+    .logout:hover {
+      text-decoration: underline;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-left: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+    .sidebar{
+      overflow-y: auto;
+    }
+    .burger {
+      display: none;
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .burger {
+        display: block;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0px; /* altura da topbar */
+        left: -250px; /* começa escondida */
+        width: 250px;
+        height: calc(150vh - 60px);
+        overflow-y: auto;
+        transition: left 0.3s ease;
+        z-index: 1000;
+      }
+
+      .sidebar.active {
+        left: 0; /* aparece */ 
+      }
+
+      .main-content {
+        margin-left: 0; /* sem deslocar o conteúdo */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">SIGEsc</div>
+    <div class="text-center mb-3">
+      <strong><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>Coordenador do Turno</strong><br>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'administracao:dashboard' %}">Dashboard</a>
+    <a href="{% url 'administracao:alunos_lista' %}">Alunos</a>
+    <a href="{% url 'administracao:turmas_e_salas' %}">Turmas  e Salas</a>
+    <a href="">Disciplinas</a>
+    <a href="{% url 'administracao:matriculas' %}">Matrículas</a>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar shadow">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <button class="burger" onclick="toggleSidebar()">☰</button>
+      <a class="logout btn btn-danger" href="{% url 'administracao:logout' %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+        <path d="M7.5 1v7h1V1z"/>
+        <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+        </svg></a>
+    </div>
+
+    <header>
+    <h2>Relatório SIGEsc</h2>
+    <p>Ano Letivo: {{ ano_actual }}</p>
+    <hr>
+  </header>
+
+  <div class="container mt-5">
+
+    <div class="row">
+      <div class="col-lg-6 mb-4">
+        Alunos Por Gênero
+        <canvas id="chartAlunosSexo"></canvas>
+      </div>
+      <div class="col-lg-6 mb-4">
+        Turmas por turno
+        <canvas id="chartTurmasTurno"></canvas>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-lg-6">
+        <h5>Resumo Geral</h5>
+        <ul class="list-group">
+          <li class="list-group-item">Turmas: {{ total_turmas }}</li>
+          <li class="list-group-item">Salas: {{ total_salas }}</li>
+          <li class="list-group-item">Cursos: {{ total_cursos }}</li>
+          <li class="list-group-item">Classes: {{ total_classes }}</li>
+          <li class="list-group-item">Alunos Total: {{ total_alunos }}</li>
+          <li class="list-group-item">Reconfirmados: {{ total_reconfirmados }}</li>
+        </ul>
+      </div>
+      <div class="col-lg-6">
+        <h5>Funcionários</h5>
+        <ul class="list-group mb-3">
+          <li class="list-group-item">Total: {{ total_funcionarios }}</li>
+          <li class="list-group-item">Administrativos: {{ total_administrativos }}</li>
+          <li class="list-group-item">Professores: {{ total_professores }}</li>
+        </ul>
+        <canvas id="chartFuncSexo"></canvas>
+      </div>
+    </div>
+    <button class="btn btn-primary no-print mb-3" onclick="window.print()">
+      Imprimir Relatório
+    </button>
+  </div>
+  {{ alunos_por_sexo|json_script:"grafico-alunos" }}
+  {{ turmas_por_turno|json_script:"grafico-turmas" }}
+  {{ funcionarios_por_genero|json_script:"grafico-funcionarios" }}
+  {{ turmas_por_turno|json_script:"turmas-turnos" }}
+  <script>
+  const alunosPorSexo = JSON.parse(document.getElementById("grafico-alunos").textContent);
+  const turmasPorTurno = JSON.parse(document.getElementById("grafico-turmas").textContent);
+  const funcionariosPorGenero = JSON.parse(document.getElementById("grafico-funcionarios").textContent);
+
+  new Chart(document.getElementById('chartAlunosSexo'), {
+    type: 'pie',
+    data: {
+      labels: ['Masculino', 'Feminino'],
+      datasets: [{
+        data: alunosPorSexo,
+        backgroundColor: ['#36A2EB', '#FF6384']
+      }]
+    }
+  });
+
+  const dadosTurmas = '{{ turmas_por_turno|safe }}';
+
+  new Chart(document.getElementById('chartTurmasTurno'), {
+    type: 'pie',
+    data: {
+      labels: dadosTurmas.labels,
+      datasets: [{
+        data: dadosTurmas.data,
+        backgroundColor: ['#36A2EB', '#FF6384', '#FFCE56', '#4BC0C0', '#9966FF'] // uma cor por turno
+      }]
+    }
+  });
+
+  new Chart(document.getElementById('chartFuncSexo'), {
+    type: 'pie',
+    data: {
+      
+      labels: ['Masculino', 'Feminino'],
+      datasets: [{
+        data: funcionariosPorGenero,
+        backgroundColor: ['#36A2EB', '#FF6384']
+      }]
+    }
+  });
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+  }
+</script>
+
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

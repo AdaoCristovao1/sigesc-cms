@@ -1,0 +1,929 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento Manual</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    :root {
+      --primary-color: #2c5aa0;
+      --primary-dark: #1e3d72;
+      --success-color: #28a745;
+      --warning-color: #ffc107;
+    }
+     
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+    }
+    
+    .sidebar {
+      height: 100vh;
+      width: 280px;
+      position: fixed;
+      background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding-top: 20px;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    
+    .main-content {
+      margin-left: 280px;
+      padding: 0;
+      background-color: #f8f9fa;
+      min-height: 100vh;
+    }
+    
+    .topbar {
+      background-color: white;
+      color: var(--primary-color);
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .card-header {
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 10px 10px 0 0 !important;
+      font-weight: 600;
+      padding: 15px 20px;
+    }
+    
+    .form-section {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .mes-option {
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .mes-option:hover {
+      border-color: var(--primary-color);
+      background-color: #f8f9fa;
+    }
+    
+    .mes-option.selected {
+      border-color: var(--primary-color);
+      background-color: #e3f2fd;
+    }
+    
+    .valor-input-container {
+      position: relative;
+    }
+    
+    .valor-input-container::before {
+      content: "Kz";
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      font-weight: 500;
+    }
+    
+    .valor-input-container input {
+      padding-left: 45px;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      border-radius: 8px;
+      padding: 10px 25px;
+      font-weight: 500;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+    
+    .service-card {
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .service-card:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .service-card.selected {
+      border-color: var(--primary-color);
+      background-color: #e3f2fd;
+    }
+    
+    @media (max-width: 768px) {
+      .sidebar {
+        left: -280px;
+        width: 280px;
+      }
+      
+      .sidebar.active {
+        left: 0;
+      }
+      
+      .main-content {
+        margin-left: 0;
+      }
+      
+      .burger {
+        display: block;
+      }
+    }
+    
+    .burger {
+      display: none;
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+    }
+    #valor_manual::-webkit-inner-spin-button,
+    #valor_manual::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    #valor_manual {
+        -moz-appearance: textfield;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}" class="active">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <!-- Cabeçalho do Aluno -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5 class="mb-0">Pagamento de Serviços</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Aluno:</strong> {{ aluno.nome_completo }}</p>
+              <p><strong>Número Mecanográfico:</strong> {{ aluno.numero_mecanografico }}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Classe:</strong> {{ aluno.classe.numero }}ª Classe</p>
+              <p><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formulário de Pagamento -->
+      <div class="form-section">
+        <form method="POST" action="{% url 'financa:pagamento_manual' aluno.id %}" id="formPagamento" onsubmit="return confirmarPagamento()">
+          {% csrf_token %}
+          <input type="hidden" id="aluno_id" value="{{ aluno.id }}">
+          <input type="hidden" id="ano_lectivo_id" value="{{ ano.id }}">
+
+          <!-- Seleção do Serviço -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Selecione o Serviço</label>
+            <div class="row">
+              {% for emolumento in emolumentos %}
+                <div class="col-md-6 col-lg-4 mb-3">
+                  <div class="service-card" onclick="selectService(this, {{ emolumento.id }})">
+                    <div class="form-check">
+                      <input class="form-check-input" type="radio" name="emolumento_id" onchange="carregarMeses(this.value)"
+                             value="{{ emolumento.id }}" id="servico-{{ emolumento.id }}">
+                      <label class="form-check-label fw-bold" for="servico-{{ emolumento.id }}">
+                        {{ emolumento.nome }}
+                      </label>
+                    </div>
+                    <small class="text-muted">{{ emolumento.descricao }}</small>
+                    <div class="mt-2">
+                      <small class="text-primary">Valor do Serviço: {{ emolumento.valor }} Kz</small>
+                    </div>
+                  </div>
+                </div>
+              {% empty %}
+                <div class="col-12">
+                  <div class="alert alert-warning">Nenhum serviço disponível no momento.</div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Tipo de Pagamento -->
+          <div class="mb-4">
+            <label class="form-label fw-bold">Tipo de Pagamento</label>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <div class="card h-100 text-center">
+                  <div class="card-body">
+                    <input type="radio" class="btn-check" name="tipo_pagamento_radio" 
+                          id="pagamento-unico" value="unico" autocomplete="off" 
+                          onchange="toggleTipoPagamento()" checked>
+                    <label class="btn btn-outline-primary w-100 h-100 p-3" for="pagamento-unico">
+                      <i class="fas fa-receipt fa-2x mb-2 text-primary"></i><br>
+                      <strong>Pagamento Único</strong><br>
+                      <small class="text-muted">Valor único para o serviço</small>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <div class="card h-100 text-center">
+                  <div class="card-body">
+                    <input type="radio" class="btn-check" name="tipo_pagamento_radio" 
+                          id="pagamento-mensal" value="mensal" autocomplete="off" 
+                          onchange="toggleTipoPagamento()">
+                    <label class="btn btn-outline-success w-100 h-100 p-3" for="pagamento-mensal">
+                      <i class="fas fa-calendar-alt fa-2x mb-2 text-success"></i><br>
+                      <strong>Pagamento Mensal</strong><br>
+                      <small class="text-muted">Pagar meses específicos</small>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Valor Manual -->
+          <div class="mb-4">
+            <label for="valor_manual" class="form-label fw-bold">Valor do Pagamento (Kz)</label>
+            <div class="valor-input-container">
+              <input type="number" class="form-control form-control-lg" 
+                    id="valor_manual" name="valor_manual" 
+                    step="0.01" min="0" required
+                    placeholder="0.00">
+            </div>
+            <div class="form-text">
+              Insira o valor manualmente. Valor sugerido do serviço será mostrado quando selecionado.
+            </div>
+          </div>
+
+          <!-- Seção dos Meses (inicialmente oculta) -->
+          <div class="mb-4" id="meses-section" style="display: none;">
+            <label class="form-label fw-bold">Meses a Pagar</label>
+            <div class="row">
+              {% for mes in meses %}
+                <div class="col-6 col-md-4 col-lg-3 mb-3">
+                  <div class="mes-option" onclick="toggleMes(this, {{ mes.id }})">
+                    <div class="form-check">
+                      <input class="form-check-input mes-checkbox" type="checkbox"
+                            name="meses" value="{{ mes.id }}" 
+                            id="mes-{{ mes.id }}">
+                      <label class="form-check-label fw-bold" for="mes-{{ mes.id }}">
+                        {{ mes.nome }}
+                      </label>
+                    </div>
+                    
+                    <!-- Multa -->
+                    <div class="form-check mt-2">
+                      <input class="form-check-input multa-checkbox" type="checkbox"
+                            name="multas" value="{{ mes.id }}" 
+                            id="multa-{{ mes.id }}">
+                      <label class="form-check-label text-danger small" for="multa-{{ mes.id }}">
+                        Incluir Multa
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Forma de Pagamento -->
+          <div class="mb-4">
+            <label for="tipo_pagamento" class="form-label fw-bold">Forma de Pagamento</label>
+            <select name="tipo_pagamento" class="form-select" required>
+              <option value="">-- Selecione a forma de pagamento --</option>
+              {% for tipo in tipos_pagamento %}
+                <option value="{{ tipo.id }}">{{ tipo.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Resumo do Pagamento -->
+          <div class="card bg-light mb-4">
+            <div class="card-body">
+              <h6 class="card-title">Resumo do Pagamento</h6>
+              <div class="row">
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>Serviço selecionado:</strong> <span id="servico-selecionado">Nenhum</span></p>
+                  <p class="mb-1"><strong>Tipo:</strong> <span id="tipo-selecionado">Único</span></p>
+                </div>
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>Total a pagar:</strong></p>
+                  <h4 class="text-success" id="total-display">0.00 Kz</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botão de Confirmação -->
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{% url 'financa:financas' %}" class="btn btn-secondary me-md-2">Cancelar</a>
+            <button type="submit" class="btn btn-primary btn-lg" onclick="return confirmarPagamento()">
+              <i class="fas fa-check-circle me-2"></i>
+              Confirmar Pagamento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <br><br><br>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    let servicoSelecionado = null;
+    let valorSugerido = 0;
+
+    function selectService(element, servicoId) {
+      // Remover seleção anterior
+      document.querySelectorAll('.service-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Adicionar seleção atual
+      element.classList.add('selected');
+      
+      // Marcar o radio button
+      const radio = element.querySelector('input[type="radio"]');
+      radio.checked = true;
+      
+      servicoSelecionado = servicoId;
+      
+      // Atualizar resumo
+      document.getElementById('servico-selecionado').textContent = element.querySelector('label').textContent;
+      
+      // Buscar valor sugerido (você pode implementar uma requisição AJAX aqui se necessário)
+      // Por enquanto, vamos usar o valor do texto
+      const valorText = element.querySelector('.text-primary').textContent;
+      const valorMatch = valorText.match(/(\d+\.?\d*)/);
+      if (valorMatch) {
+        valorSugerido = parseFloat(valorMatch[1]);
+        document.getElementById('valor_manual').value = valorSugerido.toFixed(2);
+        calcularTotal();
+      }
+    }
+
+    function toggleTipoPagamento() {
+        const pagamentoUnico = document.getElementById('pagamento-unico');
+        const pagamentoMensal = document.getElementById('pagamento-mensal');
+        const mesesSection = document.getElementById('meses-section');
+        const tipoSelecionado = document.getElementById('tipo-selecionado');
+        const emolumentoSelecionado = document.querySelector('input[name="emolumento_id"]:checked');
+        
+        if (pagamentoUnico.checked) {
+            mesesSection.style.display = 'none';
+            tipoSelecionado.textContent = 'Único';
+            
+            // Se houver emolumento selecionado, buscar valor da multa
+            if (emolumentoSelecionado) {
+                const alunoId = document.getElementById("aluno_id").value;
+                const anoLectivoId = document.getElementById("ano_lectivo_id").value;
+                
+                fetch(`/financeiro/obter-meses/?emolumento_id=${emolumentoSelecionado.value}&aluno_id=${alunoId}&ano_lectivo_id=${anoLectivoId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        valorMulta = data.multa_valor || 0;
+                        calcularTotal();
+                    });
+            }
+        } else {
+            tipoSelecionado.textContent = 'Mensal';
+            
+            // Só mostra meses se houver emolumento selecionado
+            if (emolumentoSelecionado) {
+                carregarMeses(emolumentoSelecionado.value);
+            } else {
+                mesesSection.style.display = 'none';
+                alert('Por favor, selecione um serviço primeiro para ver os meses disponíveis.');
+                pagamentoUnico.checked = true;
+                mesesSection.style.display = 'none';
+                tipoSelecionado.textContent = 'Único';
+            }
+        }
+        calcularTotal();
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const mesesCheckboxes = document.querySelectorAll("input[name='meses']");
+        const multaCheckboxes = document.querySelectorAll(".multa-checkbox");
+
+        mesesCheckboxes.forEach((checkbox, index) => {
+            checkbox.addEventListener("change", function () {
+
+                const mesElement = this.closest(".mes-option");
+
+                if (this.checked) {
+                    // ➜ Garantir que todos os meses anteriores estejam marcados
+                    for (let i = 0; i < index; i++) {
+                        if (!mesesCheckboxes[i].checked) {
+                            alert("Você deve pagar os meses anteriores primeiro!");
+                            this.checked = false;
+                            return;
+                        }
+                    }
+
+                    // Marca como selecionado
+                    mesElement.classList.add("selected");
+
+                } else {
+                    // ➜ Desmarcar meses posteriores
+                    for (let i = index + 1; i < mesesCheckboxes.length; i++) {
+
+                        mesesCheckboxes[i].checked = false;
+
+                        const el = mesesCheckboxes[i].closest(".mes-option");
+                        if (el) el.classList.remove("selected");
+
+                        // Desmarcar multas posteriores
+                        const multa = el.querySelector(".multa-checkbox");
+                        multa.checked = false;
+                    }
+
+                    // Desmarcar a multa do mês atual
+                    const multaAtual = mesElement.querySelector(".multa-checkbox");
+                    multaAtual.checked = false;
+
+                    mesElement.classList.remove("selected");
+                }
+
+                // Recalcular o total
+                if (typeof calcularTotal === "function") {
+                    calcularTotal();
+                }
+            });
+        });
+    });
+
+
+    function calcularTotal() {
+        const valorManual = parseFloat(document.getElementById('valor_manual').value) || 0;
+        const pagamentoUnico = document.getElementById('pagamento-unico').checked;
+        let total = 0;
+
+        if (pagamentoUnico) {
+            // Pagamento único
+            total = valorManual + valorMulta;
+        } else {
+            // Pagamento mensal
+            const mesesCheckboxes = document.querySelectorAll('.mes-checkbox:checked');
+            total = valorManual * mesesCheckboxes.length;
+            
+            // Adicionar valor das multas selecionadas
+            const multaCheckboxes = document.querySelectorAll('.multa-checkbox:checked');
+            total += valorMulta * multaCheckboxes.length;
+        }
+
+        document.getElementById('total-display').textContent = total.toLocaleString('pt-PT', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }) + ' Kz';
+    }
+
+    // Adicionar este evento para carregar meses quando um serviço for selecionado
+    document.addEventListener('DOMContentLoaded', function() {
+        // Quando um serviço for selecionado e o tipo for mensal, carregar meses
+        document.querySelectorAll('input[name="emolumento_id"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const pagamentoMensal = document.getElementById('pagamento-mensal');
+                if (pagamentoMensal.checked && this.checked) {
+                    carregarMeses(this.value);
+                }
+            });
+        });
+        
+        // Calcular total quando o valor manual mudar
+        document.getElementById('valor_manual').addEventListener('input', calcularTotal);
+        
+        // Inicializar
+        calcularTotal();
+    });
+
+    function confirmarPagamento() {
+      const valor = document.getElementById('valor_manual').value;
+      const servico = document.querySelector('input[name="emolumento_id"]:checked');
+      const formaPagamento = document.querySelector('select[name="tipo_pagamento"]').value;
+      const total = document.getElementById('total-display').textContent;
+
+      if (!servico) {
+        alert('Por favor, selecione um serviço.');
+        return false;
+      }
+
+      if (!formaPagamento) {
+        alert('Por favor, selecione uma forma de pagamento.');
+        return false;
+      }
+
+      // ==== CRIAR MODAL DINAMICAMENTE SE NÃO EXISTIR ====
+      if (!document.getElementById('modalConfirmacaoPagamento')) {
+
+        const modalHTML = `
+          <div class="modal fade" id="modalConfirmacaoPagamento" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                
+                <div class="modal-header">
+                  <h5 class="modal-title">Confirmar Pagamento</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                  <p id="textoConfirmacao"></p>
+                </div>
+
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  <button type="button" id="btnConfirmarPagar" class="btn btn-primary">Confirmar</button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+      }
+
+      // ==== DEFINIR O TEXTO DA CONFIRMAÇÃO ====
+      document.getElementById('textoConfirmacao').textContent =
+        `Confirmar pagamento de ${total}?`;
+
+      // ==== ABRIR A MODAL ====
+      const modal = new bootstrap.Modal(document.getElementById('modalConfirmacaoPagamento'));
+      modal.show();
+
+      // ==== AÇÃO DO BOTÃO CONFIRMAR ====
+      document.getElementById('btnConfirmarPagar').onclick = function () {
+        modal.hide();
+        document.getElementById("formPagamento").submit();  
+      };
+
+      return false; // impede submissão automática
+    }
+
+
+    // Event Listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Calcular total quando o valor manual mudar
+      document.getElementById('valor_manual').addEventListener('input', calcularTotal);
+      
+      // Calcular total quando checkboxes mudarem
+      document.querySelectorAll('.mes-checkbox, .multa-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', calcularTotal);
+      });
+      
+      // Inicializar
+      calcularTotal();
+    });
+    let valorMulta = 0;
+
+    function carregarMeses(emolumentoId) {
+        const alunoId = document.getElementById("aluno_id").value;
+        const anoLectivoId = document.getElementById("ano_lectivo_id").value;
+        const mesesSection = document.getElementById("meses-section");
+
+        // Só carrega meses se o pagamento mensal estiver selecionado
+        const pagamentoMensal = document.getElementById("pagamento-mensal");
+        if (!pagamentoMensal.checked) {
+            mesesSection.style.display = 'none';
+            return;
+        }
+
+        if (!alunoId || !anoLectivoId) {
+            console.error("IDs do aluno ou ano lectivo não encontrados");
+            return;
+        }
+
+        fetch(`/financeiro/obter-meses/?emolumento_id=${emolumentoId}&aluno_id=${alunoId}&ano_lectivo_id=${anoLectivoId}`)
+            .then(response => response.json())
+            .then(data => {
+                const container = mesesSection.querySelector(".row");
+                
+                // Limpa meses antigos
+                container.innerHTML = "";
+
+                if (data.meses && data.meses.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                Este serviço já foi pago completamente para todos os meses.
+                            </div>
+                        </div>
+                    `;
+                    mesesSection.style.display = 'block';
+                    return;
+                }
+
+                if (data.error) {
+                    container.innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Erro ao carregar meses: ${data.error}
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Guardar o valor da multa para usar no cálculo
+                valorMulta = data.multa_valor || 0;
+                
+                // Reinsere os meses devolvidos pelo backend
+                data.meses.sort((a, b) => a.numero - b.numero).forEach(mes => {
+                    const multaText = valorMulta > 0 ? 
+                        `Multa: ${valorMulta.toLocaleString('pt-PT')} Kz` : 
+                        'Sem multa definida';
+                    
+                    container.innerHTML += `
+                        <div class="col-6 col-md-4 col-lg-3 mb-3">
+                            <div class="mes-option" data-numero="${mes.numero}" onclick="toggleMesCheckbox(this, ${mes.numero})">
+                                <div class="form-check">
+                                    <input class="form-check-input mes-checkbox" type="checkbox"
+                                          name="meses" value="${mes.id}" 
+                                          id="mes-${mes.id}"
+                                          data-numero="${mes.numero}">
+                                    <label class="form-check-label fw-bold" for="mes-${mes.id}">
+                                        ${mes.nome}
+                                    </label>
+                                </div>
+
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input multa-checkbox" type="checkbox"
+                                          name="multas" value="${mes.id}" 
+                                          id="multa-${mes.id}"
+                                          ${valorMulta}
+                                          data-valor-multa="${valorMulta}">
+                                    <label class="form-check-label text-danger small" for="multa-${mes.id}">
+                                        Incluir Multa (${valorMulta.toLocaleString('pt-PT')} Kz)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                mesesSection.style.display = 'block';
+                // Reatribuir event listeners após inserir novos elementos
+                setTimeout(() => {
+                    document.querySelectorAll('.mes-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', calcularTotal);
+                    });
+                    document.querySelectorAll('.multa-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', calcularTotal);
+                    });
+                }, 100);
+                
+            })
+            .catch(error => {
+                console.error("Erro ao carregar meses:", error);
+                const container = document.querySelector("#meses-section .row");
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Erro ao carregar meses disponíveis. Tente novamente.
+                        </div>
+                    </div>
+                `;
+            });
+    }
+
+    // Variável global para controlar os meses selecionados
+    let mesesSelecionados = new Set();
+
+    function toggleMesCheckbox(element, mesNumero) {
+        const checkbox = element.querySelector('.mes-checkbox');
+        const multaCheckbox = element.querySelector('.multa-checkbox');
+        
+        // Verificar meses anteriores
+        if (checkbox.checked) {
+            // Se estiver desmarcando
+            checkbox.checked = false;
+            multaCheckbox.checked = false;
+            element.classList.remove('selected');
+        } else {
+            // Se estiver marcando, verificar meses anteriores
+            let podeMarcar = true;
+            for (let i = 1; i < mesNumero; i++) {
+                const mesAnterior = document.querySelector(`.mes-option[data-numero="${i}"] .mes-checkbox`);
+                if (mesAnterior && !mesAnterior.checked) {
+                    alert(`Você deve selecionar o mês ${getNomeMes(i)} primeiro!`);
+                    podeMarcar = false;
+                    break;
+                }
+            }
+            
+            if (podeMarcar) {
+                checkbox.checked = true;
+                element.classList.add('selected');
+                // Ativar multa se houver valor de multa
+                if (valorMulta > 0) {
+                    multaCheckbox.disabled = false;
+                }
+            }
+        }
+        
+        // Desmarcar meses posteriores se desmarcar um mês
+        if (!checkbox.checked) {
+            for (let i = mesNumero + 1; i <= 12; i++) {
+                const mesPosterior = document.querySelector(`.mes-option[data-numero="${i}"]`);
+                if (mesPosterior) {
+                    const cb = mesPosterior.querySelector('.mes-checkbox');
+                    const multaCb = mesPosterior.querySelector('.multa-checkbox');
+                    if (cb) {
+                        cb.checked = false;
+                        mesPosterior.classList.remove('selected');
+                    }
+                    if (multaCb) {
+                        multaCb.checked = false;
+                        multaCb.disabled = valorMulta > 0 ? false : true;
+                    }
+                }
+            }
+        }
+        
+        checkbox.dispatchEvent(new Event('change'));
+    }
+
+    function getNomeMes(numero) {
+        const meses = [
+            '', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+        ];
+        return meses[numero] || '';
+    }
+
+    function handleMesCheckboxChange(mesId, mesNumero) {
+        const checkbox = document.getElementById(`mes-${mesId}`);
+        const mesElement = checkbox.closest('.mes-option');
+        const multaCheckbox = document.getElementById(`multa-${mesId}`);
+        
+        if (checkbox.checked) {
+            // Verificar meses anteriores
+            for (let i = 1; i < mesNumero; i++) {
+                // Encontrar o checkbox do mês anterior
+                const mesAnterior = document.querySelector(`[data-numero="${i}"]`);
+                if (mesAnterior && !mesAnterior.checked) {
+                    alert(`Você deve selecionar o mês anterior (${mesAnterior.dataset.nome}) primeiro!`);
+                    checkbox.checked = false;
+                    mesElement.classList.remove('selected');
+                    multaCheckbox.checked = false;
+                    multaCheckbox.disabled = true;
+                    return;
+                }
+            }
+            
+            mesesSelecionados.add(mesId);
+            mesElement.classList.add('selected');
+            multaCheckbox.disabled = false;
+        } else {
+            // Desmarcar meses posteriores
+            mesesSelecionados.delete(mesId);
+            mesElement.classList.remove('selected');
+            multaCheckbox.checked = false;
+            multaCheckbox.disabled = true;
+            
+            // Encontrar e desmarcar todos os meses com número maior
+            document.querySelectorAll('.mes-checkbox').forEach(cb => {
+                const cbMesNumero = parseInt(cb.dataset?.numero) || 0;
+                if (cbMesNumero > mesNumero) {
+                    cb.checked = false;
+                    const cbElement = cb.closest('.mes-option');
+                    if (cbElement) {
+                        cbElement.classList.remove('selected');
+                    }
+                    const cbMulta = document.getElementById(`multa-${cb.value}`);
+                    if (cbMulta) {
+                        cbMulta.checked = false;
+                        cbMulta.disabled = true;
+                    }
+                    mesesSelecionados.delete(parseInt(cb.value));
+                }
+            });
+        }
+        
+        calcularTotal();
+    }
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+  </script>
+</body>
+</html>

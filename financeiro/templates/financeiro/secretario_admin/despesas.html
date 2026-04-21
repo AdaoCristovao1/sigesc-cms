@@ -1,0 +1,810 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestão de Despesas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+    .card-total {
+      border-left: 4px solid;
+    }
+    .card-total.total-geral {
+      border-left-color: #dc3545;
+    }
+    .card-total.pagas {
+      border-left-color: #28a745;
+    }
+    .card-total.pendentes {
+      border-left-color: #ffc107;
+    }
+    .status-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+    .categoria-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+    }
+    .valor-negativo {
+      color: #dc3545;
+      font-weight: bold;
+    }
+    .table-hover tbody tr:hover {
+      background-color: rgba(0,0,0,.02);
+    }
+    .filter-card {
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+   <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Administrativo</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'administracao:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'administracao:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'administracao:cadastrar_funcionario' %}">
+         <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'administracao:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'administracao:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas  e Salas
+      </a>
+      <a href="{% url 'administracao:classes' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Classes
+      </a>
+      <a href="{% url 'administracao:cursos' %}">
+        <i class="fas fa-chart-bar me-2"></i> Cursos
+      </a>
+      <a href="{% url 'administracao:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'financa:financas' %}" class="active">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+      <h2 class="page-title d-flex align-items-center mb-4">
+        <i class="bi bi-graph-down me-3"></i>
+        Gestão de Despesas
+      </h2>
+      
+      <!-- Filtros -->
+      <div class="card filter-card mb-4">
+        <div class="card-body">
+          <button type="button" class="btn btn-warning float-end" data-bs-toggle="modal" data-bs-target="#gerarFolhaModal">
+            <i class="bi bi-plus-circle"></i> Gerar Folha de Salário
+          </button>
+          <form method="get" class="row g-3">
+            <div class="col-md-3">
+              <label class="form-label">Categoria</label>
+              <select name="categoria" class="form-select">
+                <option value="">Todas categorias</option>
+                {% for codigo, nome in categoria_choices %}
+                  <option value="{{ codigo }}" {% if request.GET.categoria == codigo %}selected{% endif %}>{{ nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Status</label>
+              <select name="status" class="form-select">
+                <option value="">Todos status</option>
+                {% for codigo, nome in status_choices %}
+                  <option value="{{ codigo }}" {% if request.GET.status == codigo %}selected{% endif %}>{{ nome }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3" style='display: none;'>
+              <label class="form-label">Mês</label>
+              <input type="month" name="mes" class="form-control" value="{{ request.GET.mes }}">
+            </div>
+            <div class="col-md-3"  style='display: none;'>
+              <label class="form-label">Ano</label>
+              <input type="number" name="ano" class="form-control" min="2020" max="2030" value="{{ request.GET.ano }}" placeholder="Ano">
+            </div>
+            
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-funnel"></i> Filtrar
+              </button>
+              <a href="{% url 'financa:despesas' %}" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Limpar
+              </a>
+              
+              <button type="button" class="btn btn-success float-end" data-bs-toggle="modal" data-bs-target="#novaDespesaModal">
+                <i class="bi bi-plus-circle"></i> Nova Despesa
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tabela de Despesas -->
+      <div class="card shadow">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Registro de Despesas</h5>
+          <span class="badge bg-secondary">{{ despesas.count }} registros</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-dark">Data</th>
+                  <th class="text-dark">Descrição</th>
+                  <th class="text-dark">Categoria</th>
+                  <th class="text-dark">Valor</th>
+                  <th class="text-dark">Registrado por</th>
+                  <th class="text-dark">Status</th>
+                  <th class="text-dark">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for despesa in despesas %}
+                <tr>
+                  <td>{{ despesa.data_despesa|date:"d/m/Y" }}</td>
+                  <td>
+                    <strong>{{ despesa.descricao }}</strong>
+                    {% if despesa.observacoes %}
+                    <br><small class="text-muted">{{ despesa.observacoes|truncatechars:50 }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge bg-info categoria-badge">
+                      {{ despesa.get_categoria_display }}
+                    </span>
+                  </td>
+                  <td class="valor-negativo">Kz {{ despesa.valor|floatformat:2 }}</td>
+                  <td>{{ despesa.registro_por }}</td>
+                  <td>
+                    {% if despesa.status == 'pago' %}
+                      <span class="badge bg-success status-badge">Pago</span>
+                    {% elif despesa.status == 'pendente' %}
+                      <span class="badge bg-warning status-badge">Pendente</span>
+                    {% else %}
+                      <span class="badge bg-secondary status-badge">Cancelado</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <button type="button" class="btn btn-outline-info" 
+                              data-bs-toggle="modal" 
+                              data-bs-target="#detalhesModal{{ despesa.id }}">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                     <!-- Botão Editar -->
+                     <button type="button" class="btn btn-outline-warning btn-editar" 
+                            data-id="{{ despesa.id }}"
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editarDespesaModal">
+                        <i class="bi bi-pencil"></i>
+                     </button>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Modal de Detalhes -->
+                <div class="modal fade" id="detalhesModal{{ despesa.id }}" tabindex="-1">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Detalhes da Despesa</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        <dl class="row">
+                          <dt class="col-sm-4">Descrição:</dt>
+                          <dd class="col-sm-8">{{ despesa.descricao }}</dd>
+                          
+                          <dt class="col-sm-4">Valor:</dt>
+                          <dd class="col-sm-8 valor-negativo">Kz {{ despesa.valor|floatformat:2 }}</dd>
+                          
+                          <dt class="col-sm-4">Categoria:</dt>
+                          <dd class="col-sm-8">{{ despesa.get_categoria_display }}</dd>
+                          
+                          <dt class="col-sm-4">Data da Despesa:</dt>
+                          <dd class="col-sm-8">{{ despesa.data_despesa|date:"d/m/Y" }}</dd>
+                          
+                          <dt class="col-sm-4">Responsável:</dt>
+                          <dd class="col-sm-8">{{ despesa.responsavel }}</dd>
+                          
+                          <dt class="col-sm-4">Status:</dt>
+                          <dd class="col-sm-8">
+                            {% if despesa.status == 'pago' %}
+                              <span class="badge bg-success">Pago</span>
+                            {% elif despesa.status == 'pendente' %}
+                              <span class="badge bg-warning">Pendente</span>
+                            {% else %}
+                              <span class="badge bg-secondary">Cancelado</span>
+                            {% endif %}
+                          </dd>
+                          
+                          <dt class="col-sm-4">Registrado por:</dt>
+                          <dd class="col-sm-8">{{ despesa.registro_por }}</dd>
+                          
+                          <dt class="col-sm-4">Data Registro:</dt>
+                          <dd class="col-sm-8">{{ despesa.data_registro|date:"d/m/Y H:i" }}</dd>
+                          
+                          {% if despesa.observacoes %}
+                          <dt class="col-sm-4">Observações:</dt>
+                          <dd class="col-sm-8">{{ despesa.observacoes }}</dd>
+                          {% endif %}
+                          
+                          {% if despesa.comprovante %}
+                          <dt class="col-sm-4">Comprovante:</dt>
+                          <dd class="col-sm-8">
+                            <a href="{{ despesa.comprovante.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                              <i class="bi bi-download"></i> Baixar
+                            </a>
+                          </dd>
+                          {% endif %}
+                        </dl>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Modal Editar Despesa -->
+                <div class="modal fade" id="editarDespesaModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header bg-warning text-dark">
+                                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Despesa</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <form method="post" action="" id="formEditarDespesa" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="despesa_id" id="editarDespesaId">
+                                
+                                <div class="modal-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="editarDescricao" class="form-label">Descrição *</label>
+                                            <input type="text" class="form-control" id="editarDescricao" name="descricao" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="editarValor" class="form-label">Valor (Kz) *</label>
+                                            <input type="number" class="form-control" id="editarValor" name="valor" step="0.01" min="0" required>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <label for="editarCategoria" class="form-label">Categoria *</label>
+                                            <select class="form-select" id="editarCategoria" name="categoria" required>
+                                                <option value="">Selecione...</option>
+                                                {% for codigo, nome in categoria_choices %}
+                                                    <option value="{{ codigo }}">{{ nome }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <label for="editarDataDespesa" class="form-label">Data da Despesa *</label>
+                                            <input type="date" class="form-control" id="editarDataDespesa" name="data_despesa" required>
+                                        </div>
+                                        
+                                        <div class="col-md-6" style='display: none;'>
+                                            <label for="editarResponsavel" class="form-label">Responsável *</label>
+                                            <input type="text" class="form-control" id="editarResponsavel" name="responsavel" required>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <label for="editarStatus" class="form-label">Status</label>
+                                            <select class="form-select" id="editarStatus" name="status">
+                                                {% for codigo, nome in status_choices %}
+                                                    <option value="{{ codigo }}">{{ nome }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="col-md-12">
+                                            <div class="mb-2">
+                                                <label for="editarComprovante" class="form-label">Comprovante</label>
+                                                <div id="comprovanteAtual" class="mb-2"></div>
+                                                <input type="file" class="form-control" id="editarComprovante" name="comprovante" accept=".pdf,.jpg,.jpeg,.png">
+                                                <small class="text-muted">Deixe em branco para manter o atual. Formatos: PDF, JPG, PNG (max: 5MB)</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-12">
+                                            <label for="editarObservacoes" class="form-label">Observações</label>
+                                            <textarea class="form-control" id="editarObservacoes" name="observacoes" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="bi bi-save"></i> Atualizar Despesa
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <tr>
+                  <td colspan="8" class="text-center py-4">
+                    <i class="bi bi-receipt text-muted" style="font-size: 3rem;"></i>
+                    <p class="mt-2 text-muted">Nenhuma despesa registrada</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% if despesas.has_other_pages %}
+        <div class="card-footer">
+          <nav>
+            <ul class="pagination justify-content-center mb-0">
+              {% if despesas.has_previous %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ despesas.previous_page_number }}&{{ request.GET.urlencode|cut:'page=' }}">&laquo;</a>
+                </li>
+              {% endif %}
+              
+              {% for i in despesas.paginator.page_range %}
+                {% if despesas.number == i %}
+                  <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                  <li class="page-item"><a class="page-link" href="?page={{ i }}&{{ request.GET.urlencode|cut:'page=' }}">{{ i }}</a></li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if despesas.has_next %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ despesas.next_page_number }}&{{ request.GET.urlencode|cut:'page=' }}">&raquo;</a>
+                </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Despesa -->
+  <div class="modal fade" id="novaDespesaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Registrar Nova Despesa</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="{% url 'financa:adicionar_despesa' %}" enctype="multipart/form-data" id="formDespesa">
+          {% csrf_token %}
+          <div class="modal-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="descricao" class="form-label">Descrição *</label>
+                <input type="text" class="form-control" id="descricao" name="descricao" required>
+              </div>
+              <div class="col-md-6">
+                <label for="valor" class="form-label">Valor (Kz) *</label>
+                <input type="number" class="form-control" id="valor" name="valor" step="0.01" min="0" required>
+              </div>
+              
+              <div class="col-md-6">
+                <label for="categoria" class="form-label">Categoria *</label>
+                <select class="form-select" id="categoria" name="categoria" required>
+                  <option value="">Selecione...</option>
+                  {% for codigo, nome in categoria_choices %}
+                    <option value="{{ codigo }}">{{ nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="col-md-6">
+                <label for="data_despesa" class="form-label">Data da Despesa *</label>
+                <input type="date" class="form-control" id="data_despesa" name="data_despesa" 
+                       value="{% now 'Y-m-d' %}" required>
+              </div>
+              
+              <div class="col-md-6">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                  {% for codigo, nome in status_choices %}
+                    <option value="{{ codigo }}">{{ nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div class="col-md-6">
+                <label for="comprovante" class="form-label">Comprovante (opcional)</label>
+                <input type="file" class="form-control" id="comprovante" name="comprovante" accept=".pdf,.jpg,.jpeg,.png">
+                <small class="text-muted">Formatos: PDF, JPG, PNG (max: 5MB)</small>
+              </div>
+              
+              <div class="col-12">
+                <label for="observacoes" class="form-label">Observações (opcional)</label>
+                <textarea class="form-control" id="observacoes" name="observacoes" rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save"></i> Salvar Despesa
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para gerar folha de salário -->
+    <div class="modal fade" id="gerarFolhaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-cash-stack"></i> Gerar Folha de Salário
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formFolhaSalario">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Selecione o mês para gerar a folha de salário com cálculo de descontos por faltas.
+                        </div>
+                        
+                        <div class="row g-3">
+                            
+                            <div class="col-md-6">
+                                <label class="form-label">Mês</label>
+                                <select name="mes" class="form-select" required>
+                                    <option value="">Selecione o mês</option>
+                                    <option value="1">Janeiro</option>
+                                    <option value="2">Fevereiro</option>
+                                    <option value="3">Março</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Maio</option>
+                                    <option value="6">Junho</option>
+                                    <option value="7">Julho</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Setembro</option>
+                                    <option value="10">Outubro</option>
+                                    <option value="11">Novembro</option>
+                                    <option value="12">Dezembro</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumo do desconto ativo -->
+                        <div class="card mt-3">
+                            <div class="card-body">
+                                <h6 class="card-title">Configuração Atual de Descontos</h6>
+                                {% if desconto_ativo %}
+                                    <p class="mb-1"><strong>Valor por falta:</strong> Kz {{ desconto_ativo.valor_desconto }}</p>
+                                    <small class="text-muted">Este valor será aplicado a cada falta registrada.</small>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Nenhum valor de desconto configurado. Configure um valor antes de gerar a folha.
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning" id="btnGerarFolha">
+                            <i class="bi bi-file-earmark-pdf"></i> Gerar Folha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para exibir resultado -->
+    <div class="modal fade" id="resultadoFolhaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-earmark-text"></i> Folha de Salário Gerada
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="conteudoFolha">
+                    <!-- Conteúdo será carregado aqui -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    <button type="button" class="btn btn-primary" id="btnImprimirFolha">
+                        <i class="bi bi-printer"></i> Imprimir
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <!-- Mensagens -->
+  {% if messages %}
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050">
+    {% for message in messages %}
+    <div class="toast show" role="alert">
+      <div class="toast-header {% if message.tags %}bg-{{ message.tags }}{% endif %} text-white">
+        <strong class="me-auto">Sistema</strong>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body">
+        {{ message }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+    
+    // Formatação de valores
+    document.addEventListener('DOMContentLoaded', function() {
+      // Formatar campo de valor
+      const valorInput = document.getElementById('valor');
+      if (valorInput) {
+        valorInput.addEventListener('blur', function() {
+          if (this.value) {
+            this.value = parseFloat(this.value).toFixed(2);
+          }
+        });
+      }
+      
+      // Auto-fechar mensagens após 5 segundos
+      const toasts = document.querySelectorAll('.toast');
+      toasts.forEach(toast => {
+        setTimeout(() => {
+          const bsToast = bootstrap.Toast.getInstance(toast);
+          if (bsToast) bsToast.hide();
+        }, 5000);
+      });
+      
+      // Validação do formulário
+      const form = document.getElementById('formDespesa');
+      if (form) {
+        form.addEventListener('submit', function(e) {
+          const valor = document.getElementById('valor').value;
+          if (valor && parseFloat(valor) <= 0) {
+            e.preventDefault();
+            alert('O valor deve ser maior que zero.');
+          }
+        });
+      }
+    });
+    // Função para carregar dados da despesa ao clicar em editar
+    document.addEventListener('DOMContentLoaded', function() {
+        // Botões de editar
+        const botoesEditar = document.querySelectorAll('.btn-editar');
+        
+        botoesEditar.forEach(botao => {
+            botao.addEventListener('click', function() {
+                const despesaId = this.getAttribute('data-id');
+                carregarDadosDespesa(despesaId);
+            });
+        });
+        
+        // Função para carregar dados via AJAX
+        function carregarDadosDespesa(id) {
+            // Mostrar loading
+            const modalBody = document.querySelector('#editarDespesaModal .modal-body');
+            
+            // Fazer requisição AJAX
+            fetch(`/financeiro/despesas/editar/${id}/`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Preencher formulário
+                document.getElementById('editarDespesaId').value = id;
+                document.getElementById('editarDescricao').value = data.descricao;
+                document.getElementById('editarValor').value = data.valor;
+                document.getElementById('editarCategoria').value = data.categoria;
+                document.getElementById('editarDataDespesa').value = data.data_despesa;
+                document.getElementById('editarResponsavel').value = data.responsavel;
+                document.getElementById('editarStatus').value = data.status;
+                document.getElementById('editarObservacoes').value = data.observacoes;
+                
+                // Atualizar action do formulário
+                document.getElementById('formEditarDespesa').action = `/financeiro/despesas/editar/${id}/`;
+                
+                // Mostrar comprovante atual se existir
+                const comprovanteDiv = document.getElementById('comprovanteAtual');
+                if (data.comprovante_url) {
+                    comprovanteDiv.innerHTML = `
+                        <div class="alert alert-info p-2">
+                            <i class="bi bi-paperclip"></i> Comprovante atual: 
+                            <a href="${data.comprovante_url}" target="_blank" class="ms-1">${data.comprovante_nome}</a>
+                        </div>
+                    `;
+                } else {
+                    comprovanteDiv.innerHTML = '<div class="text-muted small">Nenhum comprovante anexado</div>';
+                }
+                
+                // Restaurar conteúdo original do modal
+                restaurarConteudoModal();
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Erro ao carregar dados. Tente novamente.
+                    </div>
+                `;
+            });
+        }
+        
+        // Função para restaurar conteúdo do modal (usando template salvo)
+        function restaurarConteudoModal() {
+            // O conteúdo já está no HTML, só precisamos garantir que está visível
+            // Esta função pode ser expandida se necessário
+        }
+        
+        // Validação do formulário de edição
+        const formEditar = document.getElementById('formEditarDespesa');
+        if (formEditar) {
+            formEditar.addEventListener('submit', function(e) {
+                const valor = document.getElementById('editarValor').value;
+                if (valor && parseFloat(valor) <= 0) {
+                    e.preventDefault();
+                    alert('O valor deve ser maior que zero.');
+                    return false;
+                }
+                
+                // Opcional: Adicionar confirmação
+                if (!confirm('Tem certeza que deseja atualizar esta despesa?')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Mostrar loading no botão
+                const btnSubmit = this.querySelector('button[type="submit"]');
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...';
+                btnSubmit.disabled = true;
+            });
+        }
+        
+        // Fechar modal após sucesso (opcional)
+        formEditar.addEventListener('submit', function(e) {
+            // Se for requisição AJAX, podemos fechar o modal automaticamente
+            // Mas como estamos usando submit normal, o refresh da página já fecha
+        });
+    });
+
+    // Adicione este script à sua página
+    document.addEventListener('DOMContentLoaded', function() {
+        const formFolha = document.getElementById('formFolhaSalario');
+        const btnGerarFolha = document.getElementById('btnGerarFolha');
+        
+        if (formFolha) {
+            formFolha.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Desabilita botão e mostra loading
+                btnGerarFolha.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Gerando...';
+                btnGerarFolha.disabled = true;
+                
+                // Coleta dados do formulário
+                const formData = new FormData(this);
+                
+                // Envia requisição AJAX
+                fetch('/financeiro/gerar-folha-salario/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Exibe resultado no modal
+                        document.getElementById('conteudoFolha').innerHTML = data.html;
+                        
+                        // Fecha modal atual e abre modal de resultado
+                        const modalFolha = bootstrap.Modal.getInstance(document.getElementById('gerarFolhaModal'));
+                        modalFolha.hide();
+                        
+                        const modalResultado = new bootstrap.Modal(document.getElementById('resultadoFolhaModal'));
+                        modalResultado.show();
+                        
+                        // Configura botões do modal de resultado
+                        document.getElementById('btnImprimirFolha').onclick = function() {
+                            const printWindow = window.open('', '_blank');
+                            printWindow.document.write(data.html);
+                            printWindow.document.close();
+                            printWindow.focus();
+                            printWindow.print();
+                            printWindow.close();
+                        };
+                        
+                        document.getElementById('btnExportarPDF').onclick = function() {
+                            
+                            alert('Funcionalidade de exportar PDF em desenvolvimento.');
+                        };
+                        
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                })
+                .finally(() => {
+                    // Restaura botão
+                    btnGerarFolha.innerHTML = '<i class="bi bi-file-earmark-pdf"></i> Gerar Folha';
+                    btnGerarFolha.disabled = false;
+                });
+            });
+        }
+    });
+  </script>
+</body>
+</html>

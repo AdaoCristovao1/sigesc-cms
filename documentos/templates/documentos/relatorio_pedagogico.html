@@ -1,0 +1,716 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Pedagógico Completo</title>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      thead.bg-primary, thead.bg-success, thead.bg-danger, thead.bg-warning, thead.bg-info {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .text-success { color: #28a745 !important; }
+      .text-danger { color: #dc3545 !important; }
+      .text-warning { color: #ffc107 !important; }
+      .text-info { color: #17a2b8 !important; }
+      @page {
+        margin: 0.5cm; /* Margem reduzida para impressão */
+        size: A4;
+      }
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 11px;
+      margin: 1cm;
+      line-height: 1.4;
+    }
+    .header { 
+      text-align: center; 
+      margin-bottom: 25px;
+      border-bottom: 2px solid #0d6efd;
+      padding-bottom: 15px;
+    }
+    .header img { 
+      width: 80px; 
+      height: 80px;
+      margin-bottom: 10px;
+    }
+    .header h4 {
+      margin: 5px 0;
+      font-weight: bold;
+    }
+    .header h5 {
+      margin: 3px 0;
+      color: #555;
+    }
+    .info-box {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .summary-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      page-break-inside: avoid;
+    }
+    .summary-card.alunos { border-left: 4px solid #0d6efd; }
+    .summary-card.professores { border-left: 4px solid #28a745; }
+    .summary-card.turmas { border-left: 4px solid #ffc107; }
+    .summary-card.desempenho { border-left: 4px solid #17a2b8; }
+    .badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      margin: 1px;
+    }
+    table {
+      width: 100%;
+      margin-bottom: 15px;
+      border-collapse: collapse;
+    }
+    table th {
+      padding: 6px 8px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    table td {
+      padding: 5px 8px;
+      font-size: 10px;
+      vertical-align: middle;
+    }
+    .table-bordered th, .table-bordered td {
+      border: 1px solid #dee2e6;
+    }
+    .valor-grande {
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 30px;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      font-size: 9px;
+      color: #666;
+    }
+    .assinatura {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #000;
+    }
+    .data-emissao {
+      text-align: right;
+      font-style: italic;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .progress {
+      height: 5px;
+      background-color: #e9ecef;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+    }
+    .grafico-barra {
+      height: 20px;
+      background-color: #e9ecef;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 3px 0;
+    }
+    .barra-valor {
+      height: 100%;
+      background-color: #0d6efd;
+      color: white;
+      font-size: 8px;
+      line-height: 20px;
+      padding-left: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print mb-3 text-end">
+    <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="btn btn-secondary btn-sm" onclick="window.close()">❌ Fechar</button>
+  </div>
+
+  <div class="header">
+    {% if escola %} 
+      <img src="{{ escola.logo.url }}" alt="Logo da Escola" style="width: 100px; height: 100px;">
+      <h4>{{ escola.nome }}</h4>
+      <h5>{{ escola.endereco }}</h5>
+      <h5>Telefone: {{ escola.telefone }} | Email: {{ escola.email }}</h5>
+    {% else %}
+      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
+      <h4>Complexo Escolar Veredas Encantadas</h4>
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+    {% endif %}
+    
+    <h4>RELATÓRIO PEDAGÓGICO COMPLETO</h4>
+    <h5>Ano Lectivo: {{ ano_lectivo }}</h5>
+  </div>
+
+  <div class="data-emissao">
+    <small>Emitido em: {% now "d/m/Y H:i" %}</small>
+    <br>
+    <small>Emitido por: {{ usuario.get_full_name|default:usuario.username }}</small>
+  </div>
+
+  <!-- RESUMO EXECUTIVO -->
+  <div class="info-box">
+    <h5 style="text-align: center; margin-bottom: 15px;">RESUMO EXECUTIVO</h5>
+    
+    <div class="row">
+      <div class="col-3">
+        <div class="summary-card alunos">
+          <strong>TOTAL DE ALUNOS</strong><br>
+          <span class="valor-grande text-primary">{{ total_alunos }}</span><br>
+          <small>{{ alunos_masculino }} M | {{ alunos_feminino }} F</small>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="summary-card professores">
+          <strong>PROFESSORES</strong><br>
+          <span class="valor-grande text-success">{{ total_professores }}</span><br>
+          <small>{{ professores_masculino }} M | {{ professores_feminino }} F</small>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="summary-card turmas">
+          <strong>TURMAS</strong><br>
+          <span class="valor-grande text-warning">{{ total_turmas }}</span><br>
+          <small>{{ total_disciplinas }} disciplinas</small>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="summary-card desempenho">
+          <strong>TAXA APROVAÇÃO</strong><br>
+          <span class="valor-grande text-info">{{ taxa_aprovacao_geral|floatformat:1 }}%</span><br>
+          <small>{{ aprovados }} aprovados</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-4">
+        <strong>Alunos no Ano Letivo:</strong><br>
+        <span class="text-primary">{{ total_alunos_ano }}</span>
+      </div>
+      <div class="col-4">
+        <strong>Média Alunos/Professor:</strong><br>
+        <span class="text-info">{{ media_alunos_professor|floatformat:1 }}</span>
+      </div>
+      <div class="col-4">
+        <strong>Funcionários Totais:</strong><br>
+        <span>{{ total_funcionarios }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. DADOS DEMOGRÁFICOS -->
+  <h5 style="margin-top: 20px; color: #0d6efd;">1. DISTRIBUIÇÃO DE ALUNOS</h5>
+  
+  <table class="table table-bordered">
+    <thead class="bg-primary text-white">
+      <tr>
+        <th>CLASSE</th>
+        <th>QUANTIDADE</th>
+        <th>PERCENTUAL</th>
+        <th>DISTRIBUIÇÃO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in alunos_por_classe %}
+      <tr>
+        <td><strong>{{ item.classe.numero }}ª Classe</strong> - {{ item.classe.designacao }}</td>
+        <td style="text-align: center;">{{ item.quantidade }}</td>
+        <td style="text-align: center;">{{ item.percentual|floatformat:1 }}%</td>
+        <td style="width: 30%;">
+          <div class="progress">
+            <div class="progress-bar bg-primary" style="width: {{ item.percentual }}%"></div>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" style="text-align: center; color: #999;">Nenhum aluno matriculado</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="row">
+    <div class="col-6">
+      <h6>Distribuição por Turno</h6>
+      <table class="table table-bordered">
+        <thead class="bg-light">
+          <tr>
+            <th>TURNO</th>
+            <th>QUANTIDADE</th>
+            <th>%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in alunos_por_turno %}
+          <tr>
+            <td>{{ item.turno }}</td>
+            <td style="text-align: center;">{{ item.quantidade }}</td>
+            <td style="text-align: center;">{{ item.percentual|floatformat:1 }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="col-6">
+      <h6>Alunos por Turma (Top 5)</h6>
+      <table class="table table-bordered">
+        <thead class="bg-light">
+          <tr>
+            <th>TURMA</th>
+            <th>ALUNOS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for turma in alunos_por_turma|slice:":5" %}
+          <tr>
+            <td>{{ turma.nome }}</td>
+            <td style="text-align: center;">{{ turma.quantidade_alunos }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- 2. DESEMPENHO ACADÊMICO -->
+  <h5 style="margin-top: 20px; color: #28a745;">2. DESEMPENHO ACADÊMICO</h5>
+  
+  <div class="info-box">
+    <h6>Status Acadêmico Geral</h6>
+    <div class="row">
+      <div class="col-4 text-center">
+        <div class="border p-2" style="background-color: #d4edda;">
+          <strong>Aprovados</strong><br>
+          <span class="valor-grande">{{ aprovados }}</span><br>
+          <small>{% widthratio aprovados total_avaliados 100 %}%</small>
+        </div>
+      </div>
+      <div class="col-4 text-center">
+        <div class="border p-2" style="background-color: #f8d7da;">
+          <strong>Reprovados</strong><br>
+          <span class="valor-grande">{{ reprovados }}</span><br>
+          <small>{% widthratio reprovados total_avaliados 100 %}%</small>
+        </div>
+      </div>
+      <div class="col-4 text-center">
+        <div class="border p-2" style="background-color: #fff3cd;">
+          <strong>Pendentes</strong><br>
+          <span class="valor-grande">{{ pendentes }}</span><br>
+          <small>{% widthratio pendentes total_avaliados 100 %}%</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h6>Médias por Disciplina (Top 10)</h6>
+  <table class="table table-bordered">
+    <thead class="bg-success text-white">
+      <tr>
+        <th>DISCIPLINA</th>
+        <th>MÉDIA GERAL</th>
+        <th>APROVADOS</th>
+        <th>REPROVADOS</th>
+        <th>TAXA APROVAÇÃO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in medias_disciplinas %}
+      <tr>
+        <td>{{ item.disciplina.nome }}</td>
+        <td style="text-align: center;" class="{% if item.media_geral >= 10 %}text-success{% else %}text-danger{% endif %}">
+          <strong>{{ item.media_geral|floatformat:1 }}</strong>
+        </td>
+        <td style="text-align: center;">{{ item.alunos_aprovados }}</td>
+        <td style="text-align: center;">{{ item.alunos_reprovados }}</td>
+        <td style="text-align: center;">
+          <span class="badge {% if item.taxa_aprovacao >= 70 %}bg-success{% elif item.taxa_aprovacao >= 50 %}bg-warning{% else %}bg-danger{% endif %}">
+            {{ item.taxa_aprovacao|floatformat:1 }}%
+          </span>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align: center; color: #999;">Nenhuma nota registrada</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h6>Desempenho por Classe</h6>
+  <table class="table table-bordered">
+    <thead class="bg-light">
+      <tr>
+        <th>CLASSE</th>
+        <th>TOTAL ALUNOS</th>
+        <th>MÉDIA GERAL</th>
+        <th>DESEMPENHO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in desempenho_classes %}
+      <tr>
+        <td>{{ item.classe.numero }}ª Classe</td>
+        <td style="text-align: center;">{{ item.total_alunos }}</td>
+        <td style="text-align: center;" class="{% if item.media_geral >= 10 %}text-success{% else %}text-danger{% endif %}">
+          <strong>{{ item.media_geral|floatformat:1 }}</strong>
+        </td>
+        <td style="width: 30%;">
+          <div class="progress">
+            <div class="progress-bar {% if item.media_geral >= 10 %}bg-success{% else %}bg-danger{% endif %}" 
+                 style="width: {{ item.media_geral|floatformat:0 }}%"></div>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" style="text-align: center; color: #999;">Dados não disponíveis</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- 3. DADOS FINANCEIROS E STATUS -->
+  <h5 style="margin-top: 20px; color: #ffc107;">3. SITUAÇÃO FINANCEIRA DOS ALUNOS</h5>
+  
+  <div class="row">
+    <div class="col-6">
+      <table class="table table-bordered">
+        <thead class="bg-warning text-dark">
+          <tr>
+            <th colspan="3">STATUS DE PAGAMENTO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="background-color: #d4edda;">
+            <td><strong>Adimplentes</strong></td>
+            <td style="text-align: center;">{{ alunos_adimplentes }}</td>
+            <td style="width: 30%;">
+              <div class="progress">
+                <div class="progress-bar bg-success" style="width: {% widthratio alunos_adimplentes total_alunos_ano 100 %}%"></div>
+              </div>
+            </td>
+          </tr>
+          <tr style="background-color: #f8d7da;">
+            <td><strong>Inadimplentes</strong></td>
+            <td style="text-align: center;">{{ alunos_inadimplentes }}</td>
+            <td>
+              <div class="progress">
+                <div class="progress-bar bg-danger" style="width: {% widthratio alunos_inadimplentes total_alunos_ano 100 %}%"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="col-6">
+      <table class="table table-bordered">
+        <thead class="bg-warning text-dark">
+          <tr>
+            <th colspan="3">STATUS ACADÊMICO</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Aprovados</strong></td>
+            <td style="text-align: center;">{{ aprovados }}</td>
+            <td>
+              <div class="progress">
+                <div class="progress-bar bg-success" style="width: {% widthratio aprovados total_avaliados 100 %}%"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Reprovados</strong></td>
+            <td style="text-align: center;">{{ reprovados }}</td>
+            <td>
+              <div class="progress">
+                <div class="progress-bar bg-danger" style="width: {% widthratio reprovados total_avaliados 100 %}%"></div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Pendentes</strong></td>
+            <td style="text-align: center;">{{ pendentes }}</td>
+            <td>
+              <div class="progress">
+                <div class="progress-bar bg-warning" style="width: {% widthratio pendentes total_avaliados 100 %}%"></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 4. CORPO DOCENTE -->
+  <h5 style="margin-top: 20px; color: #17a2b8;">4. CORPO DOCENTE</h5>
+  
+  <table class="table table-bordered">
+    <thead class="bg-info text-white">
+      <tr>
+        <th>DISCIPLINA</th>
+        <th>PROFESSORES</th>
+        <th>TURMAS</th>
+        <th>MÉDIA TURMAS/PROF</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in professores_disciplina %}
+      <tr>
+        <td>{{ item.disciplina__nome }}</td>
+        <td style="text-align: center;">{{ item.quantidade }}</td>
+        <td style="text-align: center;">{{ item.turmas }}</td>
+        <td style="text-align: center;">{{ item.turmas|floatformat:1 }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" style="text-align: center; color: #999;">Nenhum vínculo registrado</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- 5. MONOGRAFIAS / TRABALHOS DE CONCLUSÃO -->
+  <h5 style="margin-top: 20px; color: #6f42c1;">5. MONOGRAFIAS / TCC</h5>
+  
+  <div class="row">
+    <div class="col-6">
+      <table class="table table-bordered">
+        <thead class="bg-purple text-white" style="background-color: #6f42c1;">
+          <tr>
+            <th colspan="2">ESTADO DAS MONOGRAFIAS</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in monografias_estado %}
+          <tr>
+            <td><strong>{{ item.estado }}</strong></td>
+            <td style="text-align: center;">{{ item.quantidade }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="2" style="text-align: center; color: #999;">Nenhuma monografia registrada</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="background-color: #f8f9fa;">
+            <td><strong>TOTAL</strong></td>
+            <td style="text-align: center;"><strong>{{ total_monografias }}</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    
+    <div class="col-6">
+      <div class="info-box text-center">
+        <h6>MÉDIA DAS NOTAS DAS MONOGRAFIAS</h6>
+        <span class="valor-grande" style="font-size: 24px;">{{ media_notas_monografias|floatformat:1 }}</span>
+        <br>
+        <small>valores de 0 a 20</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. ÚLTIMOS REGISTROS -->
+  <h5 style="margin-top: 20px; color: #6c757d;">6. ÚLTIMOS REGISTROS</h5>
+  
+  <div class="row">
+    <div class="col-4">
+      <h6>Últimas Notas Lançadas</h6>
+      <table class="table table-bordered" style="font-size: 9px;">
+        <thead class="bg-light">
+          <tr>
+            <th>Aluno</th>
+            <th>Disciplina</th>
+            <th>Nota</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for nota in ultimas_notas %}
+          <tr>
+            <td>{{ nota.aluno.nome|truncatechars:15 }}</td>
+            <td>{{ nota.disciplina.sigla|default:nota.disciplina.nome|truncatechars:10 }}</td>
+            <td style="text-align: center;">{{ nota.valor|floatformat:1 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="text-center">-</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="col-4">
+      <h6>Últimos Alunos Matriculados</h6>
+      <table class="table table-bordered" style="font-size: 9px;">
+        <thead class="bg-light">
+          <tr>
+            <th>Nome</th>
+            <th>Turma</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for aluno in ultimos_alunos %}
+          <tr>
+            <td>{{ aluno.nome|truncatechars:15 }}</td>
+            <td>{{ aluno.turma.codigo|default:aluno.turma.nome|truncatechars:10 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="text-center">-</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="col-4">
+      <h6>Últimas Monografias</h6>
+      <table class="table table-bordered" style="font-size: 9px;">
+        <thead class="bg-light">
+          <tr>
+            <th>Título</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for mono in ultimas_monografias %}
+          <tr>
+            <td>{{ mono.titulo|truncatechars:15 }}</td>
+            <td>{{ mono.estado }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="2" class="text-center">-</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 7. ANÁLISE PEDAGÓGICA -->
+  <div class="page-break"></div>
+  
+  <h5 style="margin-top: 20px; color: #0d6efd;">7. ANÁLISE PEDAGÓGICA</h5>
+  
+  <div class="info-box">
+    <h6>RESUMO DA SITUAÇÃO PEDAGÓGICA</h6>
+    <p style="text-align: justify;">
+      Durante o ano lectivo <strong>{{ ano_lectivo }}</strong>, o Complexo Escolar atendeu um total de 
+      <strong>{{ total_alunos_ano }} alunos</strong>, distribuídos em <strong>{{ total_turmas }} turmas</strong>, 
+      com um corpo docente de <strong>{{ total_professores }} professores</strong>.
+    </p>
+    
+    <p style="text-align: justify;">
+      A taxa de aprovação geral foi de <strong>{{ taxa_aprovacao_geral|floatformat:1 }}%</strong>, 
+      com <strong>{{ aprovados }} alunos aprovados</strong>, <strong>{{ reprovados }} reprovados</strong> e 
+      <strong>{{ pendentes }} pendentes</strong>. 
+      
+      {% if taxa_aprovacao_geral >= 80 %}
+        Este é um excelente resultado, demonstrando a qualidade do ensino.
+      {% elif taxa_aprovacao_geral >= 60 %}
+        Este é um resultado satisfatório, com margem para melhoria.
+      {% else %}
+        É necessário implementar medidas de recuperação e acompanhamento pedagógico.
+      {% endif %}
+    </p>
+    
+    <h6>DISCIPLINAS EM DESTAQUE</h6>
+    <ul>
+      {% with melhor_disciplina=medias_disciplinas|first %}
+        {% if melhor_disciplina %}
+          <li><strong>Melhor média:</strong> {{ melhor_disciplina.disciplina.nome }} ({{ melhor_disciplina.media_geral|floatformat:1 }})</li>
+        {% endif %}
+      {% endwith %}
+      
+      {% with pior_disciplina=medias_disciplinas|last %}
+        {% if pior_disciplina %}
+          <li><strong>Menor média:</strong> {{ pior_disciplina.disciplina.nome }} ({{ pior_disciplina.media_geral|floatformat:1 }})</li>
+        {% endif %}
+      {% endwith %}
+    </ul>
+    
+    <h6>RECOMENDAÇÕES PEDAGÓGICAS</h6>
+    <ol>
+      {% if alunos_inadimplentes > alunos_adimplentes|add:0 %}
+      <li><strong>Regularizar situação financeira:</strong> Alto índice de inadimplência pode afetar o desempenho</li>
+      {% endif %}
+      
+      {% for item in medias_disciplinas %}
+        {% if forloop.counter <= 3 and item.media_geral < 10 %}
+          <li><strong>Apoio em {{ item.disciplina.nome }}:</strong> Implementar aulas de recuperação</li>
+        {% endif %}
+      {% endfor %}
+      
+      <li><strong>Acompanhamento individualizado:</strong> Para alunos com rendimento abaixo da média</li>
+      <li><strong>Reuniões pedagógicas:</strong> Promover encontros para alinhamento de estratégias</li>
+    </ol>
+  </div>
+
+  <!-- ASSINATURAS -->
+  <div class="assinatura">
+    <div class="row">
+      <div class="col-6 text-center">
+        <p><strong>DIRETOR PEDAGÓGICO</strong></p>
+        <p style="margin-bottom: 40px;">______________________________</p>
+        <p>{{ diretor_pedagogico.nome|default:"______________________" }}</p>
+      </div>
+
+      <div class="col-6 text-center">
+        <p><strong>COORDENADOR PEDAGÓGICO</strong></p>
+        <p style="margin-bottom: 40px;">______________________________</p>
+        <p>{{ coordenador.nome|default:"______________________" }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div class="footer text-center">
+    <hr style="margin: 10px 0;">
+    <p><strong>Complexo Escolar Veredas Encantadas</strong> | Sistema Integrado de Gestão Escolar (SIGEsc)</p>
+    <p>Documento gerado automaticamente pelo Sistema SIGEsc em {% now "d/m/Y à\s H:i" %}</p>
+    <p class="text-muted">Este é um documento oficial para fins de análise e arquivo pedagógico</p>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const printBtn = document.querySelector('.no-print button');
+      if (printBtn) {
+        printBtn.addEventListener('click', function() {
+          setTimeout(function() {
+            window.print();
+          }, 100);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

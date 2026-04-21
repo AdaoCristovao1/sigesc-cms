@@ -1,0 +1,398 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Vincular Professor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Secretário Pedagógico</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'pedagogico:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'pedagogico:docentes' %}" class="active">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'pedagogico:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'pedagogico:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'pedagogico:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'pedagogico:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'pedagogico:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'pedagogico:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <h3 class="page-title">
+        <i class="fas fa-chalkboard-teacher me-2"></i> 
+        {% if modo_edicao %}Editar{% else %}Vincular{% endif %} Professor(a) - 
+        <b>{{professor.nome}}</b>
+      </h3>
+      
+      {% if modo_edicao %}
+      <div class="alert alert-info">
+        <i class="fas fa-info-circle me-2"></i>
+        Editando vínculo existente. As alterações serão aplicadas a todos os horários relacionados.
+      </div>
+      {% endif %}
+
+      <form method="post" action="{% if modo_edicao %}{% url 'core:editar_vinculo_docente' professor.id vinculo.id %}{% else %}{% url 'core:vinculo_professor' professor.id %}{% endif %}">
+        {% csrf_token %}
+        
+        {% if modo_edicao %}
+        <input type="hidden" name="vinculo_id" value="{{ vinculo.id }}">
+        {% endif %}
+        
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="disciplina" class="form-label">Disciplina *</label>
+            <select id="disciplina" name="disciplina" class="form-select" required >
+              <option value="">Selecione a Disciplina</option>
+              {% for d in disciplinas %}
+              <option value="{{ d.id }}" 
+                      {% if modo_edicao and d.id == vinculo.disciplina.id %}selected{% endif %}>
+                {{ d.nome }} ({{ d.codigo }})
+              </option>
+              {% endfor %}
+            </select>
+            {% if modo_edicao %}
+            <small class="text-muted">A disciplina não pode ser alterada em edição.</small>
+            {% endif %}
+          </div>
+          
+          <div class="col-md-6 mb-3">
+            <label for="turma" class="form-label">Turma *</label>
+            <select id="turma" name="turma" class="form-select" required>
+              <option value="">Selecione a Turma</option>
+              {% for turma in turmas %}
+              <option value="{{ turma.id }}" 
+                      data-classe="{{ turma.classe.numero }}"
+                      data-curso="{{ turma.curso.nome }}"
+                      data-turno="{{ turma.turno }}"
+                      {% if modo_edicao and turma.id == vinculo.turma.id %}selected{% endif %}>
+                {{ turma.nome }} – {{ turma.turno }}
+              </option>
+              {% endfor %}
+            </select>
+            {% if modo_edicao %}
+            <small class="text-muted">A turma não pode ser alterada em edição.</small>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <label class="form-label">Classe</label>
+            <input type="text" id="classeInfo" class="form-control" readonly 
+                   value="{% if modo_edicao %}{{ vinculo.turma.classe.numero }}ª{% endif %}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Curso</label>
+            <input type="text" id="cursoInfo" class="form-control" readonly
+                   value="{% if modo_edicao %}{{ vinculo.turma.curso.nome }}{% endif %}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Turno</label>
+            <input type="text" id="turnoInfo" class="form-control" readonly
+                   value="{% if modo_edicao %}{{ vinculo.turma.turno }}{% endif %}">
+          </div>
+        </div>
+
+        <hr class="my-4">
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4><i class="fas fa-clock me-2"></i> Horários de Aula</h4>
+          <button type="button" class="btn btn-outline-primary" onclick="adicionarHorario()">
+            <i class="fas fa-plus me-1"></i> Adicionar Horário
+          </button>
+        </div>
+
+        <div id="horarios-container">
+          {% if modo_edicao and vinculo.horarios.exists %}
+            {% for horario in vinculo.horarios.all %}
+            <div class="card bg-light mb-3 horario-item">
+              <div class="card-body row g-3">
+                <input type="hidden" name="horario_id[]" value="{{ horario.id }}">
+                <div class="col-md-3">
+                  <label class="form-label">Dia da Semana *</label>
+                  <select name="dia_semana[]" class="form-select" required>
+                    <option value="2" {% if horario.dia_semana == '2' %}selected{% endif %}>Segunda-feira</option>
+                    <option value="3" {% if horario.dia_semana == '3' %}selected{% endif %}>Terça-feira</option>
+                    <option value="4" {% if horario.dia_semana == '4' %}selected{% endif %}>Quarta-feira</option>
+                    <option value="5" {% if horario.dia_semana == '5' %}selected{% endif %}>Quinta-feira</option>
+                    <option value="6" {% if horario.dia_semana == '6' %}selected{% endif %}>Sexta-feira</option>
+                    <option value="7" {% if horario.dia_semana == '7' %}selected{% endif %}>Sábado</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Início *</label>
+                  <input type="time" name="hora_inicio[]" class="form-control" 
+                         value="{{ horario.hora_inicio|time:'H:i' }}" required>
+                </div>
+                <div class="col-md-2">
+                  <label class="form-label">Fim *</label>
+                  <input type="time" name="hora_fim[]" class="form-control" 
+                         value="{{ horario.hora_fim|time:'H:i' }}" required>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Tempo/Aula</label>
+                  <input type="number" name="tempo_aula[]" class="form-control" 
+                         value="{{ horario.tempo_aula }}" placeholder="Ex: 1" min="1">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                  <button type="button" class="btn btn-danger w-100" onclick="removerHorario(this)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <!-- Template para novo horário -->
+          <div class="card bg-light mb-3 horario-item">
+            <div class="card-body row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Dia da Semana *</label>
+                <select name="dia_semana[]" class="form-select" required>
+                  <option value="2">Segunda-feira</option>
+                  <option value="3">Terça-feira</option>
+                  <option value="4">Quarta-feira</option>
+                  <option value="5">Quinta-feira</option>
+                  <option value="6">Sexta-feira</option>
+                  <option value="7">Sábado</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Início *</label>
+                <input type="time" name="hora_inicio[]" class="form-control" required>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Fim *</label>
+                <input type="time" name="hora_fim[]" class="form-control" required>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Tempo/Aula</label>
+                <input type="number" name="tempo_aula[]" class="form-control" placeholder="Ex: 1" min="1">
+              </div>
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-danger w-100" onclick="removerHorario(this)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Pelo menos um horário deve ser definido para o vínculo.
+        </div>
+
+        <div class="mt-4">
+          <button type="submit" class="btn btn-success btn-lg">
+            <i class="fas fa-save me-2"></i>
+            {% if modo_edicao %}Atualizar{% else %}Salvar{% endif %} Vínculo
+          </button>
+          <a href="{% url 'pedagogico:docentes' %}" class="btn btn-secondary btn-lg">Cancelar</a>
+          
+          {% if modo_edicao %}
+          <button type="button" class="btn btn-danger btn-lg float-end" 
+                  data-bs-toggle="modal" data-bs-target="#modalExcluir">
+            <i class="fas fa-trash me-2"></i>
+            Excluir Vínculo
+          </button>
+          {% endif %}
+        </div>
+      </form>
+    <br><br> 
+    </div>
+  </div>
+
+  <!-- Modal de Exclusão (somente em edição) -->
+  {% if modo_edicao %}
+  <div class="modal fade" id="modalExcluir" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar Exclusão</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja excluir permanentemente este vínculo?</p>
+          <div class="alert alert-danger">
+            <strong>{{ vinculo.disciplina.nome }}</strong><br>
+            <small>{{ vinculo.turma.nome }} - {{ vinculo.turma.turno }}</small>
+          </div>
+          <p class="text-danger">
+            <i class="fas fa-exclamation-circle me-1"></i>
+            Todos os {{ vinculo.horarios.count }} horários associados também serão excluídos!
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="post" action="{% url 'core:excluir_vinculo' vinculo.id %}" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Excluir Permanentemente</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <script>
+    const turmas = [
+      {% for turma in turmas %}
+      {
+        id: {{ turma.id }},
+        nome: "{{ turma.nome }}",
+        classe_numero: "{{ turma.classe.numero }}",
+        curso_nome: "{{ turma.curso.nome }}",
+        turno: "{{ turma.turno }}"
+      },
+      {% endfor %}
+    ];
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+
+    // Atualizar informações da turma selecionada
+    document.getElementById('turma').addEventListener('change', function() {
+      const turmaId = parseInt(this.value);
+      const turma = turmas.find(t => t.id === turmaId);
+      
+      if (turma) {
+        document.getElementById('classeInfo').value = turma.classe_numero + 'ª';
+        document.getElementById('cursoInfo').value = turma.curso_nome;
+        document.getElementById('turnoInfo').value = turma.turno;
+      } else {
+        document.getElementById('classeInfo').value = '';
+        document.getElementById('cursoInfo').value = '';
+        document.getElementById('turnoInfo').value = '';
+      }
+    });
+
+    // Funções para gerenciar horários
+    function adicionarHorario() {
+      const container = document.getElementById('horarios-container');
+      const primeiroItem = container.querySelector('.horario-item');
+      const novoItem = primeiroItem.cloneNode(true);
+      
+      // Limpar valores
+      novoItem.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+      novoItem.querySelectorAll('input').forEach(input => {
+        if (input.type !== 'hidden') input.value = '';
+      });
+      
+      // Remover ID do horário se estiver clonando um existente
+      const hiddenId = novoItem.querySelector('input[name="horario_id[]"]');
+      if (hiddenId) hiddenId.remove();
+      
+      container.appendChild(novoItem);
+      updateRemoveButtons();
+    }
+
+    function removerHorario(botao) {
+      const itens = document.querySelectorAll('.horario-item');
+      if (itens.length > 1) {
+        botao.closest('.horario-item').remove();
+        updateRemoveButtons();
+      } else {
+        alert("O vínculo deve ter pelo menos um horário definido.");
+      }
+    }
+
+    function updateRemoveButtons() {
+      const itens = document.querySelectorAll('.horario-item');
+      itens.forEach((item, index) => {
+        const btn = item.querySelector('.btn-danger');
+        if (itens.length === 1) {
+          btn.disabled = true;
+          btn.classList.add('disabled');
+        } else {
+          btn.disabled = false;
+          btn.classList.remove('disabled');
+        }
+      });
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+      updateRemoveButtons();
+      
+      // Se for modo edição, preencher informações da turma
+      {% if modo_edicao and not request.POST %}
+      const turmaSelect = document.getElementById('turma');
+      if (turmaSelect.value) {
+        turmaSelect.dispatchEvent(new Event('change'));
+      }
+      {% endif %}
+    });
+  </script>
+  
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

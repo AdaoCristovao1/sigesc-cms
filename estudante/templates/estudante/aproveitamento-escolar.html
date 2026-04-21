@@ -1,0 +1,915 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Aproveitamento Escolar - SIGEsc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    :root {
+      --primary-color: #2c5aa0;
+      --primary-dark: #1e3d72;
+      --secondary-color: #6c757d;
+      --success-color: #28a745;
+      --info-color: #17a2b8;
+      --warning-color: #ffc107;
+      --danger-color: #dc3545;
+      --light-bg: #f8f9fa;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --hover-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fb;
+      color: #333;
+    }
+
+    .sidebar {
+      height: 100vh;
+      width: 280px;
+      position: fixed;
+      background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding-top: 20px;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar a {
+      padding: 14px 25px;
+      display: block;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      border-left: 4px solid transparent;
+      margin: 2px 0;
+    }
+
+    .sidebar a:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-left: 4px solid #fff;
+      padding-left: 30px;
+    }
+
+    .sidebar a.active {
+      background-color: rgba(255, 255, 255, 0.15);
+      border-left: 4px solid #fff;
+      font-weight: 600;
+    }
+
+    .main-content {
+      margin-left: 280px;
+      padding: 0;
+      background-color: var(--light-bg);
+      min-height: 100vh;
+      transition: all 0.3s ease;
+    }
+
+    .topbar {
+      background-color: white;
+      color: var(--primary-color);
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .topbar h5 {
+      margin: 0;
+      font-weight: 600;
+      color: var(--primary-color);
+    }
+
+    .logout {
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 15px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .logout:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      text-decoration: none;
+      color: white;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 22px;
+      margin-bottom: 25px;
+      padding-left: 25px;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-info {
+      text-align: center;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .user-info svg {
+      margin-bottom: 10px;
+    }
+
+    .content-container {
+      padding: 25px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eaeaea;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+
+    .page-title svg {
+      color: var(--primary-color);
+    }
+
+    .filter-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 25px;
+    }
+
+    .stats-card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s ease;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--hover-shadow);
+    }
+
+    .stats-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .stats-label {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 25px;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--hover-shadow);
+    }
+
+    .card-header {
+      border-radius: 10px 10px 0 0 !important;
+      font-weight: 600;
+      padding: 15px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+
+    .loading {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .table th {
+      background-color: var(--primary-color);
+      color: white;
+      font-weight: 600;
+      border: none;
+      padding: 12px 15px;
+    }
+
+    .table td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+
+    .badge {
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 20px;
+    }
+
+    .form-select, .form-control {
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      padding: 8px 12px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      border-color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .burger {
+      display: none;
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .burger:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    /* Responsividade */
+    @media (max-width: 992px) {
+      .sidebar {
+        width: 250px;
+      }
+      .main-content {
+        margin-left: 250px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .burger {
+        display: block;
+      }
+
+      .sidebar {
+        left: -280px;
+        width: 280px;
+      }
+
+      .sidebar.active {
+        left: 0;
+      }
+
+      .main-content {
+        margin-left: 0;
+      }
+
+      .stats-value {
+        font-size: 1.8rem;
+      }
+
+      .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .filter-container .row > div {
+        margin-bottom: 15px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .content-container {
+        padding: 15px;
+      }
+      
+      .page-title {
+        font-size: 1.5rem;
+      }
+      
+      .page-title svg {
+        width: 30px;
+        height: 30px;
+      }
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    /* Scrollbar personalizada */
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Conta do Estudante</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'estudante:aluno_home' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-mortarboard" viewBox="0 0 16 16">
+        <path d="M8.211 1.048a.5.5 0 0 0-.422 0l-7 3a.5.5 0 0 0 0 .904l7 3a.5.5 0 0 0 .422 0l5.94-2.548V10h1V5.904l.06-.027a.5.5 0 0 0 0-.904l-7-3Z"/>
+        <path d="M4.176 10.032a1 1 0 0 0-.669.949v2.447c0 .379.214.725.553.894l3.5 1.75a1 1 0 0 0 .894 0l3.5-1.75a1 1 0 0 0 .553-.894V10.98a1 1 0 0 0-.67-.95L8 8.96l-3.824 1.073Z"/>
+      </svg> Página Inicial
+    </a>
+    <a href="{% url 'estudante:meus_professores' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-workspace" viewBox="0 0 16 16">
+        <path d="M4 2a2 2 0 1 1 4 0A2 2 0 0 1 4 2Zm2 3a3 3 0 0 0-3 3v1h6V8a3 3 0 0 0-3-3ZM1 12.5A1.5 1.5 0 0 1 2.5 11h11a1.5 1.5 0 0 1 1.5 1.5V15h-1v-2H2v2H1v-2.5Z"/>
+      </svg> Meus Professores
+    </a>
+    <a href="{% url 'estudante:historico_academico' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-book-half" viewBox="0 0 16 16">
+        <path d="M8.5 2.687c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783"/>
+      </svg> Histórico Acadêmico
+    </a>
+    <a href="{% url 'estudante:historico_financeiro' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bar-chart-fill" viewBox="0 0 16 16">
+        <path d="M1 11a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm5-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z"/>
+      </svg> Histórico Financeiro
+    </a>
+    <a href="{% url 'estudante:pagamentos' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cash-stack" viewBox="0 0 16 16">
+        <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+        <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+      </svg>
+      Pagamentos
+    </a>
+    <a href="{% url 'estudante:recados' %}">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chat-dots-fill" viewBox="0 0 16 16">
+        <path d="M8 0a8 8 0 1 0 6.32 12.906L16 16l-3.094-1.68A8 8 0 0 0 8 0zm-2 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm3 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm3 0a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+      </svg> Recados
+    </a>
+    <a href="{% url 'estudante:aproveitamento' %}" class="active">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-graph-up" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07"/>
+      </svg> Aproveitamento Escolar 
+    </a>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="content-container">
+      <div class="page-header">
+        <h2 class="page-title w-100">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-graph-up text-light" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07"/>
+          </svg>
+          Aproveitamento Escolar
+        </h2>
+        <div class="d-flex align-items-center">
+          <br>
+          <span class="me-2 fw-medium">Ano Letivo:</span>
+          <select class="form-select form-select-sm w-auto" id="anoSelect">
+            <option value="all">Todos os Anos</option>
+            {% for ano in anos_letivos %}
+            <option value="{{ ano.id }}">{{ ano.ano }}</option>
+            {% endfor %}
+          </select> 
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="filter-container fade-in">
+        <div class="row">
+          <div class="col-md-3">
+            <label for="trimestreSelect" class="form-label fw-medium">Trimestre</label>
+            <select class="form-select" id="trimestreSelect">
+              <option value="all">Todos os Trimestres</option>
+              <option value="1">1º Trimestre</option>
+              <option value="2">2º Trimestre</option>
+              <option value="3">3º Trimestre</option>
+              <option value="4">Exame</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="disciplinaSelect" class="form-label fw-medium">Disciplina</label>
+            <select class="form-select" id="disciplinaSelect">
+              <option value="all">Todas as Disciplinas</option>
+              {% for disciplina in disciplinas %}
+              <option value="{{ disciplina.id }}">{{ disciplina.nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="classeSelect" class="form-label fw-medium">Classe</label>
+            <select class="form-select" id="classeSelect">
+              <option value="all">Todas as Classes</option>
+              {% for classe in classes %}
+              <option value="{{ classe.id }}">{{ classe.numero }}ª Classe</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" onclick="carregarDados()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+              </svg>
+              Atualizar Dados
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="loading" class="loading" style="display: none;">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-3 fw-medium">Carregando dados...</p>
+      </div>
+
+      <!-- Conteúdo Dinâmico -->
+      <div id="conteudo-dashboard">
+        <!-- Estatísticas Gerais -->
+        <div class="row mb-4 fade-in">
+          <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-primary text-white">
+              <div class="card-body text-center p-4">
+                <div class="stats-value" id="mediaGeral">-</div>
+                <div class="stats-label">Média Geral</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-success text-white">
+              <div class="card-body text-center p-4">
+                <div class="stats-value" id="aprovacao">-</div>
+                <div class="stats-label">Taxa de Aprovação</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-info text-white">
+              <div class="card-body text-center p-4">
+                <div class="stats-value" id="melhorDisciplina">-</div>
+                <div class="stats-label">Melhor Desempenho</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3 mb-3">
+            <div class="card stats-card bg-warning text-white">
+              <div class="card-body text-center p-4">
+                <div class="stats-value" id="totalNotas">-</div>
+                <div class="stats-label">Total de Avaliações</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row mb-4 fade-in">
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-primary text-white d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-bar-chart-fill me-2" viewBox="0 0 16 16">
+                  <path d="M1 11a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1zm5-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1zm5-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1z"/>
+                </svg>
+                Desempenho por Disciplina
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="graficoDisciplinas"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-success text-white d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-graph-up me-2" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M0 0h1v15h15v1H0zm14.817 3.113a.5.5 0 0 1 .07.704l-4.5 5.5a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61 4.15-5.073a.5.5 0 0 1 .704-.07"/>
+                </svg>
+                Evolução Trimestral
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="graficoEvolucao"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-4 fade-in">
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-info text-white d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-pie-chart-fill me-2" viewBox="0 0 16 16">
+                  <path d="M15.985 8.5H8.207l-5.5 5.5a8 8 0 0 0 13.277-5.5zM2 13.292A8 8 0 0 1 7.5.015v7.778l-5.5 5.5zM8.5.015V7.5h7.485A8.001 8.001 0 0 0 8.5.015z"/>
+                </svg>
+                Distribuição de Notas
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="graficoDistribuicao"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mb-4">
+            <div class="card h-100">
+              <div class="card-header bg-warning text-white d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-check-circle-fill me-2" viewBox="0 0 16 16">
+                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                </svg>
+                Status de Aprovação
+              </div>
+              <div class="card-body">
+                <div class="chart-container">
+                  <canvas id="graficoAprovacao"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Notas -->
+        <div class="card fade-in">
+          <div class="card-header bg-secondary text-white d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-table me-2" viewBox="0 0 16 16">
+              <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z"/>
+            </svg>
+            <h5 class="mb-0">Notas Detalhadas</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover" id="tabelaNotas">
+                <thead>
+                  <tr>
+                    <th>Disciplina</th>
+                    <th>Trimestre</th>
+                    <th>Nota</th>
+                    <th>Ano Letivo</th>
+                    <th>Classe</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="corpoTabela">
+                  <!-- Dados serão preenchidos via JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    let graficoDisciplinas, graficoEvolucao, graficoDistribuicao, graficoAprovacao;
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+
+    // Fechar sidebar ao clicar em um link (em dispositivos móveis)
+    document.querySelectorAll('.sidebar a').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          document.getElementById("sidebar").classList.remove("active");
+        }
+      });
+    });
+
+    function carregarDados() {
+      const loading = document.getElementById('loading');
+      const conteudo = document.getElementById('conteudo-dashboard');
+      
+      loading.style.display = 'flex';
+      conteudo.style.display = 'none';
+
+      const params = new URLSearchParams({
+        ano: document.getElementById('anoSelect').value,
+        trimestre: document.getElementById('trimestreSelect').value,
+        disciplina: document.getElementById('disciplinaSelect').value,
+        classe: document.getElementById('classeSelect').value
+      });
+
+      fetch(`{% url 'estudante:dados_aproveitamento' %}?${params}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Erro na resposta da rede');
+          }
+          return response.json();
+        })
+        .then(data => {
+          atualizarEstatisticas(data);
+          atualizarGraficos(data);
+          atualizarTabela(data);
+          
+          loading.style.display = 'none';
+          conteudo.style.display = 'block';
+        })
+        .catch(error => {
+          console.error('Erro:', error);
+          loading.style.display = 'none';
+          conteudo.style.display = 'block';
+          // Exibir mensagem de erro para o usuário
+          alert('Erro ao carregar os dados. Tente novamente.');
+        });
+    }
+
+    function atualizarEstatisticas(data) {
+      document.getElementById('mediaGeral').textContent = data.media_geral || '-';
+      document.getElementById('aprovacao').textContent = (data.taxa_aprovacao || '0') + '%';
+      document.getElementById('melhorDisciplina').textContent = data.melhor_disciplina || '-';
+      document.getElementById('totalNotas').textContent = data.tabela_notas ? data.tabela_notas.length : '0';
+    }
+
+    function atualizarGraficos(data) {
+      // Verificar se os dados necessários estão presentes
+      if (!data.desempenho_disciplinas || !data.evolucao_trimestral || !data.distribuicao_notas) {
+        console.error('Dados de gráficos incompletos');
+        return;
+      }
+
+      // Gráfico de Desempenho por Disciplina
+      if (graficoDisciplinas) graficoDisciplinas.destroy();
+      const ctx1 = document.getElementById('graficoDisciplinas');
+      if (ctx1) {
+        graficoDisciplinas = new Chart(ctx1, {
+          type: 'bar',
+          data: {
+            labels: data.desempenho_disciplinas.labels || [],
+            datasets: [{
+              label: 'Média',
+              data: data.desempenho_disciplinas.valores || [],
+              backgroundColor: 'rgba(54, 162, 235, 0.8)',
+              borderColor: 'rgba(54, 162, 235, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 20,
+                title: {
+                  display: true,
+                  text: 'Nota'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Gráfico de Evolução Trimestral
+      if (graficoEvolucao) graficoEvolucao.destroy();
+      const ctx2 = document.getElementById('graficoEvolucao');
+      if (ctx2) {
+        graficoEvolucao = new Chart(ctx2, {
+          type: 'line',
+          data: {
+            labels: data.evolucao_trimestral.labels || [],
+            datasets: [{
+              label: 'Média',
+              data: data.evolucao_trimestral.valores || [],
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 20,
+                title: {
+                  display: true,
+                  text: 'Nota'
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Gráfico de Distribuição de Notas
+      if (graficoDistribuicao) graficoDistribuicao.destroy();
+      const ctx3 = document.getElementById('graficoDistribuicao');
+      if (ctx3) {
+        graficoDistribuicao = new Chart(ctx3, {
+          type: 'pie',
+          data: {
+            labels: ['0-4', '5-9', '10-13', '14-17', '18-20'],
+            datasets: [{
+              data: [
+                data.distribuicao_notas['0-4'] || 0,
+                data.distribuicao_notas['5-9'] || 0,
+                data.distribuicao_notas['10-13'] || 0,
+                data.distribuicao_notas['14-17'] || 0,
+                data.distribuicao_notas['18-20'] || 0
+              ],
+              backgroundColor: [
+                '#dc3545',
+                '#ffc107',
+                '#17a2b8',
+                '#28a745',
+                '#007bff'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      }
+
+      // Gráfico de Aprovação
+      if (graficoAprovacao) graficoAprovacao.destroy();
+      const ctx4 = document.getElementById('graficoAprovacao');
+      if (ctx4 && data.tabela_notas) {
+        const aprovados = data.tabela_notas.filter(n => n.status === 'Aprovado').length;
+        const reprovados = data.tabela_notas.filter(n => n.status === 'Reprovado').length;
+        
+        graficoAprovacao = new Chart(ctx4, {
+          type: 'doughnut',
+          data: {
+            labels: ['Aprovados', 'Reprovados'],
+            datasets: [{
+              data: [aprovados, reprovados],
+              backgroundColor: ['#28a745', '#dc3545']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function atualizarTabela(data) {
+      const corpoTabela = document.getElementById('corpoTabela');
+      if (!corpoTabela) return;
+      
+      corpoTabela.innerHTML = '';
+
+      if (!data.tabela_notas || data.tabela_notas.length === 0) {
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td colspan="6" class="text-center py-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-inbox" viewBox="0 0 16 16">
+              <path d="M4.98 4a.5.5 0 0 0-.39.188L1.54 8H6a.5.5 0 0 1 .5.5 1.5 1.5 0 1 0 3 0A.5.5 0 0 1 10 8h4.46l-3.05-3.812A.5.5 0 0 0 11.02 4zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438zM3.809 3.563A1.5 1.5 0 0 1 4.981 3h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 13H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .106-.374z"/>
+            </svg>
+            <p class="mt-2 mb-0">Nenhum dado encontrado com os filtros selecionados.</p>
+          </td>
+        `;
+        corpoTabela.appendChild(linha);
+        return;
+      }
+
+      data.tabela_notas.forEach(nota => {
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td>${nota.disciplina || '-'}</td>
+          <td>${nota.trimestre || '-'}</td>
+          <td><strong>${nota.nota || '-'}</strong></td>
+          <td>${nota.ano_letivo || '-'}</td>
+          <td>${nota.classe || '-'} ª</td>
+          <td>
+            <span class="badge ${nota.status === 'Aprovado' ? 'bg-success' : 'bg-danger'}">
+              ${nota.status || '-'}
+            </span>
+          </td>
+        `;
+        corpoTabela.appendChild(linha);
+      });
+    }
+
+    // Carregar dados ao iniciar a página
+    document.addEventListener('DOMContentLoaded', function() {
+      // Adicionar animação de entrada
+      document.querySelectorAll('.fade-in').forEach(el => {
+        el.style.opacity = '0';
+      });
+      
+      setTimeout(() => {
+        carregarDados();
+      }, 300);
+      
+      // Atualizar dados quando os filtros mudarem
+      document.getElementById('anoSelect').addEventListener('change', carregarDados);
+      document.getElementById('trimestreSelect').addEventListener('change', carregarDados);
+      document.getElementById('disciplinaSelect').addEventListener('change', carregarDados);
+      document.getElementById('classeSelect').addEventListener('change', carregarDados);
+    });
+  </script>
+</body>
+</html>

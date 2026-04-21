@@ -1,0 +1,319 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <style>
+    @media print {
+      .no-print { display: none; }
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        margin: 0.5cm;
+      }
+      @page {
+        margin: 0.5cm;
+        size: A4;
+      }
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 2cm;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header img.logo {
+      width: 80px;
+      height: auto;
+    }
+
+    .header h1, .header h2 {
+      margin: 0;
+      padding: 3px 0;
+    }
+
+    .info {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    thead th {
+      background-color: #e63946;
+      color: white;
+    }
+
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .footer .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .footer .col-md-6 {
+      width: 50%;
+      text-align: left;
+    }
+
+    .footer .col-md-6.text-right {
+      text-align: right;
+    }
+    
+    .total-row {
+      background-color: #f8f9fa;
+      font-weight: bold;
+    }
+    
+    .situacao-aprovado {
+      color: green;
+      font-weight: bold;
+    }
+    
+    .situacao-reprovado {
+      color: red;
+      font-weight: bold;
+    }
+    
+    .situacao-recuperacao {
+      color: orange;
+      font-weight: bold;
+    }
+    
+    .situacao-pendente {
+      color: gray;
+      font-weight: bold;
+    }
+    
+    .nota-existente {
+      font-weight: normal;
+    }
+    
+    .nota-ausente {
+      color: #999;
+      font-style: italic;
+    }
+    
+    @media print {
+      .situacao-aprovado {
+        color: green !important;
+      }
+      
+      .situacao-reprovado {
+        color: red !important;
+      }
+      
+      .situacao-recuperacao {
+        color: orange !important;
+      }
+      
+      .situacao-pendente {
+        color: gray !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" class="logo">
+    <h3>Complexo Escolar Privado</h3>
+    <h3>Veredas Encantadas</h3>
+    <div style="background-color: #e63946; color: white; padding: 5px; font-weight: bold;">
+      BOLETIM DE NOTAS
+    </div>
+  </div>
+
+  <div class="info">
+    <p><strong>Nome:</strong> {{ aluno.nome_completo }}</p>
+    <p><strong>Nº Mecanográfico:</strong> {{ aluno.numero_mecanografico }} &nbsp;&nbsp;&nbsp;
+       <strong>Classe:</strong>
+        {% if classe.numero == 0 %}
+          Iniciação
+        {% else %}
+          {{ classe.numero }}ª
+        {% endif %}
+        &nbsp;&nbsp;&nbsp;
+        <strong>Sala:</strong> {{ sala.nome|default:"-" }} &nbsp;&nbsp;&nbsp;
+        <strong>Ano lectivo:</strong> {{ ano_lectivo.ano }}</p>
+    <p><strong>Data de emissão:</strong> {{ data_hoje|date:"d/m/Y" }}</p>
+  </div>
+
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Nº</th>
+        <th>Disciplina</th>
+        <th>MT1</th>
+        <th>MT2</th>
+        <th>MT3</th>
+        <th>MDF</th>
+        <th>Média Final</th>
+        <th>OBS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for nome, notas in notas_por_disciplina.items %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td><strong>{{ nome }}</strong></td>
+        
+        <!-- MT1 -->
+        <td class="{% if notas.MT1 is None %}nota-ausente{% else %}nota-existente{% endif %}">
+          {% if notas.MT1 is not None %}
+            {{ notas.MT1|floatformat:1 }}
+          {% else %}
+            --
+          {% endif %}
+        </td>
+        
+        <!-- MT2 -->
+        <td class="{% if notas.MT2 is None %}nota-ausente{% else %}nota-existente{% endif %}">
+          {% if notas.MT2 is not None %}
+            {{ notas.MT2|floatformat:1 }}
+          {% else %}
+            --
+          {% endif %}
+        </td>
+        
+        <!-- MT3 -->
+        <td class="{% if notas.MT3 is None %}nota-ausente{% else %}nota-existente{% endif %}">
+          {% if notas.MT3 is not None %}
+            {{ notas.MT3|floatformat:1 }}
+          {% else %}
+            --
+          {% endif %}
+        </td>
+        
+        <!-- MDF -->
+        <td class="{% if notas.MDF is None %}nota-ausente{% else %}nota-existente{% endif %}">
+          {% if notas.MDF is not None %}
+            {{ notas.MDF|floatformat:1 }}
+          {% else %}
+            --
+          {% endif %}
+        </td>
+        
+        <!-- Média Final -->
+        <td>
+          {% if notas.media_geral is not None and notas.media_geral > 0 %}
+            <strong>{{ notas.media_geral|floatformat:1 }}</strong>
+          {% else %}
+            --
+          {% endif %}
+        </td>
+        
+        <!-- Situação -->
+        <td>
+          {% if notas.situacao == 'Apto(a)' %}
+            <span class="situacao-aprovado">{{ notas.situacao }}</span>
+          {% elif notas.situacao == 'Reprovado' %}
+            <span class="situacao-reprovado">{{ notas.situacao }}</span>
+          {% elif notas.situacao == 'Recuperação' %}
+            <span class="situacao-recuperacao">{{ notas.situacao }}</span>
+          {% else %}
+            <span class="situacao-pendente">{{ notas.situacao }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" class="text-center">Nenhuma disciplina cadastrada para esta classe</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="2" rowspan="3">
+          <strong>Situação Geral:</strong><br>
+          {% if situacao_geral == 'Apto(a)' %}
+            <span class="situacao-aprovado">{{ situacao_geral }}</span>
+          {% elif situacao_geral == 'Reprovado' %}
+            <span class="situacao-reprovado">{{ situacao_geral }}</span>
+          {% elif situacao_geral == 'Recuperação' %}
+            <span class="situacao-recuperacao">{{ situacao_geral }}</span>
+          {% else %}
+            <span class="situacao-pendente">{{ situacao_geral }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr class="total-row">
+        <td colspan="2">Média Geral</td>
+        <td colspan="2">
+          {% if media_geral_total > 0 %}
+            <strong>{{ media_geral_total|floatformat:1 }}</strong>
+          {% else %}
+            --
+          {% endif %}
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div class="footer">
+    <div class="row">
+      <div class="col">
+        <p>O(A) Encarregado(a)</p>
+        <p>________________________</p>
+      </div>
+      <div class="col text-right">
+        <p>O(A) Professor(a) da Turma</p>
+        <p>________________________</p>
+      </div>
+    </div>
+    
+  </div>
+  
+  <hr>
+  <p>Documento gerado automaticamente pelo Sistema SIGEsc em {% now "d/m/Y à\s H:i" %}</p>
+
+  <div class="no-print mt-4 text-center">
+    <button class="btn btn-primary" onclick="window.print()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
+        <path d="M5 1a2 2 0 0 0-2 2v1h10V3a2 2 0 0 0-2-2H5zm6 8H5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1z"/>
+        <path d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+      </svg> Imprimir Boletim
+    </button>
+  </div>
+
+  <script>
+    // Garantir que o boletim seja impresso corretamente
+    window.onload = function() {
+      // Adicionar classe para impressão se necessário
+      if (window.matchMedia) {
+        var mediaQueryList = window.matchMedia('print');
+        mediaQueryList.addListener(function(mql) {
+          if (mql.matches) {
+            console.log('Preparando para impressão...');
+          }
+        });
+      }
+    };
+  </script>
+</body>
+</html>

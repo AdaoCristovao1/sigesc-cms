@@ -1,0 +1,865 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Pedagógico - SIGEsc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .sidebar{ overflow-y: auto; }
+    .card-total { border-left: 4px solid; }
+    .card-alunos { border-left-color: #17a2b8; }
+    .card-professores { border-left-color: #28a745; }
+    .card-turmas { border-left-color: #ffc107; }
+    .card-aprovacao { border-left-color: #6f42c1; }
+    .valor-destaque { font-weight: bold; }
+    .aprovado { color: #28a745; }
+    .reprovado { color: #dc3545; }
+    .pendente { color: #ffc107; }
+    .progress-bar-aprovacao { background-color: #28a745; }
+    .progress-bar-reprovacao { background-color: #dc3545; }
+    .status-badge { font-size: 0.75rem; padding: 0.25rem 0.5rem; }
+    .stat-card {
+      transition: transform 0.2s;
+      border: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .gender-icon {
+      font-size: 1.2rem;
+      margin-right: 0.3rem;
+    }
+    .gender-male { color: #17a2b8; }
+    .gender-female { color: #e83e8c; }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{ usuario.username }}</small>
+    </div>
+    <a href="{% url 'pedagogico:dashboard' %}">
+      <i class="fas fa-home me-2"></i> Dashboard
+    </a>
+    <a href="{% url 'pedagogico:docentes' %}">
+      <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+    </a>
+    <a href="{% url 'pedagogico:alunos_lista' %}">
+      <i class="fas fa-user-graduate me-2"></i> Alunos
+    </a>
+    <a href="{% url 'pedagogico:turmas_e_salas' %}">
+      <i class="fas fa-school me-2"></i> Turmas
+    </a>
+    <a href="{% url 'pedagogico:disciplinas' %}">
+      <i class="fas fa-book-open me-2"></i> Disciplinas
+    </a>
+    <a href="{% url 'pedagogico:matriculas' %}">
+      <i class="fas fa-clipboard-list me-2"></i> Matrículas
+    </a>
+    <a href="{% url 'pedagogico:pautas' %}">
+      <i class="fas fa-chart-bar me-2"></i> Pautas
+    </a>
+    <a href="{% url 'pedagogico:coordenacoes' %}">
+      <i class="fas fa-user-cog me-2"></i> Coordenações
+    </a>
+    <a href="" class="active">
+      <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+    </a>
+    <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <i class="bi bi-power"></i> Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+      <!-- Cabeçalho -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title w-100">
+          <i class="fas fa-chart-line me-2 text-light"></i>
+          Relatório Pedagógico {{ ano_lectivo }}
+        </h2>
+      </div>
+      
+      <!-- Filtro Ano Letivo -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <form method="get" class="row g-3 align-items-center">
+            <div class="col-md-4">
+              <label for="ano_lectivo" class="form-label">Ano Letivo:</label>
+              <select name="ano_lectivo" id="ano_lectivo" class="form-select">
+                {% for ano in anos_lectivos_disponiveis %}
+                  <option value="{{ ano }}" {% if ano == ano_lectivo %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary mt-4">
+                <i class="bi bi-funnel"></i> Filtrar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Cards de Resumo Geral -->
+      <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="card stat-card card-total card-alunos h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Total de Alunos</h6>
+                  <h2 class="mb-0">{{ total_alunos }}</h2>
+                  <small class="text-muted">{{ total_alunos_ano }} no ano letivo</small>
+                </div>
+                <div class="bg-info bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-user-graduate fa-2x text-info"></i>
+                </div>
+              </div>
+              <div class="mt-3 d-flex justify-content-between">
+                <span><i class="fas fa-mars gender-male"></i> Maculinos {{ alunos_masculino }}</span>
+                <span><i class="fas fa-venus gender-female"></i> Femininos {{ alunos_feminino }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="card stat-card card-total card-professores h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Corpo Docente</h6>
+                  <h2 class="mb-0">{{ total_professores }}</h2>
+                  <small class="text-muted">{{ total_funcionarios }} funcionários</small>
+                </div>
+                <div class="bg-success bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-chalkboard-teacher fa-2x text-success"></i>
+                </div>
+              </div>
+              <div class="mt-3 d-flex justify-content-between">
+                <span><i class="fas fa-mars gender-male"></i> Maculinos {{ professores_masculino }}</span>
+                <span><i class="fas fa-venus gender-female"></i> Femininos {{ professores_feminino }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="card stat-card card-total card-turmas h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Turmas</h6>
+                  <h2 class="mb-0">{{ total_turmas }}</h2>
+                  <small class="text-muted">{{ total_disciplinas }} disciplinas</small>
+                </div>
+                <div class="bg-warning bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-school fa-2x text-warning"></i>
+                </div>
+              </div>
+              <div class="mt-3">
+                    <small>Média de 
+                        {% if total_turmas > 0 %}
+                            {{ total_alunos_ano|divisibleby:total_turmas|floatformat:1 }}
+                        {% else %}
+                            0.0
+                        {% endif %} 
+                    alunos/turma</small>
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-3">
+          <div class="card stat-card card-total card-aprovacao h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="text-muted mb-2">Taxa de Aprovação</h6>
+                  <h2 class="mb-0">{{ taxa_aprovacao_geral|floatformat:1 }}%</h2>
+                  <small class="text-muted">{{ aprovados }} aprovados</small>
+                </div>
+                <div class="bg-purple bg-opacity-10 p-3 rounded">
+                  <i class="fas fa-star fa-2x" style="color: #6f42c1;"></i>
+                </div>
+              </div>
+              <div class="mt-3 progress" style="height: 8px;">
+                <div class="progress-bar bg-success" style="width: {{ taxa_aprovacao_geral }}%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos e Estatísticas -->
+      <div class="row mb-4">
+        <!-- Evolução de Matrículas -->
+        <div class="col-lg-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">
+                <i class="fas fa-chart-line text-primary me-2"></i>
+                Evolução de Matrículas
+              </h5>
+            </div>
+            <div class="card-body">
+              <canvas id="graficoEvolucao" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+
+       <!-- Distribuição por Classe -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie text-success me-2"></i>
+                        Alunos por Classe - {{ ano_lectivo }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if dados_classes and labels_classes %}
+                        <canvas id="graficoClasses" height="200"></canvas>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Nenhum aluno matriculado nas classes</p>
+                            <small class="text-muted">Total de alunos no ano: {{ total_alunos_ano }}</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+      <!-- Alunos por Turno e Curso -->
+      <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">
+                <i class="fas fa-clock text-warning me-2"></i>
+                Alunos por Turno
+              </h5>
+            </div>
+            <div class="card-body">
+              {% for item in alunos_por_turno %}
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span>{{ item.turno }}</span>
+                  <span class="fw-bold">{{ item.quantidade }} ({{ item.percentual|floatformat:1 }}%)</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar bg-info" style="width: {{ item.percentual }}%"></div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">
+                <i class="fas fa-graduation-cap text-primary me-2"></i>
+                Alunos por Curso
+              </h5>
+            </div>
+            <div class="card-body">
+              {% for item in alunos_por_curso|slice:":5" %}
+              <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <span>{{ item.curso.nome|truncatechars:20 }}</span>
+                  <span class="fw-bold">{{ item.quantidade }} ({{ item.percentual|floatformat:1 }}%)</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar" style="width: {{ item.percentual }}%; background-color: #6f42c1;"></div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                Status Acadêmico
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row text-center mb-3">
+                <div class="col-4">
+                  <div class="p-2">
+                    <h4 class="aprovado mb-0">{{ aprovados }}</h4>
+                    <small>Aprovados</small>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="p-2">
+                    <h4 class="reprovado mb-0">{{ reprovados }}</h4>
+                    <small>Reprovados</small>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="p-2">
+                    <h4 class="pendente mb-0">{{ pendentes }}</h4>
+                    <small>Pendentes</small>
+                  </div>
+                </div>
+              </div>
+              <canvas id="graficoStatus" height="150"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desempenho por Disciplina -->
+      <div class="card mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">
+            <i class="fas fa-chart-bar text-danger me-2"></i>
+            Médias por Disciplina - {{ ano_lectivo }}
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-hover">
+              <thead class="table-light">
+                <tr>
+                  <th>Disciplina</th>
+                  <th>Média Geral</th>
+                  <th>Aprovados</th>
+                  <th>Reprovados</th>
+                  <th>Taxa Aprovação</th>
+                  <th>Progresso</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in medias_disciplinas|slice:":10" %}
+                <tr>
+                  <td><strong>{{ item.disciplina.nome }}</strong></td>
+                  <td>
+                    <span class="fw-bold {% if item.media_geral >= 10 %}aprovado{% else %}reprovado{% endif %}">
+                      {{ item.media_geral|floatformat:1 }}
+                    </span>
+                  </td>
+                  <td class="aprovado">{{ item.alunos_aprovados }}</td>
+                  <td class="reprovado">{{ item.alunos_reprovados }}</td>
+                  <td>{{ item.taxa_aprovacao|floatformat:1 }}%</td>
+                  <td style="width: 200px;">
+                    <div class="progress" style="height: 8px;">
+                      <div class="progress-bar bg-success" style="width: {{ item.taxa_aprovacao }}%"></div>
+                      <div class="progress-bar bg-danger" style="width: {{ 100|add:item.taxa_aprovacao|add:"-100" }}%"></div>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <i class="fas fa-book-open fa-2x text-muted mb-2"></i>
+                    <p>Nenhum dado de desempenho disponível</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Turmas e Professores -->
+      <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="fas fa-users text-info me-2"></i>
+                Alunos por Turma
+              </h5>
+              <span class="badge bg-info">{{ alunos_por_turma.count }} turmas</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Turma</th>
+                      <th>Classe</th>
+                      <th>Turno</th>
+                      <th class="text-center">Alunos</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for turma in alunos_por_turma|slice:":8" %}
+                    <tr>
+                      <td><strong>{{ turma.nome }}</strong></td>
+                      <td>{{ turma.classe.numero }}ª Classe</td>
+                      <td>{{ turma.turno }}</td>
+                      <td class="text-center">
+                        <span class="badge bg-primary rounded-pill">{{ turma.quantidade_alunos }}</span>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="4" class="text-center py-3">Nenhuma turma encontrada</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="fas fa-chart-pie text-success me-2"></i>
+                Professores por Disciplina
+              </h5>
+              <span class="badge bg-success">{{ professores_disciplina.count }} disciplinas</span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive" style="overflow-x: auto;">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Disciplina</th>
+                      <th class="text-center">Professores</th>
+                      <th class="text-center">Turmas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in professores_disciplina|slice:":8" %}
+                    <tr>
+                      <td><strong>{{ item.disciplina__nome }}</strong></td>
+                      <td class="text-center">
+                        <span class="badge bg-info rounded-pill">{{ item.quantidade }}</span>
+                      </td>
+                      <td class="text-center">
+                        <span class="badge bg-secondary rounded-pill">{{ item.turmas }}</span>
+                      </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                      <td colspan="3" class="text-center py-3">Nenhum vínculo encontrado</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monografias -->
+      <div class="card mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-file-alt text-primary me-2"></i>
+            Monografias e Trabalhos de Conclusão
+          </h5>
+          <span class="badge bg-primary">{{ total_monografias }} total</span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for estado in monografias_estado %}
+            <div class="col-md-2 col-4 text-center mb-3">
+              <div class="p-2">
+                <h4 class="mb-1">{{ estado.quantidade }}</h4>
+                <small class="text-muted">{{ estado.estado|title }}</small>
+              </div>
+            </div>
+            {% endfor %}
+            <div class="col-md-2 col-4 text-center mb-3">
+              <div class="p-2 bg-light rounded">
+                <h4 class="mb-1 text-info">{{ media_notas_monografias|floatformat:1 }}</h4>
+                <small class="text-muted">Média Geral</small>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <h6 class="mb-3">Últimas submissões</h6>
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Título</th>
+                  <th>Autor</th>
+                  <th>Data</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for mono in ultimas_monografias %}
+                <tr>
+                  <td>{{ mono.titulo|truncatechars:40 }}</td>
+                  <td>{{ mono.autor }}</td>
+                  <td>{{ mono.data_submissao|date:"d/m/Y" }}</td>
+                  <td>
+                    {% if mono.estado == 'aprovado' %}
+                      <span class="badge bg-success">Aprovado</span>
+                    {% elif mono.estado == 'reprovado' %}
+                      <span class="badge bg-danger">Reprovado</span>
+                    {% elif mono.estado == 'avaliacao' %}
+                      <span class="badge bg-warning">Em avaliação</span>
+                    {% else %}
+                      <span class="badge bg-secondary">{{ mono.estado }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-2">Nenhuma monografia encontrada</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Últimas Atividades -->
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">
+                <i class="fas fa-clock me-2 text-warning"></i>
+                Últimas Notas Lançadas
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                {% for nota in ultimas_notas %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{{ nota.aluno.nome_completo|truncatechars:25 }}</strong>
+                      <br>
+                      <small class="text-muted">{{ nota.disciplina.nome }} - {{ nota.get_trimestre_display }} Trimestre</small>
+                    </div>
+                    <div>
+                      <span class="badge {% if nota.valor >= 10 %}bg-success{% else %}bg-danger{% endif %} fs-6">
+                        {{ nota.valor }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-center py-3">
+                  Nenhuma nota encontrada
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-white">
+              <h5 class="mb-0">
+                <i class="fas fa-user-plus me-2 text-success"></i>
+                Últimos Alunos Matriculados
+              </h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="list-group list-group-flush">
+                {% for aluno in ultimos_alunos %}
+                <div class="list-group-item">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>{{ aluno.nome_completo|truncatechars:25 }}</strong>
+                      <br>
+                      <small class="text-muted">
+                        {{ aluno.turma.nome }} - {{ aluno.curso.nome }}
+                      </small>
+                    </div>
+                    <div>
+                      <span class="badge bg-info">Nº {{ aluno.numero_mecanografico }}</span>
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="list-group-item text-center py-3">
+                  Nenhum aluno encontrado
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé com resumo -->
+      <div class="alert alert-info mt-3 d-flex align-items-center">
+        <i class="fas fa-info-circle fa-2x me-3"></i>
+        <div>
+          <strong>Resumo do Ano Letivo {{ ano_lectivo }}:</strong>
+          {{ total_alunos_ano }} alunos distribuídos em {{ total_turmas }} turmas,
+          com {{ total_professores }} professores e {{ total_disciplinas }} disciplinas.
+          Taxa de aprovação atual: {{ taxa_aprovacao_geral|floatformat:1 }}%.
+        </div>
+      </div>
+
+      <!-- Botão de Impressão -->
+      <div class="text-center mt-4 mb-5">
+        <a href="{% url 'documentos:relatorio_pedagogico_impressao' %}?ano_lectivo={{ ano_lectivo }}" 
+          class="btn btn-lg btn-success" target="_blank">
+          <i class="bi bi-printer"></i> Imprimir Relatório Pedagógico Completo
+        </a>
+      </div>  
+
+    </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'js/chart.umd.js' %}"></script>
+ <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'js/chart.umd.js' %}"></script>
+<script>
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+
+    // Função principal para inicializar todos os gráficos
+    function inicializarTodosGraficos() {
+        console.log('Inicializando gráficos...');
+        
+        // Verificar se Chart está disponível
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js não está carregado!');
+            return;
+        }
+
+        // GRÁFICO DE CLASSES
+        const classesCanvas = document.getElementById('graficoClasses');
+        if (classesCanvas) {
+            try {
+                // Pegar os dados do template
+                const labels = {{ labels_classes|safe }};
+                const dados = {{ dados_classes|safe }};
+                
+                console.log('Classes - Labels:', labels);
+                console.log('Classes - Dados:', dados);
+                
+                // Verificar se há dados válidos
+                if (labels && dados && labels.length > 0 && dados.length > 0) {
+                    // Formatar labels para mostrar "10ª", "11ª", etc.
+                    const labelsFormatados = labels.map(l => l + 'ª Classe');
+                    
+                    // Cores para o gráfico
+                    const cores = [
+                        '#17a2b8', '#28a745', '#ffc107', '#dc3545', 
+                        '#6f42c1', '#fd7e14', '#20c997', '#e83e8c',
+                        '#007bff', '#6610f2', '#e83e8c', '#dc3545',
+                        '#00bcd4', '#4caf50', '#ff9800', '#9c27b0'
+                    ];
+                    
+                    // Destruir gráfico existente se houver
+                    if (classesCanvas.chart) {
+                        classesCanvas.chart.destroy();
+                    }
+                    
+                    // Criar novo gráfico
+                    classesCanvas.chart = new Chart(classesCanvas, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labelsFormatados,
+                            datasets: [{
+                                data: dados,
+                                backgroundColor: cores.slice(0, dados.length),
+                                borderColor: '#ffffff',
+                                borderWidth: 2,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            cutout: '60%',
+                            plugins: {
+                                legend: { 
+                                    position: 'right',
+                                    labels: {
+                                        boxWidth: 15,
+                                        padding: 15,
+                                        font: { size: 11 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            return `${label}: ${value} alunos (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    console.log('Gráfico de classes criado com sucesso!');
+                } else {
+                    console.log('Sem dados para o gráfico de classes');
+                    classesCanvas.style.display = 'none';
+                    const parent = classesCanvas.parentNode;
+                    parent.innerHTML += `
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Dados de distribuição por classe não disponíveis</p>
+                            <small class="text-muted">Total de alunos no ano: {{ total_alunos_ano }}</small>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Erro no gráfico de classes:', e);
+                classesCanvas.style.display = 'none';
+                const parent = classesCanvas.parentNode;
+                parent.innerHTML += `
+                    <div class="alert alert-danger">
+                        Erro ao carregar gráfico: ${e.message}
+                    </div>
+                `;
+            }
+        } else {
+            console.error('Canvas do gráfico de classes não encontrado');
+        }
+
+        // GRÁFICO DE EVOLUÇÃO
+        const evolucaoCanvas = document.getElementById('graficoEvolucao');
+        if (evolucaoCanvas) {
+            try {
+                const anos = {{ anos_evolucao|safe }};
+                const dadosEvolucao = {{ matriculas_evolucao|safe }};
+                
+                console.log('Evolução - Anos:', anos);
+                console.log('Evolução - Dados:', dadosEvolucao);
+                
+                if (anos && dadosEvolucao && anos.length > 0 && dadosEvolucao.length > 0) {
+                    // Destruir gráfico existente se houver
+                    if (evolucaoCanvas.chart) {
+                        evolucaoCanvas.chart.destroy();
+                    }
+                    
+                    evolucaoCanvas.chart = new Chart(evolucaoCanvas, {
+                        type: 'line',
+                        data: {
+                            labels: anos,
+                            datasets: [{
+                                label: 'Número de Matrículas',
+                                data: dadosEvolucao,
+                                borderColor: '#17a2b8',
+                                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            return 'Matrículas: ' + context.parsed.y;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1,
+                                        callback: function(value) {
+                                            if (Number.isInteger(value)) {
+                                                return value;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    
+                    console.log('Gráfico de evolução criado com sucesso!');
+                } else {
+                    console.log('Sem dados para o gráfico de evolução');
+                    evolucaoCanvas.style.display = 'none';
+                    const parent = evolucaoCanvas.parentNode;
+                    parent.innerHTML += `
+                        <div class="text-center py-4">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Dados de evolução não disponíveis</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('Erro no gráfico de evolução:', e);
+            }
+        }
+    }
+
+    // Aguardar o carregamento completo da página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Pequeno delay para garantir que tudo está carregado
+        setTimeout(inicializarTodosGraficos, 100);
+    });
+
+    // Auto-submit do filtro
+    const selectAno = document.getElementById('ano_lectivo');
+    if (selectAno) {
+        selectAno.addEventListener('change', function() {
+            this.form.submit();
+        });
+    }
+</script>
+</body>
+</html>

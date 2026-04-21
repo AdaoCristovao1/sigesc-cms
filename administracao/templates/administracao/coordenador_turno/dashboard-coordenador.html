@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel | Coodenador de Turno</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .sidebar {
+      height: 100vh;
+      width: 250px;
+      position: fixed;
+      background-color: #3885f8;
+      color: white;
+      padding-top: 20px;
+    }
+
+    .sidebar a {
+      padding: 12px 20px;
+      display: block;
+      color: white;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover {
+      background-color: #073a88;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      height: 100vh;
+    }
+
+    .topbar {
+      background-color: #3885f8;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar h5 {
+      margin: 0;
+    }
+
+    .logout {
+      color: white;
+      text-decoration: none;
+    }
+
+    .logout:hover {
+      text-decoration: underline;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-left: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+    .sidebar{
+      overflow-y: auto;
+    }
+    .burger {
+      display: none;
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .burger {
+        display: block;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0px; /* altura da topbar */
+        left: -250px; /* começa escondida */
+        width: 250px;
+        height: calc(150vh - 60px);
+        overflow-y: auto;
+        transition: left 0.3s ease;
+        z-index: 1000;
+      }
+
+      .sidebar.active {
+        left: 0; /* aparece */ 
+      }
+
+      .main-content {
+        margin-left: 0; /* sem deslocar o conteúdo */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">SIGEsc</div>
+    <div class="text-center mb-3">
+      <strong><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>Coordenador do Turno</strong><br>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'administracao:dashboard' %}">Dashboard</a>
+    <a href="#">Docentes</a>
+    <a href="{% url 'administracao:alunos_lista' %}">Alunos</a>
+    <a href="{% url 'administracao:turmas_e_salas' %}">Turmas  e Salas</a>
+    <a href="{% url 'administracao:matriculas' %}">Matrículas</a>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar shadow">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <button class="burger" onclick="toggleSidebar()">☰</button>
+      <a class="logout btn  btn-danger" href="{% url 'administracao:logout' %}">
+        <b>
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+        <path d="M7.5 1v7h1V1z"/>
+        <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+        </svg></a>
+    </div>
+
+    <div class="container mt-4">
+      <h2>Dashboard</h2>
+      {% if messages %}
+        <div class="container mt-3">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Botão para abrir modal -->
+      <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">
+        Alterar Minha Senha
+      </a>
+
+      <!-- Modal Alterar Senha -->
+      <div class="modal fade" id="alterarSenhaModal" tabindex="-1" aria-labelledby="alterarSenhaModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="POST" action="{% url 'core:alterar_senha' %}">
+              {% csrf_token %}
+              <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="alterarSenhaModalLabel">Alterar Senha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="senha_atual" class="form-label">Senha Atual</label>
+                  <input type="password" class="form-control" id="senha_atual" name="senha_atual" required>
+                </div>
+                <div class="mb-3">
+                  <label for="nova_senha" class="form-label">Nova Senha</label>
+                  <input type="password" class="form-control" id="nova_senha" name="nova_senha" required>
+                </div>
+                <div class="mb-3">
+                  <label for="confirmar_senha" class="form-label">Confirmar Nova Senha</label>
+                  <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-warning">Alterar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="card mt-3">
+        <div class="card-body">
+          <h5 class="card-title">Bem-vindo ao painel Administrativa!</h5>
+          <p class="card-text">Utilize o menu lateral para navegar entre as diferentes seções do sistema.</p>
+        </div>
+        <div class="row">
+          <div class="card-body col-4 text-center">
+            <h5 class="card-title">Número de Funcionários Administrativos</h5>
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-person-standing text-warning" viewBox="0 0 16 16">
+              <path d="M8 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3M6 6.75v8.5a.75.75 0 0 0 1.5 0V10.5a.5.5 0 0 1 1 0v4.75a.75.75 0 0 0 1.5 0v-8.5a.25.25 0 1 1 .5 0v2.5a.75.75 0 0 0 1.5 0V6.5a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v2.75a.75.75 0 0 0 1.5 0v-2.5a.25.25 0 0 1 .5 0"/>
+            </svg>
+            <p class="card-text" style="font-size: 20px;">{{funcionarios_total}}</p>
+          </div>
+          <div class="card-body col-4 text-center">
+            <h5 class="card-title">Professores</h5>
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-person-raised-hand text-primary" viewBox="0 0 16 16">
+              <path d="M6 6.207v9.043a.75.75 0 0 0 1.5 0V10.5a.5.5 0 0 1 1 0v4.75a.75.75 0 0 0 1.5 0v-8.5a.25.25 0 1 1 .5 0v2.5a.75.75 0 0 0 1.5 0V6.5a3 3 0 0 0-3-3H6.236a1 1 0 0 1-.447-.106l-.33-.165A.83.83 0 0 1 5 2.488V.75a.75.75 0 0 0-1.5 0v2.083c0 .715.404 1.37 1.044 1.689L5.5 5c.32.32.5.754.5 1.207"/>
+              <path d="M8 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3"/>
+            </svg>
+            <p class="card-text" style="font-size: 20px;">{{professores_total}}</p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="card-body col-4">
+            <h5 class="card-title">Alunos Reconfirmados</h5>
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-person-lines-fill text-success" viewBox="0 0 16 16">
+              <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5 6s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zM11 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5m.5 2.5a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1zm2 3a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1zm0 3a.5.5 0 0 0 0 1h2a.5.5 0 0 0 0-1z"/>
+            </svg>
+            <p class="card-text" style="font-size: 20px;">{{aluno_total}}</p>
+          </div>
+          <div class="card-body col-4">
+            <h5 class="card-title">Alunos Inadimplentes</h5>
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="currentColor" class="bi bi-person-x-fill text-danger" viewBox="0 0 16 16">
+              <path fill-rule="evenodd" d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m6.146-2.854a.5.5 0 0 1 .708 0L14 6.293l1.146-1.147a.5.5 0 0 1 .708.708L14.707 7l1.147 1.146a.5.5 0 0 1-.708.708L14 7.707l-1.146 1.147a.5.5 0 0 1-.708-.708L13.293 7l-1.147-1.146a.5.5 0 0 1 0-.708"/>
+            </svg>
+            <p class="card-text" style="font-size: 20px;">{{aluno_inadimplentes_total}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+      }
+  </script>
+</body>
+</html>

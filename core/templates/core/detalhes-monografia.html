@@ -1,0 +1,905 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Monografias - ISPCAN</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'css/base.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    :root {
+      --secondary-color: #3498db;
+      --accent-color: #1abc9c;
+      --warning-color: #f39c12;
+      --danger-color: #e74c3c;
+      --success-color: #27ae60;
+      --light-bg: #f8f9fa;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .sidebar{
+      overflow-y: auto;
+    }
+    
+    /* Page Header */
+    .page-header {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 25px;
+      border-left: 4px solid var(--secondary-color);
+    }
+    
+    .page-title {
+      color: var(--primary-color);
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    /* Detalhes Card */
+    .details-card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .info-group {
+      margin-bottom: 25px;
+    }
+    
+    .info-label {
+      color: #666;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+      font-weight: 500;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .status-rascunho {
+      background-color: #f8f9fa;
+      color: #6c757d;
+      border: 1px solid #dee2e6;
+    }
+    
+    .status-submetido {
+      background-color: #e3f2fd;
+      color: #1976d2;
+      border: 1px solid #bbdefb;
+    }
+    
+    .status-avaliacao {
+      background-color: #fff3e0;
+      color: #f57c00;
+      border: 1px solid #ffe0b2;
+    }
+    
+    .status-aprovado {
+      background-color: #e8f5e9;
+      color: #388e3c;
+      border: 1px solid #c8e6c9;
+    }
+    
+    .status-reprovado {
+      background-color: #ffebee;
+      color: #d32f2f;
+      border: 1px solid #ffcdd2;
+    }
+    
+    /* Nota Final */
+    .nota-final {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--success-color);
+      text-align: center;
+      padding: 20px;
+      background: #f8fff9;
+      border-radius: 10px;
+      border: 2px solid #e8f5e9;
+    }
+    
+    /* Arquivo Card */
+    .arquivo-card {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 20px;
+      border: 1px solid #dee2e6;
+    }
+    
+    .arquivo-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .arquivo-icon {
+      font-size: 2.5rem;
+      color: var(--danger-color);
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+    
+    .btn-action {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary-custom {
+      background-color: var(--secondary-color);
+      color: white;
+      border: none;
+    }
+    
+    .btn-primary-custom:hover {
+      background-color: #2980b9;
+      color: white;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary-custom {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+    }
+    
+    .btn-secondary-custom:hover {
+      background-color: #5a6268;
+      color: white;
+    }
+    
+    .btn-success-custom {
+      background-color: var(--success-color);
+      color: white;
+      border: none;
+    }
+    
+    .btn-danger-custom {
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+    }
+    
+    .btn-warning-custom {
+      background-color: var(--warning-color);
+      color: white;
+      border: none;
+    }
+    
+    /* Resumo Box */
+    .resumo-box {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      border-left: 4px solid var(--accent-color);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .main-content {
+        padding: 15px;
+      }
+      
+      .page-header {
+        padding: 20px;
+      }
+      
+      .details-card {
+        padding: 20px;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .btn-action {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .navbar-brand span {
+        display: none;
+      }
+    }
+    
+    /* Loading Animation */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      display: none;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--secondary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+    
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .timeline-item:last-child {
+      border-bottom: none;
+    }
+    
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -30px;
+      top: 5px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--secondary-color);
+    }
+    
+    .timeline-date {
+      color: #666;
+      font-size: 0.85rem;
+    }
+    
+    /* Metadata */
+    .metadata {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    
+    .metadata-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .metadata-item:last-child {
+      border-bottom: none;
+    }
+  </style>
+</head>
+<body>
+   <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'core:dashboard' %}" class="active">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+    </div>
+  </div>
+  <div class="main-content">
+    <div class="topbar mb-5">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+ 
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <h1 class="page-title">
+              <i class="fas fa-book-open text-primary"></i>
+              Detalhes da Monografia
+            </h1>
+            <p class="text-muted mb-0">
+              ID: #{{ monografia.id }} | Visualização detalhada
+            </p>
+          </div>
+          <div class="col-md-6 text-end">
+            <a href="{% url 'pedagogico:monografias' %}" class="btn btn-secondary-custom btn-action">
+              <i class="fas fa-arrow-left"></i> Voltar à Lista
+            </a>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <!-- Coluna Principal -->
+        <div class="col-lg-8">
+          <div class="details-card">
+            <!-- Título e Status -->
+            <div class="info-group">
+              <div class="row align-items-center">
+                <div class="col-md-8">
+                  <div class="info-label">Título da Monografia</div>
+                  <h3 class="info-value" style="border: none; font-size: 1.4rem;">{{ monografia.titulo }}</h3>
+                </div>
+                <div class="col-md-4 text-end">
+                  <div class="info-label">Status</div>
+                  <span class="status-badge status-{{ monografia.estado }}">
+                    <i class="fas fa-circle" style="font-size: 0.7rem;"></i>
+                    {{ monografia.get_estado_display }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Informações do Autor -->
+            <div class="section-title">
+              <i class="fas fa-user-graduate"></i>
+              Informações do Autor
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 info-group">
+                <div class="info-label">Nome do Autor</div>
+                <div class="info-value">{{ monografia.autor }}</div>
+              </div>
+              <div class="col-md-6 info-group">
+                <div class="info-label">Curso</div>
+                <div class="info-value">{{ monografia.autor_curso }}</div>
+              </div>
+              <div class="col-md-6 info-group">
+                <div class="info-label">Email</div>
+                <div class="info-value">{{ monografia.autor_email }}</div>
+              </div>
+              <div class="col-md-6 info-group">
+                <div class="info-label">Telefone</div>
+                <div class="info-value">{{ monografia.autor_telefone }}</div>
+              </div>
+            </div>
+            
+            <!-- Informações do Orientador -->
+            <div class="section-title">
+              <i class="fas fa-chalkboard-teacher"></i>
+              Informações do Orientador
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 info-group">
+                <div class="info-label">Nome do Orientador</div>
+                <div class="info-value">{{ monografia.orientador }}</div>
+              </div>
+              <div class="col-md-6 info-group">
+                <div class="info-label">Telefone do Orientador</div>
+                <div class="info-value">{{ monografia.orientador_telefone }}</div>
+              </div>
+            </div>
+            
+            <!-- Resumo -->
+            <div class="section-title">
+              <i class="fas fa-file-alt"></i>
+              Resumo da Monografia
+            </div>
+            
+            <div class="resumo-box">
+              {% if monografia.resumo %}
+                {{ monografia.resumo|linebreaks }}
+              {% else %}
+                <p class="text-muted fst-italic">Nenhum resumo disponível.</p>
+              {% endif %}
+            </div>
+            
+            <!-- Informações Acadêmicas -->
+            <div class="section-title">
+              <i class="fas fa-calendar-alt"></i>
+              Informações Acadêmicas
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 info-group">
+                <div class="info-label">Ano Académico</div>
+                <div class="info-value">{{ monografia.ano_academico }}</div>
+              </div>
+              <div class="col-md-6 info-group">
+                <div class="info-label">Data de Submissão</div>
+                <div class="info-value">{{ monografia.data_submissao|date:"d/m/Y H:i" }}</div>
+              </div>
+            </div>
+            
+            <!-- Arquivo -->
+            <div class="section-title">
+              <i class="fas fa-paperclip"></i>
+              Arquivo da Monografia
+            </div>
+            
+            <div class="arquivo-card">
+              <div class="arquivo-info">
+                <div>
+                  <i class="fas fa-file-pdf arquivo-icon"></i>
+                </div>
+                <div style="flex: 1;">
+                  <p class="text-muted mb-2">
+                    Submetido em: {{ monografia.data_submissao|date:"d/m/Y H:i" }}
+                  </p>
+                  <div class="d-flex gap-2">
+                    <a href="{{ monografia.arquivo.url }}" target="_blank" class="btn btn-primary-custom btn-action">
+                      <i class="fas fa-eye"></i> Visualizar
+                    </a>
+                    <a href="{{ monografia.arquivo.url }}" download class="btn btn-success-custom btn-action">
+                      <i class="fas fa-download"></i> Baixar
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Coluna Lateral -->
+        <div class="col-lg-4">
+          <!-- Nota Final -->
+          {% if monografia.nota_final %}
+          <div class="details-card">
+            <div class="section-title">
+              <i class="fas fa-star"></i>
+              Nota Final
+            </div>
+            <div class="nota-final">
+              {{ monografia.nota_final }}/20
+            </div>
+            <p class="text-center text-muted mt-2">
+              {% if monografia.esta_aprovada %}
+                <i class="fas fa-check-circle text-success"></i> Monografia Aprovada
+              {% else %}
+                <i class="fas fa-clock text-warning"></i> Aguardando Aprovação
+              {% endif %}
+            </p>
+          </div>
+          {% endif %}
+          
+          <!-- Ações Rápidas -->
+          <div class="details-card">
+            <div class="section-title">
+              <i class="fas fa-bolt"></i>
+              Ações Rápidas
+            </div>
+            
+            <div class="d-grid gap-2">
+              {% if perfil == 'admin' or perfil == 'chefe_departamento' %}
+                <a href="#" class="btn btn-warning-custom btn-action" data-bs-toggle="modal" data-bs-target="#avaliarModal">
+                  <i class="fas fa-clipboard-check"></i> Avaliar Monografia
+                </a>
+              {% endif %}
+              
+              {% if perfil == 'tecnico_departamento' %}
+                <a href="#" class="btn btn-primary-custom btn-action">
+                  <i class="fas fa-edit"></i> Atualizar Informações
+                </a>
+                
+                <a href="#" class="btn btn-secondary-custom btn-action">
+                  <i class="fas fa-comments"></i> Enviar Comentários
+                </a>
+              {% endif %}
+            </div>
+          </div>
+          
+          <!-- Metadados -->
+          <div class="details-card">
+            <div class="section-title">
+              <i class="fas fa-info-circle"></i>
+              Metadados
+            </div>
+            
+            <div class="metadata">
+              <div class="metadata-item">
+                <span class="text-muted">ID:</span>
+                <span class="fw-bold">#{{ monografia.id }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="text-muted">Criado em:</span>
+                <span>{{ monografia.criado_em|date:"d/m/Y H:i" }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="text-muted">Atualizado em:</span>
+                <span>{{ monografia.atualizado_em|date:"d/m/Y H:i" }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="text-muted">Estado:</span>
+                <span class="fw-bold">{{ monografia.get_estado_display }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Action Buttons Footer -->
+      <div class="action-buttons">
+        <a href="{% url 'pedagogico:monografias' %}" class="btn btn-secondary-custom btn-action">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+        
+        <div class="ms-auto">
+          {% if perfil == 'admin' %}
+            <a href="#" class="btn btn-danger-custom btn-action me-2">
+              <i class="fas fa-trash"></i> Excluir
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  
+  <!-- Modais -->
+  
+ <!-- Modal de Avaliação (atualizado) -->
+<div class="modal fade" id="avaliarModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-clipboard-check me-2"></i> Avaliar Monografia</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formAvaliacao" method="post"  action="{% url 'pedagogico:submeter_avaliacao' monografia.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-1"></i> {{ monografia.titulo }}</h6>
+                        <p class="mb-1"><strong>Autor:</strong> {{ monografia.autor }}</p>
+                        <p class="mb-0"><strong>Curso:</strong> {{ monografia.autor_curso }}</p>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="avaliador" class="form-label">Avaliador *</label>
+                            <input type="text" class="form-control" id="avaliador" name="avaliador" 
+                                   value="{{ user.get_full_name|default:user.username }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nota" class="form-label">Nota (0-20)</label>
+                            <input type="number" class="form-control" id="nota" name="nota" 
+                                   min="0" max="20" step="0.1" placeholder="Ex: 15.5">
+                            <div class="form-text">Deixe em branco se não aplicar</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="parecer" class="form-label">Parecer Detalhado *</label>
+                        <textarea class="form-control" id="parecer" name="parecer" 
+                                  rows="6" placeholder="Descreva sua avaliação detalhada..." required></textarea>
+                        <div class="form-text">
+                            Inclua pontos fortes, fracos, sugestões de melhoria, etc.
+                        </div>
+                    </div>
+                    
+                    <!-- Critérios de Avaliação -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0"><i class="fas fa-list-check me-1"></i> Critérios de Avaliação</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="criterio1">
+                                <label class="form-check-label" for="criterio1">
+                                    Estrutura e organização adequadas
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="criterio2">
+                                <label class="form-check-label" for="criterio2">
+                                    Qualidade da pesquisa bibliográfica
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="criterio3">
+                                <label class="form-check-label" for="criterio3">
+                                    Metodologia apropriada
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="criterio4">
+                                <label class="form-check-label" for="criterio4">
+                                    Análise e discussão consistentes
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="criterio5">
+                                <label class="form-check-label" for="criterio5">
+                                    Formatação conforme normas
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        <strong>Atenção:</strong> Após submeter, a avaliação não poderá ser editada.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane me-1"></i>Submeter Avaliação
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+  
+  <!-- Modal de Aprovação -->
+  <div class="modal fade" id="aprovarModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-check me-2"></i> Aprovar Monografia</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja aprovar a monografia <strong>"{{ monografia.titulo }}"</strong>?</p>
+          <div class="form-group mt-3">
+            <label for="notaFinal" class="form-label">Nota Final (0-20)</label>
+            <input type="number" class="form-control" id="notaFinal" min="0" max="20" step="0.01" placeholder="Ex: 15.5">
+          </div>
+          <div class="form-group mt-3">
+            <label for="observacoes" class="form-label">Observações</label>
+            <textarea class="form-control" id="observacoes" rows="3" placeholder="Observações sobre a aprovação..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-success">Confirmar Aprovação</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Modal de Reprovação -->
+  <div class="modal fade" id="reprovarModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="fas fa-times me-2"></i> Reprovar Monografia</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja reprovar a monografia <strong>"{{ monografia.titulo }}"</strong>?</p>
+          <div class="form-group mt-3">
+            <label for="motivoReprovacao" class="form-label">Motivo da Reprovação</label>
+            <textarea class="form-control" id="motivoReprovacao" rows="4" placeholder="Descreva o motivo da reprovação..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger">Confirmar Reprovação</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+     function toggleSidebar() { 
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+    // Mostrar loading ao clicar em ações
+    $(document).ready(function() {
+      $('.btn-action').on('click', function(e) {
+        if ($(this).attr('href') === '#' && !$(this).data('bs-toggle')) {
+          $('#loadingOverlay').fadeIn();
+        }
+      });
+      
+      // Fechar loading quando modais são fechados
+      $('.modal').on('hidden.bs.modal', function() {
+        $('#loadingOverlay').fadeOut();
+      });
+      
+      // Formatação da nota
+      const notaFinal = document.getElementById('notaFinal');
+      if (notaFinal) {
+        notaFinal.addEventListener('change', function() {
+          let value = parseFloat(this.value);
+          if (value < 0) this.value = 0;
+          if (value > 20) this.value = 20;
+        });
+      }
+    });
+    
+    // Função para aprovar monografia
+    function aprovarMonografia() {
+      const nota = document.getElementById('notaFinal')?.value;
+      const observacoes = document.getElementById('observacoes')?.value;
+      
+      if (!nota || nota < 0 || nota > 20) {
+        alert('Por favor, insira uma nota válida entre 0 e 20');
+        return;
+      }
+      
+      $('#loadingOverlay').fadeIn();
+      
+      // Simulação de requisição AJAX
+      setTimeout(() => {
+        $('#loadingOverlay').fadeOut();
+        $('#aprovarModal').modal('hide');
+        alert('Monografia aprovada com sucesso!');
+        location.reload(); // Recarregar para atualizar status
+      }, 1500);
+    }
+    
+    // Função para reprovar monografia
+    function reprovarMonografia() {
+      const motivo = document.getElementById('motivoReprovacao')?.value;
+      
+      if (!motivo || motivo.trim() === '') {
+        alert('Por favor, informe o motivo da reprovação');
+        return;
+      }
+      
+      $('#loadingOverlay').fadeIn();
+      
+      // Simulação de requisição AJAX
+      setTimeout(() => {
+        $('#loadingOverlay').fadeOut();
+        $('#reprovarModal').modal('hide');
+        alert('Monografia reprovada com sucesso!');
+        location.reload(); // Recarregar para atualizar status
+      }, 1500);
+    }
+    
+    // Atribuir funções aos botões dos modais
+    document.addEventListener('DOMContentLoaded', function() {
+      const aprovarBtn = document.querySelector('#aprovarModal .btn-success');
+      const reprovarBtn = document.querySelector('#reprovarModal .btn-danger');
+      
+      if (aprovarBtn) {
+        aprovarBtn.onclick = aprovarMonografia;
+      }
+      
+      if (reprovarBtn) {
+        reprovarBtn.onclick = reprovarMonografia;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<!-- Removidos metadados para evitar cabeçalhos na impressão -->
+<link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <style> 
+    @media print {
+      .page-break { page-break-before: always; }
+      thead.bg-primary {
+        background-color: #0d6efd !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      thead.bg-primary th {
+        color: white !important;
+      }
+      .no-print { display: none !important; }
+      @page {
+        margin: 0.5cm; /* Margem reduzida para impressão */
+        size: A4;
+      }
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 2cm;
+    }
+
+    .header { text-align: center; margin-bottom: 20px; }
+    .header img { width: 100px; height: 100px; margin-bottom: 10px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    table, th, td { border: 1px solid black; }
+    th, td { padding: 5px; text-align: center; }
+
+    .assinatura { margin-top: 50px; text-align: center; }
+  </style>
+</head>
+<body>
+<div class="no-print mb-3">
+  <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button>
+</div>
+
+<div class="header">
+  <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo">
+  <h4>Complexo Escolar Veredas Encantadas</h4>
+  <h5>Lista de Alunos Inadimplentes - Ano Lectivo: {{ ano_letivo }}</h5>
+</div>
+
+<table>
+  <thead class="bg-primary text-white text-center">
+    <tr>
+      <th>Ord.</th>
+      <th>Nome Completo</th>
+      <th>Nº Mecanográfico</th>
+      <th>Gênero</th>
+      <th>Turma</th>
+      <th>Classe</th>
+      <th>Curso</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in alunos_inadimplentes %}
+    <tr>
+      <td>{{ forloop.counter }}</td>
+      <td>{{ item.aluno.nome_completo }}</td>
+      <td>{{ item.aluno.numero_mecanografico }}</td>
+      <td>{{ item.aluno.get_genero_display }}</td>
+      <td>{{ item.turma.nome }}</td>
+      <td>{{ item.classe.numero }} ª</td>
+      <td>{{ item.curso.nome }}</td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7">Nenhum aluno inadimplente encontrado.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="assinatura">
+  <p>O Diretor Administrativo</p>
+  <p>______________________________</p>
+</div>
+
+<div class="rodape mt-5 text-center">
+  <hr>
+  <p><small>© {{ data|date:"Y" }} Documento gerado pelo sistema SIGEsc</small></p>
+</div>
+
+</body>
+</html>

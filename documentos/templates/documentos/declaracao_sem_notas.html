@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    @media print {
+       .no-print { display: none; }
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+          margin: 0.5cm; /* Margem ainda mais reduzida */
+        }
+        @page {
+          margin: 0.5cm; /* Margem reduzida para impressão */
+          size: A4;
+        }
+    }
+
+    body {
+      font-family: "Times New Roman", serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      margin: 1.5cm;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+    }
+
+    .header img.logo {
+      display: block;
+      margin: 0 auto 10px;
+      width: 80px;
+      height: auto;
+    }
+
+    .header h1 {
+      font-size: 14pt;
+      font-weight: bold;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .header h2 {
+      font-size: 12pt;
+      font-weight: bold;
+      margin: 3px 0;
+      text-transform: uppercase;
+    }
+
+    .header h3 {
+      font-size: 11pt;
+      font-weight: normal;
+      margin: 3px 0;
+      font-style: italic;
+    }
+
+    .numero-declaracao {
+      text-align: right;
+      margin: 20px 0;
+      font-weight: bold;
+      font-size: 12pt;
+    }
+
+    .texto-declaracao {
+      text-align: justify;
+      margin: 20px 0;
+      line-height: 1.8;
+    }
+
+    .texto-declaracao p {
+      margin-bottom: 15px;
+    }
+
+    .destaque {
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .dados-pessoais {
+      margin: 15px 0;
+      padding-left: 20px;
+    }
+
+    .assinatura-container {
+      margin-top: 60px;
+      text-align: center;
+    }
+
+    .assinatura-linha {
+      margin: 40px 0 5px 0;
+      border-top: 1px solid #000;
+      width: 300px;
+      display: inline-block;
+    }
+
+    .nome-cargo {
+      margin-top: 5px;
+      font-weight: bold;
+    }
+
+    .rodape {
+      margin-top: 50px;
+      text-align: center;
+      font-size: 10pt;
+      color: #666;
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+    }
+
+    .local-data {
+      text-align: right;
+      margin-top: 40px;
+      font-weight: bold;
+    }
+
+    .instituicao-info {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 10pt;
+      color: #333;
+    }
+
+    .curso-info {
+      margin: 15px 0;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="no-print mb-3">
+  <button class="btn btn-primary" onclick="window.print()">
+    <i class="bi bi-printer-fill"></i> Imprimir Declaração
+  </button>
+</div>
+
+<div class="header">
+  <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" class="logo">
+  <h1>Complexo Escolar Veredas Encantadas</h1>
+  <h3>Criado sob Decreto Executivo </h3>
+  <br><br><br>
+  <h2>Declaração de Frequência</h2>
+</div>
+
+<div class="texto-declaracao">
+  <p>
+    Para efeitos de <span class="destaque">{{ finalidade }}</span>, declara-se que
+    {% if aluno.genero == 'M' %}o Aluno{% else %}a Aluna{% endif %}
+    <span class="destaque">
+      {{ aluno.nome_completo }}
+    </span>,
+    {% if aluno.estado_civil %}
+      {{ aluno.estado_civil|lower }}(a),
+    {% endif %}
+    filho(a) de 
+    <span class="destaque">{{ aluno.nome_pai }}</span> 
+    e de 
+    <span class="destaque">{{ aluno.nome_mae }}</span>,
+    nascido(a) em 
+    <span class="destaque">{{ aluno.dia_nasc}} de {{ aluno.mes_nasc}} de {{ aluno.ano_nasc}}</span>,
+    na Província de 
+    <span class="destaque">{{ aluno.naturalidade }}</span>,
+    titular do 
+    <span class="destaque">
+      B.I nº {{ aluno.bi }}.
+    </span>
+    {% if aluno.data_emissao_documento %}
+      emitido por {{ aluno.local_emissao_documento|default:"Direcção Nacional de Identificação" }},
+      em {{ aluno.data_emissao_documento|date:"d \d\e F \d\e Y" }}.
+    {% endif %}
+  </p>
+
+  <p>
+    Frequenta nesta instituição, sob o número mecanográfico 
+    <span class="destaque">{{ aluno.numero_mecanografico|default:aluno.id }}</span>,
+    o curso de 
+    <span class="destaque">{{ aluno.curso.nome|default:"Ensino Secundário" }}</span>,
+    a 
+    <span class="destaque">{{ aluno.classe.numero }}ª Classe</span>,
+    {% if aluno.turno %}
+      período <span class="destaque">{{ aluno.turno }}</span>,
+    {% endif %}
+    ano lectivo <span class="destaque">{{ aluno.ano_lectivo.ano|default:"2024/2025" }}</span>.
+  </p>
+
+  <p>
+    Por ter sido solicitada, mandei passar a presente declaração que vai assinada 
+    e autenticada com o carimbo à óleo em uso nesta instituição.
+  </p>
+</div>
+
+<div class="local-data">
+  <br><br><br>
+  <p>
+    <span class="destaque">
+      {{ aluno.endereco.municipio|default:"Malanje" }},
+      em {% now "d \d\e F \d\e Y" %}
+    </span>
+  </p>
+</div>
+
+<div class="assinatura-container">
+  <div class="assinatura-linha"></div>
+  <div class="nome-cargo">
+    {{ diretor.nome|default:"Nome do Director" }}
+  </div>
+  <div>Director Geral</div>
+</div>
+<br><br><br>
+<div class="rodape">
+  <p><small>© {% now "Y" %} Documento gerado pelo sistema SIGEsc - Complexo Escolar Veredas Encantadas</small></p>
+</div>
+
+</body>
+</html>

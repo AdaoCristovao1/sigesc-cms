@@ -1,0 +1,482 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatório Financeiro Completo</title>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      thead.bg-primary, thead.bg-success, thead.bg-danger, thead.bg-warning, thead.bg-info {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .valor-positivo { color: #28a745 !important; }
+      .valor-negativo { color: #dc3545 !important; }
+      .valor-info { color: #17a2b8 !important; }
+      @page {
+        margin: 0.5cm; /* Margem reduzida para impressão */
+        size: A4;
+      }
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 11px;
+      margin: 1cm;
+      line-height: 1.4;
+    }
+    .header { 
+      text-align: center; 
+      margin-bottom: 25px;
+      border-bottom: 2px solid #0d6efd;
+      padding-bottom: 15px;
+    }
+    .header img { 
+      width: 80px; 
+      height: 80px;
+      margin-bottom: 10px;
+    }
+    .header h4 {
+      margin: 5px 0;
+      font-weight: bold;
+    }
+    .header h5 {
+      margin: 3px 0;
+      color: #555;
+    }
+    .info-box {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .summary-card {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+      page-break-inside: avoid;
+    }
+    .summary-card.receitas { border-left: 4px solid #28a745; }
+    .summary-card.despesas { border-left: 4px solid #dc3545; }
+    .summary-card.pendentes { border-left: 4px solid #ffc107; }
+    .summary-card.saldo { border-left: 4px solid #17a2b8; }
+    .badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      margin: 1px;
+    }
+    table {
+      width: 100%;
+      margin-bottom: 15px;
+      border-collapse: collapse;
+    }
+    table th {
+      padding: 6px 8px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    table td {
+      padding: 5px 8px;
+      font-size: 10px;
+      vertical-align: middle;
+    }
+    .table-bordered th, .table-bordered td {
+      border: 1px solid #dee2e6;
+    }
+    .text-success { color: #28a745 !important; }
+    .text-danger { color: #dc3545 !important; }
+    .text-warning { color: #ffc107 !important; }
+    .text-info { color: #17a2b8 !important; }
+    .valor-grande {
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .footer {
+      margin-top: 30px;
+      border-top: 1px solid #ddd;
+      padding-top: 10px;
+      font-size: 9px;
+      color: #666;
+    }
+    .assinatura {
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #000;
+    }
+    .data-emissao {
+      text-align: right;
+      font-style: italic;
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .progress {
+      height: 5px;
+      background-color: #e9ecef;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print mb-3 text-end">
+    <button class="btn btn-primary btn-sm" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="btn btn-secondary btn-sm" onclick="window.close()">❌ Fechar</button>
+  </div>
+
+  <div class="header">
+    {% if escola %}
+      <img src="{{ escola.logo.url }}" alt="Logo da Escola" style="width: 100px; height: 100px;">
+      <h4>{{ escola.nome }}</h4>
+      <h5>{{ escola.endereco }}</h5>
+      <h5>Telefone: {{ escola.telefone }} | Email: {{ escola.email }}</h5>
+    {% else %}
+      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
+      <h4>Complexo Escolar Veredas Encantadas</h4>
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+    {% endif %}
+    
+    <h4>RELATÓRIO FINANCEIRO COMPLETO</h4>
+    <h5>Ano Lectivo: {{ ano_lectivo }}</h5>
+    <h6>Período: {{ data_inicio|date:"d/m/Y" }} - {{ data_fim|date:"d/m/Y"|default:"Atual" }}</h6>
+  </div>
+
+  <div class="data-emissao">
+    <small>Emitido em: {% now "d/m/Y H:i" %}</small>
+  </div>
+
+  <!-- RESUMO EXECUTIVO -->
+  <div class="info-box">
+    <h5 style="text-align: center; margin-bottom: 15px;">RESUMO EXECUTIVO</h5>
+    
+    <div class="row">
+      <div class="col-3">
+        <div class="summary-card receitas">
+          <strong>RECEITAS TOTAIS</strong><br>
+          <span class="valor-grande text-success">Kz {{ total_receitas|floatformat:2 }}</span><br>
+          <small>{{ total_pagamentos }} pagamentos</small>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="summary-card despesas">
+          <strong>DESPESAS TOTAIS</strong><br>
+          <span class="valor-grande text-danger">Kz {{ total_despesas|floatformat:2 }}</span><br>
+          <small>{{ total_despesas_pagas|floatformat:2 }} pagas</small>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="summary-card pendentes">
+          <strong>DESPESAS PENDENTES</strong><br>
+          <span class="valor-grande text-warning">Kz {{ total_despesas_pendentes|floatformat:2 }}</span><br>
+          <small>Aguardando pagamento</small>
+        </div>
+      </div>
+      <div class="col-3">
+        <div class="summary-card saldo">
+          <strong>SALDO EM CAIXA</strong><br>
+          <span class="valor-grande text-info">Kz {{ saldo_caixa|floatformat:2 }}</span><br>
+          <small>Receitas - Despesas Pagas</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <div class="col-4">
+        <strong>Média Mensal Receitas:</strong><br>
+        <span class="text-success">Kz {{ media_receita_mensal|floatformat:2 }}</span>
+      </div>
+      <div class="col-4">
+        <strong>Média Mensal Despesas:</strong><br>
+        <span class="text-danger">Kz {{ media_despesa_mensal|floatformat:2 }}</span>
+      </div>
+      <div class="col-4">
+        <strong>% Despesas/Receitas:</strong><br>
+        <span class="{% if percentual_despesas > 100 %}text-danger{% else %}text-info{% endif %}">
+          {{ percentual_despesas|floatformat:1 }}%
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- DETALHAMENTO DAS RECEITAS -->
+  <h5 style="margin-top: 20px; color: #28a745;">1. DETALHAMENTO DAS RECEITAS</h5>
+  
+  <table class="table table-bordered">
+    <thead class="bg-success text-white">
+      <tr>
+        <th width="50%">TIPO DE SERVIÇO</th>
+        <th width="20%">QUANTIDADE</th>
+        <th width="30%">TOTAL (Kzs)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in por_servico %}
+      <tr>
+        <td>{{ item.tipoServico__nome|default:"Serviço não especificado" }}</td>
+        <td style="text-align: center;">{{ item.quantidade }}</td>
+        <td style="text-align: right;" class="text-success"><strong>{{ item.total|floatformat:2 }}</strong></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3" style="text-align: center; color: #999;">Nenhuma receita registrada</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr style="background-color: #f8f9fa;">
+        <td><strong>TOTAL GERAL</strong></td>
+        <td style="text-align: center;"><strong>{{ total_pagamentos }}</strong></td>
+        <td style="text-align: right;" class="text-success valor-grande"><strong>Kz {{ total_receitas|floatformat:2 }}</strong></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- DISTRIBUIÇÃO MENSAL DAS RECEITAS -->
+  <h6 style="color: #28a745;">Distribuição Mensal das Receitas</h6>
+  <table class="table table-bordered" style="font-size: 9px;">
+    <thead class="bg-light">
+      <tr>
+        {% for mes in meses_labels %}
+        <th>{{ mes }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        {% for valor in receitas_mensais %}
+        <td style="text-align: center; {% if valor > 0 %}color: #28a745; font-weight: bold;{% else %}color: #999;{% endif %}">
+          {% if valor > 0 %}Kz {{ valor|floatformat:0 }}{% else %}-{% endif %}
+        </td>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- DETALHAMENTO DAS DESPESAS -->
+  <h5 style="margin-top: 20px; color: #dc3545;">2. DETALHAMENTO DAS DESPESAS</h5>
+  
+  <table class="table table-bordered">
+    <thead class="bg-danger text-white">
+      <tr>
+        <th>CATEGORIA</th>
+        <th>QUANTIDADE</th>
+        <th>TOTAL GERAL</th>
+        <th>TOTAL PAGO</th>
+        <th>TOTAL PENDENTE</th>
+        <th>% PAGO</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in despesas_por_categoria %}
+      <tr>
+        <td>
+          {% for codigo, nome in categoria_choices %}
+            {% if codigo == item.categoria %}
+              <span class="badge bg-info">{{ nome }}</span>
+            {% endif %}
+          {% endfor %}
+        </td>
+        <td style="text-align: center;">{{ item.quantidade }}</td>
+        <td style="text-align: right;" class="text-danger"><strong>Kz {{ item.total|floatformat:2 }}</strong></td>
+        <td style="text-align: right;" class="text-success">Kz {{ item.total_pago|default:0|floatformat:2 }}</td>
+        <td style="text-align: right;" class="text-warning">Kz {{ item.total_pendente|default:0|floatformat:2 }}</td>
+        <td>
+          <div class="progress" style="width: 100%;">
+            <div class="progress-bar bg-success" 
+                 style="width: {% widthratio item.total_pago|default:0 item.total 100 %}%">
+            </div>
+          </div>
+          <small style="display: block; text-align: center;">
+            {% widthratio item.total_pago|default:0 item.total 100 %}%
+          </small>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: #999;">Nenhuma despesa registrada</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr style="background-color: #f8f9fa;">
+        <td><strong>TOTAIS</strong></td>
+        <td style="text-align: center;"><strong>{{ despesas_por_categoria|length }}</strong></td>
+        <td style="text-align: right;" class="text-danger valor-grande"><strong>Kz {{ total_despesas|floatformat:2 }}</strong></td>
+        <td style="text-align: right;" class="text-success"><strong>Kz {{ total_despesas_pagas|floatformat:2 }}</strong></td>
+        <td style="text-align: right;" class="text-warning"><strong>Kz {{ total_despesas_pendentes|floatformat:2 }}</strong></td>
+        <td>
+          <div class="progress" style="width: 100%;">
+            <div class="progress-bar bg-success" 
+                 style="width: {% widthratio total_despesas_pagas total_despesas 100 %}%">
+            </div>
+          </div>
+          <small style="display: block; text-align: center;">
+            {% widthratio total_despesas_pagas total_despesas 100 %}%
+          </small>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- ÚLTIMAS DESPESAS REGISTRADAS -->
+  <h6 style="color: #dc3545;">Últimas Despesas Registradas</h6>
+  <table class="table table-bordered" style="font-size: 9px;">
+    <thead class="bg-light">
+      <tr>
+        <th>DATA</th>
+        <th>DESCRIÇÃO</th>
+        <th>CATEGORIA</th>
+        <th>VALOR</th>
+        <th>STATUS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for despesa in ultimas_despesas|slice:":5" %}
+      <tr>
+        <td>{{ despesa.data_despesa|date:"d/m/Y" }}</td>
+        <td>{{ despesa.descricao|truncatechars:30 }}</td>
+        <td>
+          {% for codigo, nome in categoria_choices %}
+            {% if codigo == despesa.categoria %}{{ nome }}{% endif %}
+          {% endfor %}
+        </td>
+        <td style="text-align: right;" class="text-danger">Kz {{ despesa.valor|floatformat:2 }}</td>
+        <td>
+          {% if despesa.status == 'pago' %}
+            <span class="badge bg-success">Pago</span>
+          {% else %}
+            <span class="badge bg-warning">Pendente</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align: center; color: #999;">Nenhuma despesa registrada</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <!-- ANÁLISE E CONCLUSÕES -->
+  <h5 style="margin-top: 20px; color: #0d6efd;">3. ANÁLISE E CONCLUSÕES</h5>
+  
+  <div class="info-box"> 
+    <h6>RESUMO DA SITUAÇÃO FINANCEIRA</h6>
+    <p style="text-align: justify;">
+      Durante o ano lectivo <strong>{{ ano_lectivo }}</strong>, o Complexo Escolar registrou um total de 
+      <strong>Kz {{ total_receitas|floatformat:2 }}</strong> em receitas, provenientes de 
+      <strong>{{ total_pagamentos }}</strong> pagamentos realizados pelos alunos e encarregados de educação.
+      
+      No mesmo período, foram contabilizadas despesas no valor total de 
+      <strong>Kz {{ total_despesas|floatformat:2 }}</strong>, das quais 
+      <strong>Kz {{ total_despesas_pagas|floatformat:2 }}</strong> já se encontram pagas, restando 
+      <strong>Kz {{ total_despesas_pendentes|floatformat:2 }}</strong> em despesas pendentes.
+    </p>
+    
+    <h6>SALDO DISPONÍVEL</h6>
+    <p style="text-align: justify;">
+      O saldo actual em caixa, calculado como a diferença entre as receitas totais e as despesas já pagas,
+      é de <strong>Kz {{ saldo_caixa|floatformat:2 }}</strong>. Este valor representa os recursos financeiros
+      disponíveis para novas despesas e investimentos.
+    </p>
+    
+    <h6>ÍNDICES DE DESEMPENHO</h6>
+    <ul>
+      <li><strong>Percentual Despesas/Receitas:</strong> {{ percentual_despesas|floatformat:1 }}% 
+        {% if percentual_despesas > 100 %}
+          <span class="badge bg-danger">ACIMA DO ORÇAMENTO</span>
+        {% elif percentual_despesas > 80 %}
+          <span class="badge bg-warning">ATENÇÃO</span>
+        {% else %}
+          <span class="badge bg-success">DENTRO DO ORÇAMENTO</span>
+        {% endif %}
+      </li>
+      <li><strong>Média Mensal Receitas:</strong> Kz {{ media_receita_mensal|floatformat:2 }}</li>
+      <li><strong>Média Mensal Despesas:</strong> Kz {{ media_despesa_mensal|floatformat:2 }}</li>
+      <li><strong>Taxa de Cumprimento de Pagamentos:</strong> 
+        {% widthratio total_despesas_pagas total_despesas 100 %}%
+      </li>
+    </ul>
+  </div>
+
+  <!-- RECOMENDAÇÕES -->
+  <h6 style="color: #fd7e14;">RECOMENDAÇÕES</h6>
+  <div style="border-left: 3px solid #fd7e14; padding-left: 10px; margin: 10px 0;">
+    <ol>
+      {% if total_despesas_pendentes > 0 %}
+      <li><strong>Regularizar pendências:</strong> Prioritizar o pagamento das despesas pendentes no valor de Kz {{ total_despesas_pendentes|floatformat:2 }}</li>
+      {% endif %}
+      
+      {% if percentual_despesas > 100 %}
+      <li><strong>Controlar despesas:</strong> As despesas ultrapassaram as receitas em {{ percentual_despesas|floatformat:1 }}% - necessário rever orçamento</li>
+      {% endif %}
+      
+      <li><strong>Monitorar categorias:</strong> Acompanhar de perto as categorias com maior volume de despesas</li>
+      <li><strong>Planeamento do próximo período:</strong> Utilizar as médias mensais para projecções futuras</li>
+    </ol>
+  </div>
+
+  <!-- ASSINATURAS -->
+  <div class="assinatura">
+    <div class="row">
+      <div class="col-6 text-center">
+        <p><strong>DIRETOR GERAL</strong></p>
+        <p style="margin-bottom: 40px;">______________________________</p>
+        <p>{{director_geral.nome}}</p>
+      </div>
+
+      <div class="col-6 text-center">
+        <p><strong>DIRETOR ADMINISTRATIVO</strong></p>
+        <p style="margin-bottom: 40px;">______________________________</p>
+        <p>{{director_admin.nome}}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ -->
+  <div class="footer text-center">
+    <hr style="margin: 10px 0;">
+    <p><strong>Complexo Escolar Veredas Encantadas</strong> | Sistema Integrado de Gestão Escolar (SIGEsc)</p>
+    <p>Documento gerado automaticamente pelo Sistema SIGEsc sob a licença nº em {% now "d/m/Y à\s H:i" %}</p>
+    <p class="text-muted">Este é um documento oficial para fins de análise e arquivo financeiro</p>
+  </div>
+
+  <script>
+    // Configuração de impressão
+    document.addEventListener('DOMContentLoaded', function() {
+      // Adiciona data/hora de impressão
+      const printBtn = document.querySelector('.no-print button');
+      if (printBtn) {
+        printBtn.addEventListener('click', function() {
+          setTimeout(function() {
+            window.print();
+          }, 100);
+        });
+      }
+    });
+    
+    // Fechar após impressão (opcional)
+    window.onafterprint = function() {
+      // Se quiser fechar automaticamente após impressão, descomente:
+      // setTimeout(function() { window.close(); }, 1000);
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Matrículas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .sidebar {
+      height: 100vh;
+      width: 250px;
+      position: fixed;
+      background-color: #3885f8;
+      color: white;
+      padding-top: 20px;
+    }
+
+    .sidebar a {
+      padding: 12px 20px;
+      display: block;
+      color: white;
+      text-decoration: none;
+    }
+
+    .sidebar a:hover {
+      background-color: #073a88;
+    }
+
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+      background-color: #f8f9fa;
+      height: 100vh;
+    }
+
+    .topbar {
+      background-color: #3885f8;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .topbar h5 {
+      margin: 0;
+    }
+
+    .logout {
+      color: white;
+      text-decoration: none;
+    }
+
+    .logout:hover {
+      text-decoration: underline;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-left: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+    }
+    .sidebar{
+      overflow-y: auto;
+    }
+    .burger {
+      display: none;
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .burger {
+        display: block;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0px; /* altura da topbar */
+        left: -250px; /* começa escondida */
+        width: 250px;
+        height: calc(150vh - 60px);
+        overflow-y: auto;
+        transition: left 0.3s ease;
+        z-index: 1000;
+      }
+
+      .sidebar.active {
+        left: 0; /* aparece */ 
+      }
+
+      .main-content {
+        margin-left: 0; /* sem deslocar o conteúdo */
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">SIGEsc</div>
+    <div class="text-center mb-3">
+      <strong><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>Coordenador do Turno</strong><br>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'administracao:dashboard' %}">Dashboard</a>
+    <a href="#">Docentes</a>
+    <a href="{% url 'administracao:alunos_lista' %}">Alunos</a>
+    <a href="{% url 'administracao:turmas_e_salas' %}">Turmas  e Salas</a>
+    <a href="">Disciplinas</a>
+    <a href="{% url 'administracao:matriculas' %}">Matrículas</a>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar shadow">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <button class="burger" onclick="toggleSidebar()">☰</button>
+      <a class="logout btn btn-danger" href="{% url 'administracao:logout' %}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+        <path d="M7.5 1v7h1V1z"/>
+        <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+        </svg></a>
+    </div>
+
+    <div class="container mt-4">
+       <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2>Matrículas</h2>
+    </div>
+    <div class="card mt-3">
+        <div class="card-body">
+          <h5 class="card-title">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalMatricula">
+              Nova Matrícula
+            </button>
+          </h5>
+          <p class="card-text">Clicar  no botão acima para inserir os dados de um novo aluno</p>
+        </div>
+    </div>
+    <div class="card mt-3">
+        <div class="card-body">
+          <h5 class="card-title">
+            <a href="{% url 'administracao:reconfirmacao' %}" class="btn btn-success">
+              Reconfirmar Matrícula
+            </a>
+          </h5>
+          <p class="card-text">Clicar no botão acima para reconfirmar a matrícula de um aluno</p>
+        </div>
+    </div>
+    <!-- Modal de Matrícula -->
+    <div class="modal fade" id="modalMatricula" tabindex="-1" aria-labelledby="modalMatriculaLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <form method="POST" action="" class="modal-content" target="_blank">
+          {% csrf_token %}
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalMatriculaLabel">Nova Matrícula</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          <!-- dentro do modal de matrícula -->
+          <div class="modal-body row">
+            <div class="col-md-6">
+              <label class="form-label">Nome completo</label>
+              <input type="text" name="nome_completo" class="form-control" required>
+
+              <label class="form-label mt-3">BI</label>
+              <input type="text" name="bi" class="form-control" maxlength="14">
+
+              <label class="form-label mt-3">Gênero</label>
+              <select name="genero" class="form-select" required>
+                <option value="">Selecione</option>
+                <option value="M">Masculino</option>
+                <option value="F">Feminino</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">Classe</label>
+              <select id="selClasse" name="classe" class="form-select" required>
+                <option value="">Selecione</option>
+                {% for classe in classes %}
+                  <option value="{{ classe.id }}">{{ classe.numero }} ª Classe</option>
+                {% endfor %}
+              </select>
+
+              <label class="form-label mt-3">Turma</label>
+              <select id="selTurma" name="turma" class="form-select" required disabled>
+                <option value="">Selecione</option>
+              </select>
+
+              <!-- Curso (mostra nome, envia ID) -->
+            <input type="hidden" id="cursoInfo" name="curso">
+            <label class="form-label mt-3">Curso</label>
+            <input type="text" id="cursoNome" class="form-control" readonly>
+
+            <!-- Sala (mostra nome, envia ID) -->
+            <input type="hidden" id="salaInfo" name="sala">
+            <label class="form-label mt-3">Sala</label>
+            <input type="text" id="salaNome" class="form-control" readonly>
+
+            <!-- Turno -->
+            <input type="hidden" id="turnoInfo" name="turno">
+            <label class="form-label mt-3">Turno</label>
+            <input type="text" id="turnoNome" class="form-control" readonly>
+
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-success">Matricular</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  </div>
+  <script id="turmas-json" type="application/json">
+    {{ turmas_json|safe }}
+  </script>
+
+  <script>
+    const turmasData = JSON.parse(document.getElementById('turmas-json').textContent);
+
+    const selClasse = document.getElementById('selClasse');
+  const selTurma = document.getElementById('selTurma');
+  const cursoInfo = document.getElementById('cursoInfo');
+  const cursoNome = document.getElementById('cursoNome');
+  const salaInfo = document.getElementById('salaInfo');
+  const salaNome = document.getElementById('salaNome');
+  const turnoInfo = document.getElementById('turnoInfo');
+  const turnoNome = document.getElementById('turnoNome');
+
+  selClasse.addEventListener('change', function() {
+    const classeId = parseInt(this.value);
+    selTurma.innerHTML = '<option value="">Selecione</option>';
+    selTurma.disabled = true;
+
+    cursoInfo.value = cursoNome.value = '';
+    salaInfo.value = salaNome.value = '';
+    turnoInfo.value = turnoNome.value = '';
+
+    const turmasFiltradas = turmasData.filter(t => t.classe === classeId);
+    if (turmasFiltradas.length) {
+      selTurma.disabled = false;
+      turmasFiltradas.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.text = t.nome;
+        selTurma.appendChild(opt);
+      });
+    }
+  });
+
+  selTurma.addEventListener('change', function () {
+    const turmaId = parseInt(this.value);
+    const turma = turmasData.find(t => t.id === turmaId);
+
+    if (turma) {
+      cursoInfo.value = turma.curso_id;
+      cursoNome.value = turma.curso_nome;
+
+      salaInfo.value = turma.sala_id || '';
+      salaNome.value = turma.sala_nome;
+
+      turnoInfo.value = turma.turno;
+      turnoNome.value = turma.turno.charAt(0).toUpperCase() + turma.turno.slice(1);
+    }
+  });
+  function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+  }
+  </script>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

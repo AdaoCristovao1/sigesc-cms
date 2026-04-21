@@ -1,0 +1,77 @@
+<div class="mb-3">
+    <label for="funcionario_id" class="form-label">Funcionário</label>
+    <select name="funcionario_id" id="funcionario_id" class="form-select" required>
+        <option value="">-- Selecione --</option>
+        {% for prof in professores %}
+            <option value="{{ prof.id }}" 
+                {% if coord and coord.funcionario.id == prof.id %}selected{% endif %}>
+                {{ prof.nome }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="mb-3">
+    <label for="tipo" class="form-label">Tipo de Coordenação</label>
+    <select name="tipo" id="tipo" class="form-select" required>
+        <option value="">-- Selecione --</option>
+        <option value="turno" {% if coord and coord.tipo == "turno" %}selected{% endif %}>Coordenador de Turno</option>
+        <option value="turma" {% if coord and coord.tipo == "turma" %}selected{% endif %}>Coordenador de Turma</option>
+        <option value="disciplina" {% if coord and coord.tipo == "disciplina" %}selected{% endif %}>Coordenador de Disciplina</option>
+    </select>
+</div>
+
+<div class="mb-3" id="campo-turno" style="display:none;">
+    <label for="turno" class="form-label">Turno</label>
+    <select name="turno" id="turno" class="form-select">
+        <option value="">-- Selecione --</option>
+        <option value="Manhã" {% if coord and coord.turno == "Manhã" %}selected{% endif %}>Manhã</option>
+        <option value="Tarde" {% if coord and coord.turno == "Tarde" %}selected{% endif %}>Tarde</option>
+        <option value="Noite" {% if coord and coord.turno == "Noite" %}selected{% endif %}>Noite</option>
+    </select>
+</div>
+
+<div class="mb-3" id="campo-turma" style="display:none;">
+    <label for="turma_id" class="form-label">Turma</label>
+    <select name="turma_id" id="turma_id" class="form-select">
+        <option value="">-- Selecione --</option>
+        {% for t in turmas %}
+            <option value="{{ t.id }}" 
+                {% if coord and coord.turma and coord.turma.id == t.id %}selected{% endif %}>
+                {{ t.nome }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+<div class="mb-3" id="campo-disciplina" style="display:none;">
+    <label for="disciplina_id" class="form-label">Disciplina</label>
+    <select name="disciplina_id" id="disciplina_id" class="form-select">
+        <option value="">-- Selecione --</option>
+        {% for d in disciplinas %}
+            <option value="{{ d.id }}" 
+                {% if coord and coord.disciplina and coord.disciplina.id == d.id %}selected{% endif %}>
+                {{ d.nome }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const tipoSelect = document.getElementById("tipo");
+    const campoTurno = document.getElementById("campo-turno");
+    const campoTurma = document.getElementById("campo-turma");
+    const campoDisciplina = document.getElementById("campo-disciplina");
+
+    function atualizarCampos() {
+        const valor = tipoSelect.value;
+        campoTurno.style.display = valor === "turno" ? "block" : "none";
+        campoTurma.style.display = valor === "turma" ? "block" : "none";
+        campoDisciplina.style.display = valor === "disciplina" ? "block" : "none";
+    }
+
+    tipoSelect.addEventListener("change", atualizarCampos);
+    atualizarCampos(); // executa ao carregar a página (útil para edição)
+});
+</script>

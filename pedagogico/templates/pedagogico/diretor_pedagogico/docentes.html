@@ -1,0 +1,360 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Docentes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Pedagógico</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+     <a href="{% url 'pedagogico:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'pedagogico:docentes' %}" class="active">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'pedagogico:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'pedagogico:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'pedagogico:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'pedagogico:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'pedagogico:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'pedagogico:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+        <h2 class="page-title w-100"><i class="fas fa-chalkboard-teacher me-2"></i>Lista de Professores</h2>
+        <a href="{% url 'documentos:gerar_horario_completo' %}" class="btn btn-primary mb-3">Gerar Horário Completo</a>
+        <form method="GET" class="row g-3 mt-3 mb-4">
+            <div class="col-md-8">
+                <input type="text" name="q" class="form-control" placeholder="Pesquise aqui!..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+                    Pesquisar
+                </button>
+            </div>
+        </form>
+       <div id="lista-outros" class="table-responsive" style="overflow-x: auto;">
+      <table class="table table-bordered table-striped table-hover">
+        <thead class="table-primary">
+          <tr>
+            <th class="text-dark">Ordem</th>
+            <th class="text-dark">Nome Completo</th>
+            <th class="text-dark">Identidade</th>
+            <th class="text-dark">Gênero</th>
+            <th class="text-dark">Telefone</th>
+            <th class="text-dark">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for funcionario in funcionarios %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ funcionario.nome }}</td>
+            <td>{{ funcionario.bi }}</td>
+            <td>{{ funcionario.get_genero_display }}</td>
+            <td>{{ funcionario.telefone }}</td>
+            <td><button class="btn btn-primary ver-professor" data-id="{{ funcionario.id }}">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill text-light" viewBox="0 0 16 16">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+              </svg></button>
+            </td>
+            </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center">Nenhum Funcionário encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    </div>
+  </div>
+   <!-- Modal -->
+    <div class="modal fade" id="modalDetalhesProfessor" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>
+                    Detalhes do Professor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Informações Básicas -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h6 class="card-title text-primary">
+                                    <i class="fas fa-user-graduate me-2"></i>
+                                    Informações Acadêmicas
+                                </h6>
+                                <p class="mb-1"><strong>Nome:</strong> <span id="nomeProfessor">---</span></p>
+                                <p class="mb-1"><strong>Nível Acadêmico:</strong> <span id="nivel_academico">---</span></p>
+                                <p class="mb-0"><strong>Área de Formação:</strong> <span id="area_formacao">---</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabela de Horários -->
+                <div class="card">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Horário de Aulas
+                        </h6>
+                        <a id="vinculoBtn" href="#" class="btn btn-light btn-sm">
+                            <i class="fas fa-link me-1"></i>
+                            Gerenciar Vínculos
+                        </a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped align-middle mb-0" style="font-size: 0.85rem;">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Disciplina</th>
+                                        <th>Turma</th>
+                                        <th>Classe</th>
+                                        <th>Curso</th>
+                                        <th>Turno</th>
+                                        <th>Tempo</th>
+                                        <th>Dia da Semana</th>
+                                        <th>Início</th>
+                                        <th>Fim</th>
+                                        <th class="text-center">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaVinculos">
+                                    <!-- Os dados serão inseridos aqui via JavaScript -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="9" class="text-end small text-muted">
+                                            Total de horários: <span id="totalHorarios" class="badge bg-info">0</span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".ver-professor").forEach(button => {
+            button.addEventListener("click", function() {
+                const id = this.getAttribute("data-id");
+                const tbody = document.getElementById('tabelaVinculos');
+                
+                // Mostrar loading
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                            Carregando horários do professor...
+                        </td>
+                    </tr>
+                `;
+
+                fetch(`/pedagogico/docente/${id}/detalhes/`)
+                    .then(response => {
+                        if (!response.ok) throw new Error(`Erro ${response.status}`);
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Atualizar informações básicas
+                        document.getElementById("vinculoBtn").href = `/pedagogico/professor/${id}/vinculo/`;
+                        document.getElementById('nomeProfessor').textContent = data.nome || "---";
+                        document.getElementById('nivel_academico').textContent = data.nivel_academico || "---";
+                        document.getElementById('area_formacao').textContent = data.area_formacao || "---";
+
+                        // Limpar e preencher tabela
+                        tbody.innerHTML = "";
+
+                        if (data.horario_completo && data.horario_completo.length > 0) {
+                            data.horario_completo.forEach((horario, index) => {
+                                const row = document.createElement('tr');
+                                
+                                // Diferentes cores para dias diferentes (opcional)
+                                const diaCores = {
+                                    'Segunda-feira': 'table-primary',
+                                    'Terça-feira': 'table-info',
+                                    'Quarta-feira': 'table-warning',
+                                    'Quinta-feira': 'table-success',
+                                    'Sexta-feira': 'table-danger',
+                                    'Sábado': 'table-secondary'
+                                };
+                                
+                                row.className = diaCores[horario.dia] || '';
+                                
+                                row.innerHTML = `
+                                    <td><strong>${horario.disciplina}</strong></td>
+                                    <td>${horario.turma}</td>
+                                    <td><span class="badge bg-dark">${horario.classe}</span></td>
+                                    <td>${horario.curso}</td>
+                                    <td>
+                                        <span class="badge bg-${
+                                            horario.turno === 'Manhã' ? 'warning' :
+                                            horario.turno === 'Tarde' ? 'info' : 'secondary'
+                                        }">
+                                            ${horario.turno}
+                                        </span>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">${horario.tempo}</span></td>
+                                    <td><strong>${horario.dia}</strong></td>
+                                    <td>${horario.inicio}</td>
+                                    <td>${horario.fim}</td>
+
+                                    <!-- AÇÕES -->
+                                    <td class="text-center">
+                                        <a href="/professor/${id}/vincular/editar/${horario.vinculo_id}/"
+                                        class="btn btn-sm btn-outline-primary me-1"
+                                        title="Editar vínculo">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+                                        <a href="/professor-vinculo/excluir/${horario.vinculo_id}/"
+                                        class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </a>
+                                    </td>
+                                `;
+
+                                
+                                tbody.appendChild(row);
+                            });
+                            
+                            // Atualizar contador
+                            document.getElementById('totalHorarios').textContent = data.horario_completo.length;
+                        } else {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="9" class="text-center py-4 text-muted">
+                                        <i class="fas fa-calendar-times fa-2x mb-3"></i>
+                                        <p class="mb-0">Nenhum horário cadastrado.</p>
+                                        <small>Clique em "Gerenciar Vínculos" para adicionar.</small>
+                                    </td>
+                                </tr>
+                            `;
+                            document.getElementById('totalHorarios').textContent = '0';
+                        }
+
+                        // Mostrar modal
+                        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesProfessor'));
+                        modal.show();
+                    })
+                    .catch(error => {
+                        console.error("Erro:", error);
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="9" class="text-center py-4 text-danger">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Erro ao carregar: ${error.message}
+                                </td>
+                            </tr>
+                        `;
+                        
+                        const modal = new bootstrap.Modal(document.getElementById('modalDetalhesProfessor'));
+                        modal.show();
+                    });
+            });
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const vinculoBtn = document.getElementById('vinculoBtn');
+        if (vinculoBtn) {
+        vinculoBtn.addEventListener('click', function () {
+            const professorId = this.getAttribute('data-id');
+            if (professorId) {
+            const url = `/pedagogico/professor/${professorId}/vinculo/`;
+            window.location.href = url;
+            }
+        });
+        }
+    });
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+</script>
+
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

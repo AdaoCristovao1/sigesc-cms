@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Usuários | SIGEsc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar" id="sidebar">
+  <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+  </div>
+      <a href="{% url 'administracao:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'administracao:usuarios' %}" class="active">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'administracao:cadastrar_funcionario' %}">
+         <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'administracao:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'administracao:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas  e Salas
+      </a>
+      <a href="{% url 'administracao:classes' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Classes
+      </a>
+      <a href="{% url 'administracao:cursos' %}">
+        <i class="fas fa-chart-bar me-2"></i> Cursos
+      </a>
+      <a href="{% url 'administracao:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatórios
+      </a>
+      <br><br>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+  <div class="container mt-4">
+    <h2 class="page-title"><i class="fas fa-chalkboard-teacher me-2"></i>Lista de Usuários</h2>
+
+    <form method="GET" class="row g-3 mt-3 mb-4">
+      <div class="col-md-8">
+        <input type="text" name="q" class="form-control" placeholder="Pesquisar por nome ou usuário..." value="{{ request.GET.q }}">
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+            </svg>
+            Pesquisar
+        </button>
+      </div>
+    </form>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+      <div>
+        <button class="btn btn-outline-primary" onclick="mostrarLista('outros')">Funcionários</button>
+        <button class="btn btn-outline-success" onclick="mostrarLista('alunos')">Alunos</button>
+      </div>
+    </div>
+    <br>
+    <div id="lista-outros" class="table-responsive" style="overflow-x: auto;">
+      <table class="table table-bordered table-striped table-hover">
+        <thead class="table-primary">
+          <tr>
+            <th class="text-dark">#</th>
+            <th class="text-dark">Usuário</th>
+            <th class="text-dark">Perfil</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usuario in outros %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ usuario.username }}</td>
+            <td>{{ usuario.get_perfil_display }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center">Nenhum usuário encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div id="lista-alunos" class="table-responsive d-none" style="overflow-x: auto;">
+      <table class="table table-bordered table-striped table-hover">
+        <thead class="table-success">
+          <tr>
+            <th class="text-dark">#</th>
+            <th class="text-dark">Usuário</th>
+            <th class="text-dark">Email</th>
+            <th class="text-dark">Telefone</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for aluno in alunos %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ aluno.username }}</td>
+            <td>{{ aluno.email }}</td>
+            <td>{{ aluno.telefone }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center">Nenhum aluno encontrado.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- Modal de Confirmação de Senha -->
+<div class="modal fade" id="confirmacaoModal" tabindex="-1" aria-labelledby="confirmacaoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{% url 'core:verificar_acao_usuario' %}">
+      {% csrf_token %}
+      <input type="hidden" name="usuario_id" id="usuarioIdInput">
+      <input type="hidden" name="acao" id="acaoInput">
+
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmacaoModalLabel">Confirme sua senha</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="senha" class="form-label">Senha atual:</label>
+            <input type="password" class="form-control" name="senha" required>
+          </div>
+          <p class="text-muted">Para continuar, digite sua senha de acesso.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+function mostrarLista(tipo) {
+  const listaAlunos = document.getElementById('lista-alunos');
+  const listaOutros = document.getElementById('lista-outros');
+
+  if (tipo === 'alunos') {
+    listaAlunos.classList.remove('d-none');
+    listaOutros.classList.add('d-none');
+  } else {
+    listaOutros.classList.remove('d-none');
+    listaAlunos.classList.add('d-none');
+  }
+}
+function toggleSidebar() {
+  document.getElementById("sidebar").classList.toggle("active");
+}
+</script>
+
+<script src="{% static 'js/modal.js' %}"></script>
+<script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

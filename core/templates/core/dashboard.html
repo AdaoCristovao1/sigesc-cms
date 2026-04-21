@@ -1,0 +1,360 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel | Diretor Geral</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+    
+    .btn-outline-primary, .btn-outline-secondary, .btn-outline-success {
+      border-width: 2px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-primary:hover {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-secondary:hover {
+      background: linear-gradient(45deg, #6c757d, #495057);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-success:hover {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .badge {
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    
+    .card {
+      border-radius: 15px !important;
+    }
+    
+    .input-group-text {
+      border-radius: 10px 0 0 10px;
+    }
+    
+    .form-control {
+      border-radius: 0 10px 10px 0;
+    }
+    
+    .modal-content {
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar"  id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'core:dashboard' %}" class="active">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <h2 class="page-title"><i class="fas fa-home me-2"></i> Dashboard</h2>
+      {% if messages %}
+        <div class="container mt-3">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+              {{ message }} 
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %} 
+      <p class="text-muted mt-1 mb-4">
+        <i class="fas fa-calendar-alt me-1"></i> 
+        {% now "l, d \d\e F \d\e Y" %}
+      </p>
+
+      <!-- Botão para abrir modal -->
+      <a href="#" class="btn btn-warning mb-4" data-bs-toggle="modal" data-bs-target="#alterarSenhaModal">
+        Alterar Minha Senha
+      </a>
+      <!-- Botão para novo ano lectivo -->
+      <a href="{% url 'core:ano_lectivo' %}" class="btn btn-primary mb-4">Ano Lectivo</a>
+      <a class="btn btn-secondary mb-4" href="{% url 'pedagogico:monografias' %}">
+        <i class="fas fa-book me-1"></i>Gestão de Monografias
+      </a>
+       
+      <!-- Modal Alterar Senha -->
+      <div class="modal fade" id="alterarSenhaModal" tabindex="-1" aria-labelledby="alterarSenhaModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <form method="POST" action="{% url 'core:alterar_senha' %}">
+              {% csrf_token %}
+              <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="alterarSenhaModalLabel">Alterar Senha</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="senha_atual" class="form-label">Senha Atual</label>
+                  <input type="password" class="form-control" id="senha_atual" name="senha_atual" required>
+                </div>
+                <div class="mb-3">
+                  <label for="nova_senha" class="form-label">Nova Senha</label>
+                  <input type="password" class="form-control" id="nova_senha" name="nova_senha" required>
+                </div>
+                <div class="mb-3">
+                  <label for="confirmar_senha" class="form-label">Confirmar Nova Senha</label>
+                  <input type="password" class="form-control" id="confirmar_senha" name="confirmar_senha" required>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-warning">Alterar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Card de boas-vindas -->
+      <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+        <div class="row g-0">
+          <div class="col-md-8">
+            <div class="card-body p-4">
+              <h4 class="fw-bold mb-3">
+                <i class="fas fa-hand-wave text-warning me-2"></i> 
+                Olá, <span class="text-primary">{{ request.user.get_full_name|default:request.user.username }}</span>!
+              </h4>
+              <p class="text-muted mb-3">
+                Bem-vindo ao painel de controle do <strong>Sistema Integrado de Gestão Escolar</strong>.
+                Utilize o menu lateral para navegar entre as diferentes seções do sistema e gerenciar
+                todas as informações da sua instituição de ensino.
+              </p>
+              <div class="d-flex gap-3 mt-3">
+                <span class="badge bg-primary bg-opacity-10 text-primary p-2">
+                  <i class="fas fa-clock me-1"></i> Último acesso: {% now "d/m/Y H:i" %}
+                </span>
+                <span class="badge bg-success bg-opacity-10 text-success p-2">
+                  <i class="fas fa-shield-alt me-1"></i> Director Geral
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 d-none d-md-block" style="background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);">
+            <div class="p-4 text-white h-100 d-flex flex-column justify-content-center">
+              <h5 class="fw-bold">SIGEsc</h5>
+              <p class="small opacity-75 mb-0">Sistema Integrado de Gestão Escolar</p>
+              <p class="small opacity-50 mt-2">Versão 2.0</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cards de Estatísticas -->
+      <div class="row g-4">
+        <!-- Card Funcionários Administrativos -->
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">
+                    <i class="fas fa-users me-1"></i> Administrativo
+                  </span>
+                </div>
+                <div class="bg-warning bg-opacity-10 p-3 rounded-circle">
+                  <i class="fas fa-user-tie text-warning fs-4"></i>
+                </div>
+              </div>
+              <h3 class="fw-bold mb-2">{{ funcionarios_total }}</h3>
+              <p class="text-muted small mb-0">Funcionários Administrativos</p>
+              <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'core:cadastrar_funcionario' %}" class="text-decoration-none small text-warning">
+                  Ver detalhes <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Professores -->
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill">
+                    <i class="fas fa-chalkboard-teacher me-1"></i> Docentes
+                  </span>
+                </div>
+                <div class="bg-primary bg-opacity-10 p-3 rounded-circle">
+                  <i class="fas fa-chalkboard-teacher text-primary fs-4"></i>
+                </div>
+              </div>
+              <h3 class="fw-bold mb-2">{{ professores_total }}</h3>
+              <p class="text-muted small mb-0">Professores Ativos</p>
+              <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'core:cadastrar_funcionario' %}?funcao=professor" class="text-decoration-none small text-primary">
+                  Ver detalhes <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Alunos Reconfirmados -->
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                    <i class="fas fa-check-circle me-1"></i> Alunos
+                  </span>
+                </div>
+                <div class="bg-success bg-opacity-10 p-3 rounded-circle">
+                  <i class="fas fa-user-graduate text-success fs-4"></i>
+                </div>
+              </div>
+              <h3 class="fw-bold mb-2">{{ aluno_total }}</h3>
+              <p class="text-muted small mb-0">Alunos Reconfirmados</p>
+              <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'core:alunos_lista' %}?status=reconfirmado" class="text-decoration-none small text-success">
+                  Ver detalhes <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Alunos Inadimplentes -->
+        <div class="col-xl-3 col-md-6">
+          <div class="card border-0 shadow-sm h-100 hover-lift">
+            <div class="card-body">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div>
+                  <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                    <i class="fas fa-exclamation-triangle me-1"></i> Inadimplentes
+                  </span>
+                </div>
+                <div class="bg-danger bg-opacity-10 p-3 rounded-circle">
+                  <i class="fas fa-user-clock text-danger fs-4"></i>
+                </div>
+              </div>
+              <h3 class="fw-bold mb-2">{{ aluno_inadimplentes_total }}</h3>
+              <p class="text-muted small mb-0">Alunos com Pendências</p>
+              <div class="mt-3 pt-2 border-top">
+                <a href="{% url 'core:alunos_lista' %}?status=inadimplente" class="text-decoration-none small text-danger">
+                  Ver detalhes <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </div>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+      }
+  </script>
+</body>
+</html>

@@ -1,0 +1,288 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<!-- Removidos metadados para evitar cabeçalhos na impressão -->
+<link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+<style>
+@media print {
+  .no-print { display: none; }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0.5cm; /* Margem ainda mais reduzida */
+  }
+  @page {
+    margin: 0.5cm; /* Margem reduzida para impressão */
+    size: A4;
+  }
+}
+
+body {
+  font-family: "Times New Roman", serif;
+  margin: 0.5cm; /* Reduzido para 0.5cm */
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+    }
+
+    .header img.logo {
+      display: block;
+      margin: 0 auto 10px;
+      width: 80px;
+      height: auto;
+    }
+
+    .header h1 {
+      font-size: 14pt;
+      font-weight: bold;
+      margin: 0;
+      text-transform: uppercase;
+    }
+
+    .header h2 {
+      font-size: 12pt;
+      font-weight: bold;
+      margin: 3px 0;
+      text-transform: uppercase;
+    }
+
+    .header h3 {
+      font-size: 11pt;
+      font-weight: normal;
+      margin: 3px 0;
+      font-style: italic;
+    }
+.titulo-certificado {
+  margin: 10px 0; /* Reduzido */
+  text-align: center;
+  font-size: 20px; /* Reduzido de 22px */
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.texto-certificado {
+  text-align: justify;
+  line-height: 1.6; /* Reduzido de 1.8 */
+  margin-bottom: 10px;
+  font-size: 13px; /* Reduzido */
+}
+
+.nome-aluno {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.info-pessoal {
+  margin: 10px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 12px; /* Reduzido de 13px */
+}
+
+table, th, td {
+  border: 1px solid #000;
+}
+
+th {
+  background-color: #f0f0f0;
+  text-align: center;
+  padding: 4px 2px; /* Reduzido */
+  font-weight: bold;
+  font-size: 11px; /* Reduzido */
+}
+
+td {
+  padding: 3px 2px; /* Reduzido */
+  text-align: center;
+  vertical-align: middle;
+  font-size: 11px; /* Reduzido */
+}
+
+.periodo-col {
+  width: 12%;
+}
+
+.media-col {
+  width: 10%;
+}
+
+.disciplina-col {
+  width: 28%;
+}
+
+.assinatura-container {
+  margin-top: 30px; /* Reduzido */
+  text-align: center;
+}
+
+.assinatura-linha {
+  margin: 25px 0 3px 0; /* Reduzido */
+}
+
+.nome-diretor {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.rodape-info {
+  margin-top: 15px;
+  font-size: 10px; /* Reduzido */
+  text-align: justify;
+}
+
+.local-data {
+  text-align: right;
+  margin-top: 20px; /* Reduzido */
+  font-weight: bold;
+  font-size: 13px; /* Reduzido */
+}
+
+.sublinhado {
+  text-decoration: underline;
+}
+
+.categoria-disciplina {
+  font-weight: bold;
+  background-color: #f8f9fa;
+  text-align: left;
+  padding-left: 5px !important; /* Reduzido */
+}
+
+.categoria-disciplina td {
+  text-align: left;
+}
+
+.media-geral {
+  font-weight: bold;
+  background-color: #e9ecef;
+}
+
+.valor-extenso {
+  font-style: italic;
+  font-size: 10px; /* Reduzido */
+}
+
+/* Compactar ainda mais */
+.header h4 {
+  font-size: 16px; /* Reduzido */
+  margin-bottom: 2px;
+}
+
+.header h5 {
+  font-size: 14px; /* Reduzido */
+  margin-bottom: 1px;
+}
+
+small {
+  font-size: 9px; /* Reduzido para notas da tabela */
+}
+</style>
+</head>
+
+<body>
+
+<div class="no-print mb-3">
+  <button class="btn btn-primary" onclick="window.print()">Imprimir Certificado</button>
+</div>
+
+<div class="header">
+  <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" class="logo">
+  <h1>Complexo Escolar Veredas Encantadas</h1>
+  <h3>Criado sob Decreto Executivo </h3>
+  <br><br><br>
+  <h2>CERTIFICADO DE CONCLUSÃO</h2>
+</div>
+
+<p class="texto-certificado">
+  <span class="nome-diretor">{{ diretor.nome }}</span>, Director (a) do Complexo Escolar Veredas Encantadas, 
+  criado sob Decreto Executivo nº 449/15 de 18 de Junho, certifica que 
+  <span class="nome-aluno">{{ aluno.nome_completo }}</span>, 
+  filho(a) de <strong>{{ aluno.nome_pai }}</strong> e de <strong>{{ aluno.nome_mae }}</strong>, 
+  natural de <strong>{{ aluno.naturalidade }}</strong>,
+  Província de <strong>{{ aluno.naturalidade }}</strong>, nascido(a) aos {{ aluno.dia_nasc}} de {{ aluno.mes_nasc}} de {{ aluno.ano_nasc}}</span>, 
+  portador(a) do B.I nº <strong>{{ aluno.bi }}</strong>, passado pelo arquivo de identificação de {{ aluno.naturalidade }},
+  concluiu no ano lectivo {{ano_conclusao}},
+   {% if aluno.reconfirmacao.classe.numero > 9 %}
+      o curso do II CICLO DO ENSINO SECUNDÁRIO GERAL,
+      na área de {{aluno.reconfirmacao.curso.nome}},
+   {% elif aluno.reconfirmacao.classe.numero < 9 %}
+      o curso do ENSINO PRIMÁRIO
+   {% else %}
+      o curso do I CICLO
+   {% endif %}
+  conforme o disposto da alínea e) do artigo 109º da LBSEE17/16, de 7 de Outubro, com a Média Final de <strong>{{ media_geral }}</strong> valores, obtida nas seguintes classificações por disciplinas:
+</p>
+
+<table>
+  <thead>
+    <tr>
+      <th class="disciplina-col">DISCIPLINAS</th>
+      {% for cabecalho in cabecalhos %}
+      <th class="periodo-col">{{ cabecalho.texto }}<br><small>(1º/2º/3º/Exame)</small></th>
+      {% endfor %}
+      <th class="media-col">MÉDIA FINAL</th>
+      <th class="media-col">MÉDIA POR EXTENSO</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for disciplina in todas_disciplinas %}
+    <tr>
+      <td>{{ disciplina.nome }}</td>
+
+      {% for dados_coluna in disciplina.notas_ordenadas %}
+        <td>
+          {% if dados_coluna %}
+            {% if dados_coluna.media %}
+              <strong>{{ dados_coluna.media|floatformat:1 }}</strong>
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+      {% endfor %}
+
+      <td><strong>{{ disciplina.media_final|floatformat:1 }}</strong></td>
+      <td class="valor-extenso">{{ disciplina.media_extenso }}</td>
+    </tr>
+  {% endfor %}
+</tbody>
+</table>
+<p class="texto-certificado">
+  Para efeitos legais lhe é passado o presente CERTIFICADO, que consta no livro de registo nº 001, folha 77, assinado por mim e autenticado com carimbo à óleo/selo branco em uso neste estabelecimento de ensino.
+</p>
+
+<div class="local-data">
+  <strong>Malanje, aos 
+    {% if data %}
+      {{ data|date:"d \\d\\e F \\d\\e Y" }}
+    {% else %}
+      {% now "d" %} de {% now "F" %} de {% now "Y" %}
+    {% endif %}
+  </strong>
+</div>
+
+<div class="assinatura-container">
+  <div class="assinatura-linha">
+    <hr style="width: 250px; margin: 0 auto;">
+  </div>
+  <div class="nome-diretor">{{ diretor.nome }}</div>
+  <div>Director</div>
+</div>
+
+<div class="rodape-info">
+  <p><em>Nota: Este certificado foi gerado eletronicamente pelo Sistema SIGEsc e possui validade legal conforme as normas do Ministério da Educação de Angola.</em></p>
+</div>
+
+</body>
+</html>

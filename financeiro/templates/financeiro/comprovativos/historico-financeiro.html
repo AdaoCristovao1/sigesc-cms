@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Histórico Financeiro</title>
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      thead.bg-primary {
+        background-color: #0d6efd !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      thead.bg-primary th { color: black !important; }
+      @page {
+        margin: 0.5cm; /* Margem reduzida para impressão */
+        size: A4;
+      }
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 2cm;
+    }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header img { width: 80px; height: auto; }
+  </style>
+</head>
+<body>
+  <div class="no-print mb-3 text-end">
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+
+  <div class="header">
+    <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
+    <h5>Complexo Escolar Veredas Encantadas</h5>
+    <h5>Histórico Financeiro do Aluno</h5>
+  </div>
+  <p><strong>Aluno: {{ aluno.nome_completo }}</strong> (Nº {{ aluno.numero_mecanografico }})</p>
+  {% for ano, pagamentos in historico.items %}
+    <h5 class="mt-4"> Ano Lectivo: {{ ano }}</h5>
+    <table class="table table-bordered">
+      <thead class="bg-primary text-white">
+        <tr>
+          <th>Data</th>
+          <th>Serviço</th>
+          <th>Forma de Pagamento</th>
+          <th>Mês</th>
+          <th>Valor (Kzs)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pagamentos %}
+        <tr>
+          <td>{{ p.data_pagamento|date:"d/m/Y" }}</td>
+          <td>{{ p.tipoServico.nome }}</td>
+          <td>{{ p.tipo.nome }}</td>
+          <td>{{ p.mes.nome }}</td>
+          <td>{{ p.valor|floatformat:2 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% empty %}
+    <p class="text-muted">Nenhum pagamento registrado.</p>
+  {% endfor %}
+
+  <div class="row info mt-5">
+    <div class="col-6 mt-5 text-center">
+      <p>______________________________</p>
+      <p><strong>Diretor Geral</strong></p>
+    </div>
+
+    <div class="col-6 mt-5 text-center">
+      <p>______________________________</p>
+      <p><strong>Diretor Administrativo</strong></p>
+    </div>
+  </div>
+
+  <div class="mt-5 text-center">
+    <hr>
+    <p><small>&copy; Documento gerado pelo sistema SIGESC - {{ now|date:"Y" }}</small></p>
+  </div>
+</body>
+</html>

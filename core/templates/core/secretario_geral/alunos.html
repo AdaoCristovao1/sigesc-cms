@@ -1,0 +1,727 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Alunos Matriculados</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+     /* Estilos customizados */
+    .bg-gradient-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .modal-content {
+      border-radius: 15px;
+      overflow: hidden;
+    }
+    
+    .section-icon {
+      transition: transform 0.3s;
+    }
+    
+    .section-icon:hover {
+      transform: scale(1.1);
+    }
+    
+    .input-group-text {
+      min-width: 45px;
+      justify-content: center;
+    }
+    
+    .form-control:focus, .form-select:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+    }
+    
+    /* Animação de loading no botão */
+    .btn-loading {
+      position: relative;
+      color: transparent !important;
+    }
+    
+    .btn-loading:after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+     
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Secretário Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+        <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}" class="active">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <h3 class="page-title"><i class="fas fa-user-graduate me-2"></i>Lista de Alunos Matriculados- Ano Lectivo: {{ano_letivo}}</h3>
+       <div class="mb-4">
+        <form method="GET" class="d-flex w-75 mb-4 w-100">
+          <input type="text" name="q" class="form-control me-2" placeholder="Buscar aluno, nº mecanográfico ou turma..." value="{{ search_query }}">
+          <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                    </svg>
+                    Pesquisar 
+                </button>
+            </div>
+        </form>
+        <form method="get" class="d-flex align-items-end">
+          <div class="flex-grow-1">
+            <label for="ano_lectivo" class="form-label">Ano Letivo:</label>
+            <select name="ano_lectivo" id="ano_lectivo" class="form-select">
+              {% for ano in anos_disponiveis %}
+                  <option value="{{ ano }}" {% if ano == ano_lectivo %}selected{% endif %}>{{ ano }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+          </div>
+        </form>
+        <br>
+        <a href="{% url 'documentos:alunos_inadimpletes' %}" class="btn btn-danger" target="_blank">Alunos Inadimplentes</a>
+        <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#gerarAtaModal">
+          Gerar Ata de Prova
+        </a>
+        <a href="{% url 'documentos:print_alunos' %}" class="btn btn-success">Imprimir Lista</a>
+      </div>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      {% for grupo, alunos in turmas_agrupadas.items %}
+      <div class="card my-3">
+        <div class="card-header text-secondary">
+          <h5 class="mb-0">|  {{ grupo }}</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped table-bordered">
+            <thead>
+              <tr>
+                <th class="text-dark">Ord.</th>
+                <th class="text-dark">Nome Completo</th>
+                <th class="text-dark">Nº Mecanográfico</th>
+                <th class="text-dark">Gênero</th>
+                <th class="text-dark">Ação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for aluno in alunos %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ aluno.nome_completo }}</td>
+                <td>{{ aluno.numero_mecanografico }}</td>
+                <td>{{ aluno.get_genero_display }}</td>
+                <td>
+                  <a href="{% url 'core:aluno_detalhes' aluno.id %}" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+                      <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                      <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                    </svg>
+                  </a>
+                  <button class="btn btn-sm btn-warning" 
+                  onclick='abrirModalEdicao({
+                  "id": "{{ aluno.id }}",
+                  "nome_completo": "{{ aluno.nome_completo|escapejs }}",
+                  "bi": "{{ aluno.bi }}",
+                  "genero": "{{ aluno.genero }}",
+                  "classe_id": "{{ aluno.classe.id }}",
+                  "turma_id": "{{ aluno.turma.id }}"
+                  })' data-bs-toggle="modal" data-bs-target="#editModal">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill text-light" viewBox="0 0 16 16">
+                  <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
+                  </svg>
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+    <!-- Modal Gerar Ata -->
+    <div class="modal fade" id="gerarAtaModal" tabindex="-1" aria-labelledby="gerarAtaModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="post" action="{% url 'documentos:gerar_ata_prova' %}" target="_blank">
+            {% csrf_token %}
+            <div class="modal-header">
+              <h5 class="modal-title" id="gerarAtaModalLabel">Gerar Ata de Prova</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="turma" class="form-label">Turma</label>
+                <select name="turma_id" id="turma" class="form-select" required>
+                  <option value="">-- Selecione a Turma --</option>
+                  {% for turma in turmas %}
+                  <option value="{{ turma.id }}">{{ turma.nome }} - {{ turma.classe.numero }} ª Classe - {{ turma.curso.nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="epoca" class="form-label">Época</label>
+                <select name="epoca" id="epoca" class="form-select" required>
+                  <option value="">-- Selecione a época --</option>
+                  <option value="1º Trimestre">1º Trimestre</option>
+                  <option value="2º Trimestre">2º Trimestre</option>
+                  <option value="3º Trimestre">3º Trimestre</option>
+                  <option value="Exame">Exame</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="professor" class="form-label">Disciplina</label>
+                <select name="disciplina" id="disciplina" class="form-select" required>
+                  <option value="">-- Selecione a Disciplina --</option>
+                  {% for disciplina in disciplinas %}
+                  <option value="{{ disciplina.nome }}">{{ disciplina.nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="professor" class="form-label">Professor Responsável</label>
+                <select name="professor" id="professor" class="form-select" required>
+                  <option value="">-- Selecione o Professor --</option>
+                  {% for prof in professores %}
+                  <option value="{{ prof.nome }}">{{ prof.nome }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Gerar Ata</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Modal de Edição de Aluno -->
+     <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <form method="POST" action="{% url 'core:editar_aluno' 0 %}" id="formEdit" class="modal-content">
+          {% csrf_token %}
+          
+          <!-- Header com gradiente -->
+          <div class="modal-header bg-gradient-primary text-white">
+            <div class="d-flex align-items-center w-100">
+              <div class="modal-icon me-3">
+                <i class="fas fa-user-graduate fa-2x"></i>
+              </div>
+              <div>
+                <h5 class="modal-title fw-bold mb-0" id="editModalLabel">EDITAR ALUNO</h5>
+                <p class="mb-0 small opacity-75">Edite os dados do aluno</p>
+              </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          </div>
+          
+          <!-- Body com seções organizadas -->
+          <div class="modal-body p-4">
+            <!-- Campo oculto para o ID do aluno -->
+            <input type="hidden" id="editAlunoId" name="aluno_id">
+            
+            <!-- Seção 1: Dados Pessoais -->
+            <div class="mb-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="section-icon bg-primary bg-opacity-10 p-2 rounded me-2">
+                  <i class="fas fa-user text-primary"></i>
+                </div>
+                <h6 class="mb-0 fw-bold text-primary">DADOS PESSOAIS</h6>
+              </div>
+              
+              <div class="row g-3">
+                <!-- Nome Completo -->
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-signature me-1 text-muted"></i>
+                    Nome Completo
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user text-muted"></i>
+                    </span>
+                    <input type="text" id="editNome" name="nome_completo" class="form-control" placeholder="Digite o nome completo" required>
+                  </div>
+                </div>
+                
+                <!-- BI e Gênero -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-id-card me-1 text-muted"></i>
+                    BI / Nº Documento
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-id-card text-muted"></i>
+                    </span>
+                    <input type="text" id="editBI" name="bi" class="form-control" placeholder="Ex: 123456789LA123" maxlength="14">
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-venus-mars me-1 text-muted"></i>
+                    Gênero
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user text-muted"></i>
+                    </span>
+                    <select id="editGenero" name="genero" class="form-select" required>
+                      <option value="" disabled>Selecione o gênero</option>
+                      <option value="M">Masculino</option>
+                      <option value="F">Feminino</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Naturalidade -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-map-marker-alt me-1 text-muted"></i>
+                    Naturalidade
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-globe-africa text-muted"></i>
+                    </span>
+                    <input type="text" id="editNaturalidade" name="naturalidade" class="form-control" placeholder="Ex: Luanda, Benguela, Huíla...">
+                  </div>
+                </div>
+                
+                <!-- Data de Nascimento -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-birthday-cake me-1 text-muted"></i>
+                    Data de Nascimento
+                  </label>
+                  <div class="row g-2">
+                    <div class="col-4">
+                      <div class="input-group">
+                        <span class="input-group-text bg-light">Dia</span>
+                        <select id="editDiaNasc" name="dia_nasc" class="form-select">
+                          <option value="">DD</option>
+                          {% for dia in "1"|rjust:"31" %}
+                            <option value="{{ forloop.counter }}">{{ forloop.counter|stringformat:"02d" }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="input-group">
+                        <span class="input-group-text bg-light">Mês</span>
+                        <select id="editMesNasc" name="mes_nasc" class="form-select">
+                          <option value="">MM</option>
+                          <option value="Janeiro">Janeiro</option>
+                          <option value="Fevereiro">Fevereiro</option>
+                          <option value="Março">Março</option>
+                          <option value="Abril">Abril</option>
+                          <option value="Maio">Maio</option>
+                          <option value="Junho">Junho</option>
+                          <option value="Julho">Julho</option>
+                          <option value="Agosto">Agosto</option>
+                          <option value="Setembro">Setembro</option>
+                          <option value="Outubro">Outubro</option>
+                          <option value="Novembro">Novembro</option>
+                          <option value="Dezembro">Dezembro</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="col-4">
+                      <div class="input-group">
+                        <span class="input-group-text bg-light">Ano</span>
+                        <input type="number" id="editAnoNasc" name="ano_nasc" class="form-control" placeholder="AAAA" min="1900" max="{% now 'Y' %}">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Nomes dos Pais -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-male me-1 text-muted"></i>
+                    Nome do Pai
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user-tie text-muted"></i>
+                    </span>
+                    <input type="text" id="editNomePai" name="nome_pai" class="form-control" placeholder="Nome completo do pai">
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-female me-1 text-muted"></i>
+                    Nome da Mãe
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user-tie text-muted"></i>
+                    </span>
+                    <input type="text" id="editNomeMae" name="nome_mae" class="form-control" placeholder="Nome completo da mãe">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Divisor -->
+            <hr class="my-4">
+            
+            <!-- Seção 2: Informações Acadêmicas -->
+            <div class="mb-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="section-icon bg-success bg-opacity-10 p-2 rounded me-2">
+                  <i class="fas fa-graduation-cap text-success"></i>
+                </div>
+                <h6 class="mb-0 fw-bold text-success">INFORMAÇÕES ACADÊMICAS</h6>
+              </div>
+              
+              <div class="row g-3">
+                <!-- Classe e Turma -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-chalkboard-teacher me-1 text-muted"></i>
+                    Classe
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-layer-group text-muted"></i>
+                    </span>
+                    <select id="editClasse" name="classe" class="form-select" required>
+                      <option value="" disabled selected>Selecione a classe</option>
+                      {% for classe in classes %}
+                        <option value="{{ classe.id }}">{{ classe.numero }}ª Classe</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-users me-1 text-muted"></i>
+                    Turma
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-user-friends text-muted"></i>
+                    </span>
+                    <select id="editTurma" name="turma" class="form-select" required disabled>
+                      <option value="" disabled selected>Primeiro selecione a classe</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <!-- Curso -->
+                <div class="col-md-12">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-book me-1 text-muted"></i>
+                    Curso
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-book-open text-muted"></i>
+                    </span>
+                    <input type="text" id="editCursoNome" class="form-control" placeholder="Selecione a turma para ver o curso" readonly style="cursor: not-allowed; background-color: #f8f9fa;">
+                    <input type="hidden" id="editCursoInfo" name="curso">
+                  </div>
+                </div>
+                
+                <!-- Sala e Turno -->
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-door-open me-1 text-muted"></i>
+                    Sala
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-school text-muted"></i>
+                    </span>
+                    <input type="text" id="editSalaNome" class="form-control" placeholder="Sala automática" readonly style="background-color: #f8f9fa;">
+                    <input type="hidden" id="editSalaInfo" name="sala">
+                  </div>
+                </div>
+                
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">
+                    <i class="fas fa-clock me-1 text-muted"></i>
+                    Turno
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-sun text-muted"></i>
+                    </span>
+                    <input type="text" id="editTurnoNome" class="form-control" placeholder="Turno automático" readonly style="background-color: #f8f9fa;">
+                    <input type="hidden" id="editTurnoInfo" name="turno">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Footer com botões destacados -->
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+              <i class="fas fa-times me-2"></i>
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary px-4" id="editSubmitBtn">
+              <i class="fas fa-save me-2"></i>
+              Salvar Alterações
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+      <script id="turmas-json" type="application/json">
+        {{ turmas_json|safe }}
+      </script>
+  </div>
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() { 
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+    // Dados das turmas para preenchimento automático
+    const turmasData = JSON.parse(document.getElementById('turmas-json').textContent);
+    
+    // Elementos do formulário de edição
+    const editSelClasse = document.getElementById('editClasse');
+    const editSelTurma = document.getElementById('editTurma');
+    const editCursoInfo = document.getElementById('editCursoInfo');
+    const editCursoNome = document.getElementById('editCursoNome');
+    const editSalaInfo = document.getElementById('editSalaInfo');
+    const editSalaNome = document.getElementById('editSalaNome');
+    const editTurnoInfo = document.getElementById('editTurnoInfo');
+    const editTurnoNome = document.getElementById('editTurnoNome');
+    
+    // Evento de mudança da classe no modal de edição
+    editSelClasse.addEventListener('change', function() {
+      const classeId = parseInt(this.value);
+      editSelTurma.innerHTML = '<option value="" disabled selected>Selecione a turma</option>';
+      editSelTurma.disabled = true;
+      
+      // Limpar campos relacionados
+      editCursoInfo.value = editCursoNome.value = '';
+      editSalaInfo.value = editSalaNome.value = '';
+      editTurnoInfo.value = editTurnoNome.value = '';
+      
+      const turmasFiltradas = turmasData.filter(t => t.classe === classeId);
+      if (turmasFiltradas.length) {
+        editSelTurma.disabled = false;
+        turmasFiltradas.forEach(t => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.text = t.nome;
+          editSelTurma.appendChild(opt);
+        });
+      }
+    });
+    
+    // Evento de mudança da turma no modal de edição
+    editSelTurma.addEventListener('change', function() {
+      const turmaId = parseInt(this.value);
+      const turma = turmasData.find(t => t.id === turmaId);
+      
+      if (turma) {
+        editCursoInfo.value = turma.curso_id;
+        editCursoNome.value = turma.curso_nome;
+        
+        editSalaInfo.value = turma.sala_id || '';
+        editSalaNome.value = turma.sala_nome;
+        
+        editTurnoInfo.value = turma.turno;
+        editTurnoNome.value = turma.turno.charAt(0).toUpperCase() + turma.turno.slice(1);
+      }
+    });
+    
+    // Função para preencher o modal com dados do aluno
+    function abrirModalEdicao(aluno) {
+      // Preencher ID
+      document.getElementById('editAlunoId').value = aluno.id;
+      
+      // Preencher dados pessoais
+      document.getElementById('editNome').value = aluno.nome_completo;
+      document.getElementById('editBI').value = aluno.bi || '';
+      document.getElementById('editGenero').value = aluno.genero;
+      document.getElementById('editNaturalidade').value = aluno.naturalidade || '';
+      
+      // Preencher data de nascimento
+      if (aluno.data_nascimento) { 
+        const dataParts = aluno.data_nascimento.split('-');
+        if (dataParts.length === 3) {
+          document.getElementById('editAnoNasc').value = dataParts[0];
+          document.getElementById('editMesNasc').value = dataParts[1];
+          document.getElementById('editDiaNasc').value = parseInt(dataParts[2]);
+        }
+      }
+      
+      // Preencher nomes dos pais
+      document.getElementById('editNomePai').value = aluno.nome_pai || '';
+      document.getElementById('editNomeMae').value = aluno.nome_mae || '';
+      
+      // Preencher classe e turma
+      if (aluno.classe_id) {
+        editSelClasse.value = aluno.classe_id;
+        
+        // Disparar evento change para carregar as turmas
+        const changeEvent = new Event('change');
+        editSelClasse.dispatchEvent(changeEvent);
+        
+        // Aguardar um pouco para as turmas serem carregadas e então selecionar a turma
+        setTimeout(() => {
+          if (aluno.turma_id) {
+            editSelTurma.value = aluno.turma_id;
+            editSelTurma.dispatchEvent(new Event('change'));
+          }
+        }, 300);
+      }
+      
+      // Atualizar action do formulário com o ID do aluno
+      document.getElementById('formEdit').action = `/alunos/editar/${aluno.id}/`;
+    }
+    
+    // Script para melhorar a experiência do usuário
+    document.addEventListener('DOMContentLoaded', function() {
+      const submitBtn = document.getElementById('editSubmitBtn');
+      const form = document.getElementById('formEdit');
+      
+      if (submitBtn && form) {
+        // Prevenir múltiplos cliques
+        submitBtn.addEventListener('click', function(e) {
+          if (form.checkValidity()) {
+            this.classList.add('btn-loading');
+            this.disabled = true;
+            form.submit();
+          } else {
+            // Scroll para o primeiro campo inválido
+            const invalidField = form.querySelector(':invalid');
+            if (invalidField) {
+              invalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              invalidField.focus();
+            }
+          }
+        });
+      }
+      
+      // Placeholders dinâmicos 
+      const nomeInput = document.querySelector('#editNome');
+      const biInput = document.querySelector('#editBI');
+      
+      if (nomeInput) {
+        nomeInput.addEventListener('focus', function() {
+          this.setAttribute('placeholder', 'Ex: João Carlos da Silva');
+        });
+      }
+      
+      if (biInput) {
+        biInput.addEventListener('focus', function() {
+          this.setAttribute('placeholder', 'Ex: 123456789LA123');
+        });
+      }
+      
+      // Máscara para ano de nascimento
+      const anoInput = document.querySelector('#editAnoNasc');
+      if (anoInput) {
+        const currentYear = new Date().getFullYear();
+        anoInput.setAttribute('max', currentYear);
+      }
+    });
+  </script>
+</body>
+</html>

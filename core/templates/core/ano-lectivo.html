@@ -1,0 +1,421 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestão de Ano Lectivo - SIGEsc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Ícones -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- DataTables -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+  
+  <!-- Favicon -->
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  
+  <style>
+
+    /* Card Container */
+    .content-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 30px;
+      padding: 30px;
+      box-shadow: var(--card-shadow);
+      animation: fadeInUp 0.5s ease;
+    }
+
+    /* Formulário Moderno */
+    .form-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: var(--dark-color);
+      margin-bottom: 8px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-control, .form-select {
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 12px 15px;
+      font-size: 15px;
+      transition: var(--transition);
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+    }
+
+    .btn {
+      padding: 12px 25px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: var(--transition);
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+    }
+
+    .btn-warning {
+      background: linear-gradient(135deg, #f8961e 0%, #f3722c 100%);
+      border: none;
+      color: white !important;
+      box-shadow: 0 5px 15px rgba(248, 150, 30, 0.3);
+    }
+
+    /* Tabela Moderna */
+    .table-responsive {
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .table {
+      margin-bottom: 0;
+    }
+
+    .table thead th {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 15px;
+      border: none;
+    }
+
+    .table tbody td {
+      padding: 15px;
+      vertical-align: middle;
+      color: #555;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(102, 126, 234, 0.05);
+    }
+
+    .badge {
+      padding: 8px 15px;
+      border-radius: 30px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .badge.bg-success {
+      background: linear-gradient(135deg, #4cc9f0 0%, #4895ef 100%) !important;
+    }
+
+    .badge.bg-secondary {
+      background: linear-gradient(135deg, #adb5bd 0%, #6c757d 100%) !important;
+    }
+
+    /* Animações */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .sidebar{
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-graduation-cap"></i>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <i class="fas fa-user-circle fa-4x"></i>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    
+    <a href="{% url 'core:dashboard' %}" class="active">
+      <i class="fas fa-home me-2"></i> Dashboard
+    </a>
+    <a href="{% url 'core:usuarios' %}">
+      <i class="fas fa-users me-2"></i> Usuários
+    </a>
+    <a href="{% url 'core:docentes' %}">
+      <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+    </a>
+    <a href="{% url 'core:cadastrar_funcionario' %}">
+      <i class="fas fa-user-tie me-2"></i> Funcionários
+    </a>
+    <a href="{% url 'core:alunos_lista' %}">
+      <i class="fas fa-user-graduate me-2"></i> Alunos
+    </a>
+    <a href="{% url 'core:turmas_e_salas' %}">
+      <i class="fas fa-school me-2"></i> Turmas
+    </a>
+    <a href="{% url 'core:classes' %}">
+      <i class="fas fa-layer-group me-2"></i> Classes
+    </a>
+    <a href="{% url 'core:cursos' %}">
+      <i class="fas fa-book me-2"></i> Cursos
+    </a>
+    <a href="{% url 'core:disciplinas' %}">
+      <i class="fas fa-book-open me-2"></i> Disciplinas
+    </a>
+    <a href="{% url 'core:matriculas' %}">
+      <i class="fas fa-clipboard-list me-2"></i> Matrículas
+    </a>
+    <a href="{% url 'core:pautas' %}">
+      <i class="fas fa-chart-bar me-2"></i> Pautas
+    </a>
+    <a href="{% url 'core:coordenacoes' %}">
+      <i class="fas fa-user-cog me-2"></i> Coordenações
+    </a>
+    <a href="{% url 'financa:financas' %}">
+      <i class="fas fa-wallet me-2"></i> Finanças
+    </a>
+    <a href="{% url 'financa:relatorios' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <!-- Título da Página -->
+       <br><br>
+      <div class="page-title">
+        <h5><i class="fas fa-calendar-alt me-2"></i> Gestão de Ano Lectivo</h5>
+        <span class="badge bg-success ms-3">{{ anos|length }} registros</span>
+      </div>
+
+      <!-- Card Principal -->
+      <div class="content-card">
+        <!-- Formulário de Cadastro/Edição -->
+        <div class="form-card mb-4">
+          <h5 class="mb-4" style="color: var(--primary-color); font-weight: 600;">
+           
+            <span id="formTitle">Novo Ano Lectivo</span>
+          </h5>
+          
+          <form method="POST" class="row g-4">
+            {% csrf_token %}
+            <input type="hidden" name="id" id="ano_id">
+
+            <div class="col-md-6">
+              <label for="ano" class="form-label">
+                <i class="fas fa-calendar me-2"></i>Ano Lectivo
+              </label>
+              <input type="text" class="form-control" name="ano" id="ano" 
+                     placeholder="Ex: 2024" required>
+            </div>
+
+            <div class="col-md-6" id="estado_div" style="display: none;">
+              <label for="estado" class="form-label">
+                <i class="fas fa-toggle-on me-2"></i>Estado
+              </label>
+              <select class="form-select" name="estado" id="estado">
+                <option value="Aberto">🔵 Aberto</option>
+                <option value="Fechado">⚪ Fechado</option>
+              </select>
+            </div>
+ 
+            <div class="col-12">
+              <hr class="my-3">
+              <button type="submit" class="btn btn-primary me-2">
+                <i class="fas fa-save me-2"></i>Salvar
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="limparForm()">
+                <i class="fas fa-eraser me-2"></i>Limpar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Lista de Anos Lectivos -->
+        <div class="table-responsive" style="overflow-x: auto;">
+          <table class="table table-hover" id="anosTable">
+            <thead>
+              <tr>
+                <th><i class="fas fa-hashtag me-2"></i>ID</th>
+                <th><i class="fas fa-calendar me-2"></i>Ano</th>
+                <th><i class="fas fa-circle me-2"></i>Estado</th>
+                <th><i class="fas fa-cog me-2"></i>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ano in anos %}
+              <tr>
+                <td><span class="badge bg-dark">{{ ano.id }}</span></td>
+                <td><strong>{{ ano.ano }}</strong></td>
+                <td>
+                  {% if ano.estado == "Aberto" %}
+                    <span class="badge bg-success">
+                      <i class="fas fa-lock-open me-1"></i>Aberto
+                    </span>
+                  {% else %}
+                    <span class="badge bg-secondary">
+                      <i class="fas fa-lock me-1"></i>Fechado
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <button class="btn btn-warning btn-sm me-2" 
+                          onclick="editarAno('{{ ano.id }}','{{ ano.ano }}','{{ ano.estado }}')"
+                          title="Editar">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4" class="text-center py-5">
+                  <i class="fas fa-calendar-times fa-3x mb-3" style="color: #ccc;"></i>
+                  <p class="text-muted">Nenhum ano lectivo cadastrado</p>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  
+  <script>
+    // Inicialização do DataTable
+    $(document).ready(function() {
+      $('#anosTable').DataTable({
+        language: {
+          url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+        },
+        pageLength: 10,
+        order: [[0, 'desc']],
+        responsive: true
+      });
+    });
+
+    // Funções do formulário
+    function editarAno(id, ano, estado) {
+      document.getElementById("ano_id").value = id;
+      document.getElementById("ano").value = ano;
+      document.getElementById("estado_div").style.display = "block";
+      document.getElementById("estado").value = estado;
+      
+      // Atualizar título do formulário
+      document.getElementById("formTitle").innerHTML = '<i class="fas fa-edit me-2"></i>Editar Ano Lectivo';
+      
+      // Scroll suave até o formulário
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+
+    function limparForm() {
+      document.getElementById("ano_id").value = "";
+      document.getElementById("ano").value = "";
+      document.getElementById("estado_div").style.display = "none";
+      
+      // Resetar título do formulário
+      document.getElementById("formTitle").innerHTML = '<i class="fas fa-edit me-2"></i>Novo Ano Lectivo';
+      
+      // Focar no campo ano
+      document.getElementById("ano").focus();
+    }
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+      document.getElementById("mainContent").classList.toggle("expanded");
+    }
+
+    // Fechar sidebar ao clicar fora em dispositivos móveis
+    document.addEventListener('click', function(event) {
+      const sidebar = document.getElementById('sidebar');
+      const burger = document.querySelector('.burger');
+      
+      if (window.innerWidth <= 768) {
+        if (!sidebar.contains(event.target) && !burger.contains(event.target)) {
+          sidebar.classList.remove('active');
+          document.getElementById('mainContent').classList.remove('expanded');
+        }
+      }
+    });
+
+    // Auto-hide da mensagem de sucesso após 3 segundos
+    setTimeout(function() {
+      const alerts = document.querySelectorAll('.alert');
+      alerts.forEach(alert => {
+        alert.style.transition = 'opacity 0.5s ease';
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 500);
+      });
+    }, 3000);
+     function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+    }
+  </script>
+</body>
+</html>

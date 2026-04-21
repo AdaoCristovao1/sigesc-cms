@@ -1,0 +1,607 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatórios Financeiros</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+  <style>
+    .sidebar{ overflow-y: auto; }
+    .card-total { border-left: 4px solid; }
+    .card-receitas { border-left-color: #28a745; }
+    .card-despesas { border-left-color: #dc3545; }
+    .card-saldo { border-left-color: #17a2b8; }
+    .card-pendente { border-left-color: #ffc107; }
+    .valor-positivo { color: #28a745; font-weight: bold; }
+    .valor-negativo { color: #dc3545; font-weight: bold; }
+    .valor-info { color: #17a2b8; font-weight: bold; }
+    .progress-bar-receitas { background-color: #28a745; }
+    .progress-bar-despesas { background-color: #dc3545; }
+    .status-badge { font-size: 0.75rem; }
+    .categoria-badge { font-size: 0.7rem; }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+   <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+      </svg>
+      <div><strong>Director Geral</strong></div>
+      <small>{{usuario.username}}</small>
+    </div>
+    <a href="{% url 'core:dashboard' %}">
+        <i class="fas fa-home me-2"></i> Dashboard
+      </a>
+      <a href="{% url 'core:usuarios' %}">
+        <i class="fas fa-users me-2"></i> Usuários
+      </a>
+      <a href="{% url 'core:docentes' %}">
+        <i class="fas fa-chalkboard-teacher me-2"></i> Docentes
+      </a>
+      <a href="{% url 'core:cadastrar_funcionario' %}">
+        <i class="fas fa-user-tie me-2"></i> Funcionários
+      </a>
+      <a href="{% url 'core:alunos_lista' %}">
+        <i class="fas fa-user-graduate me-2"></i> Alunos
+      </a>
+      <a href="{% url 'core:turmas_e_salas' %}">
+        <i class="fas fa-school me-2"></i> Turmas
+      </a>
+      <a href="{% url 'core:classes' %}">
+        <i class="fas fa-layer-group me-2"></i> Classes
+      </a>
+      <a href="{% url 'core:cursos' %}">
+        <i class="fas fa-book me-2"></i> Cursos
+      </a>
+      <a href="{% url 'core:disciplinas' %}">
+        <i class="fas fa-book-open me-2"></i> Disciplinas
+      </a>
+      <a href="{% url 'core:matriculas' %}">
+        <i class="fas fa-clipboard-list me-2"></i> Matrículas
+      </a>
+      <a href="{% url 'core:pautas' %}">
+        <i class="fas fa-chart-bar me-2"></i> Pautas
+      </a>
+      <a href="{% url 'core:coordenacoes' %}">
+        <i class="fas fa-user-cog me-2"></i> Coordenações
+      </a>
+      <a href="{% url 'financa:financas' %}">
+        <i class="fas fa-wallet me-2"></i> Finanças
+      </a>
+      <a href="{% url 'financa:relatorios' %}" class="active">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Financeiro
+      </a>
+      <a href="{% url 'pedagogico:relatorio_pedagogico' %}">
+        <i class="fas fa-chart-pie me-2"></i> Relatório Pedagógico
+      </a>
+      <br><br>
+  </div>
+
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <i class="bi bi-power"></i> Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+      <h2 class="page-title d-flex align-items-center mb-4">
+        <i class="bi bi-graph-up-arrow me-3"></i>
+        Relatório Financeiro Completo
+      </h2>
+      
+      <!-- Selecionar ano letivo -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <form method="get" class="row g-3 align-items-center">
+            <div class="col-md-4">
+              <label for="ano_lectivo" class="form-label form-">Ano Letivo:</label>
+              <select name="ano_lectivo" id="ano_lectivo" class="form-select">
+                {% for ano in ano_lectivos_disponiveis %}
+                  <option value="{{ ano }}" {% if ano == ano_lectivo %}selected{% endif %}>{{ ano }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary mt-4">
+                <i class="bi bi-funnel"></i> Filtrar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Cards de Resumo -->
+      <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+          <div class="card card-total card-receitas shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2 text-muted">
+                <i class="bi bi-cash-stack text-success"></i> Total Receitas
+              </h6>
+              <h3 class="card-title valor-positivo">Kz {{ total_receitas|floatformat:2 }}</h3>
+              <p class="card-text small text-muted">
+                {{ total_pagamentos }} pagamentos registrados
+              </p>
+              <div class="progress" style="height: 5px;">
+                <div class="progress-bar progress-bar-receitas" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+          <div class="card card-total card-despesas shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2 text-muted">
+                <i class="bi bi-graph-down text-danger"></i> Total Despesas
+              </h6>
+              <h3 class="card-title valor-negativo">Kz {{ total_despesas|floatformat:2 }}</h3>
+              <p class="card-text small text-muted">
+                {{ total_despesas_pagas|floatformat:2 }} pagas / {{ total_despesas_pendentes|floatformat:2 }} pendentes
+              </p>
+              <div class="progress" style="height: 5px;">
+                <div class="progress-bar progress-bar-despesas" 
+                     style="width: {% widthratio total_despesas_pagas total_despesas 100 %}%">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+          <div class="card card-total card-pendente shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2 text-muted">
+                <i class="bi bi-clock text-warning"></i> Despesas Pendentes
+              </h6>
+              <h4 class="card-title text-warning">Kz {{ total_despesas_pendentes|floatformat:2 }}</h4>
+              <p class="card-text small text-muted">
+                Aguardando pagamento
+              </p>
+              <div class="progress" style="height: 5px;">
+                <div class="progress-bar bg-warning" 
+                     style="width: {% widthratio total_despesas_pendentes total_despesas 100 %}%">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+          <div class="card card-total card-saldo shadow-sm h-100">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2 text-muted">
+                <i class="bi bi-wallet2 text-info"></i> Saldo em Caixa
+              </h6>
+              <h3 class="card-title valor-info">Kz {{ saldo_caixa|floatformat:2 }}</h3>
+              <p class="card-text small text-muted">
+                Receitas - Despesas Pagas
+              </p>
+              <div class="progress" style="height: 5px;">
+                <div class="progress-bar bg-info" 
+                     style="width: {% widthratio saldo_caixa total_receitas 100 %}%">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estatísticas Adicionais -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title">Média Mensal Receitas</h6>
+              <h4 class="valor-positivo">Kz {{ media_receita_mensal|floatformat:2 }}</h4>
+              <small class="text-muted">Média por mês</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title">Média Mensal Despesas</h6>
+              <h4 class="valor-negativo">Kz {{ media_despesa_mensal|floatformat:2 }}</h4>
+              <small class="text-muted">Média por mês</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title">% Despesas sobre Receitas</h6>
+              <h4 class="{% if percentual_despesas > 100 %}valor-negativo{% else %}valor-info{% endif %}">
+                {{ percentual_despesas|floatformat:1 }}%
+              </h4>
+              <small class="text-muted">Relação despesas/receitas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="row mb-4">
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-bar-chart text-primary"></i>
+                Receitas & Despesas Mensais
+              </h5>
+            </div>
+            <div class="card-body">
+              <canvas id="graficoComparativoMensal" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="bi bi-pie-chart text-success"></i>
+                Despesas por Categoria
+              </h5>
+            </div>
+            <div class="card-body">
+              <canvas id="graficoDespesasCategoria" height="200"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela Despesas por Categoria -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-list-check text-danger"></i>
+            Despesas por Categoria
+          </h5>
+          <span class="badge bg-secondary">{{ despesas_por_categoria.count }} categorias</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-dark">Categoria</th>
+                  <th class="text-dark">Quantidade</th>
+                  <th class="text-dark">Total Geral</th>
+                  <th class="text-dark">Total Pago</th>
+                  <th class="text-dark">Total Pendente</th>
+                  <th class="text-dark">% Pago</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in despesas_por_categoria %}
+                <tr>
+                  <td>
+                    {% for codigo, nome in categoria_choices %}
+                      {% if codigo == item.categoria %}
+                        <span class="badge bg-info categoria-badge">{{ nome }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                  <td>{{ item.quantidade }}</td>
+                  <td class="valor-negativo">Kz {{ item.total|floatformat:2 }}</td>
+                  <td class="text-success">Kz {{ item.total_pago|default:0|floatformat:2 }}</td>
+                  <td class="text-warning">Kz {{ item.total_pendente|default:0|floatformat:2 }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-success" 
+                             style="width: {% widthratio item.total_pago|default:0 item.total 100 %}%">
+                        </div>
+                      </div>
+                      <small class="ms-2">
+                        {% widthratio item.total_pago|default:0 item.total 100 %}%
+                      </small>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <i class="bi bi-receipt text-muted" style="font-size: 2rem;"></i>
+                    <p class="mt-2 text-muted">Nenhuma despesa registrada</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela Últimas Despesas -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-clock-history text-warning"></i>
+            Últimas Despesas Registradas
+          </h5>
+          <a href="{% url 'financa:despesas' %}" class="btn btn-sm btn-outline-primary">
+            Ver todas <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-dark">Data</th>
+                  <th class="text-dark">Descrição</th>
+                  <th class="text-dark">Categoria</th>
+                  <th class="text-dark">Valor</th>
+                  <th class="text-dark">Status</th>
+                  <th class="text-dark">Responsável</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for despesa in ultimas_despesas %}
+                <tr>
+                  <td>{{ despesa.data_despesa|date:"d/m/Y" }}</td>
+                  <td>
+                    <strong>{{ despesa.descricao|truncatechars:40 }}</strong>
+                    {% if despesa.observacoes %}
+                    <br><small class="text-muted">{{ despesa.observacoes|truncatechars:30 }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="badge bg-info categoria-badge">
+                      {{ despesa.get_categoria_display }}
+                    </span>
+                  </td>
+                  <td class="valor-negativo">Kz {{ despesa.valor|floatformat:2 }}</td>
+                  <td>
+                    {% if despesa.status == 'pago' %}
+                      <span class="badge bg-success status-badge">Pago</span>
+                    {% else %}
+                      <span class="badge bg-warning status-badge">Pendente</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <small>{{ despesa.registro_por }}</small>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="text-center py-4">
+                    <i class="bi bi-receipt text-muted" style="font-size: 2rem;"></i>
+                    <p class="mt-2 text-muted">Nenhuma despesa registrada</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela Receitas por Serviço (mantida do original) -->
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-cash-stack text-success"></i>
+            Receitas por Tipo de Serviço - {{ ano_lectivo }}
+          </h5>
+          <span class="badge bg-success">{{ total_pagamentos }} pagamentos</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive" style="overflow-x: auto;">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="text-dark">Serviço</th>
+                  <th class="text-dark">Quantidade</th>
+                  <th class="text-dark">Total (Kzs)</th>
+                  <th class="text-dark">% do Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in por_servico %}
+                <tr>
+                  <td>{{ item.tipoServico__nome|default:"Não informado" }}</td>
+                  <td>{{ item.quantidade }}</td>
+                  <td class="valor-positivo">Kz {{ item.total|floatformat:2 }}</td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <div class="progress flex-grow-1" style="height: 6px;">
+                        <div class="progress-bar bg-success" 
+                             style="width: {% widthratio item.total total_receitas 100 %}%">
+                        </div>
+                      </div>
+                      <small class="ms-2">
+                        {% widthratio item.total total_receitas 100 %}%
+                      </small>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-center py-4">
+                    <i class="bi bi-cash text-muted" style="font-size: 2rem;"></i>
+                    <p class="mt-2 text-muted">Nenhum pagamento registrado</p>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+              <tfoot class="table-light">
+                <tr>
+                  <th>TOTAL</th>
+                  <th>{{ total_pagamentos }}</th>
+                  <th class="valor-positivo">Kz {{ total_receitas|floatformat:2 }}</th>
+                  <th>100%</th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- Botão de Impressão -->
+      <div class="text-center mt-4 mb-5">
+        <a href="{% url 'documentos:relatorio_financeiro' %}?ano_lectivo={{ ano_lectivo }}" 
+           class="btn btn-lg btn-success" target="_blank">
+          <i class="bi bi-printer"></i> Imprimir Relatório Completo
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'js/chart.umd.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+
+    // Gráfico Comparativo Mensal
+    const ctxComparativo = document.getElementById('graficoComparativoMensal');
+    new Chart(ctxComparativo, {
+      type: 'bar',
+      data: {
+        labels: {{ meses_labels|safe }},
+        datasets: [
+          {
+            label: 'Receitas',
+            data: {{ receitas_mensais|safe }},
+            backgroundColor: 'rgba(40, 167, 69, 0.7)',
+            borderColor: 'rgba(40, 167, 69, 1)',
+            borderWidth: 1
+          },
+          {
+            label: 'Despesas',
+            data: {{ despesas_mensais|safe }},
+            backgroundColor: 'rgba(220, 53, 69, 0.7)',
+            borderColor: 'rgba(220, 53, 69, 1)',
+            borderWidth: 1
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return 'Kz ' + value.toLocaleString();
+              }
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                label += 'Kz ' + context.parsed.y.toLocaleString();
+                return label;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Gráfico Despesas por Categoria
+    const categorias = [
+      {% for item in despesas_por_categoria %}
+        {% for codigo, nome in categoria_choices %}
+          {% if codigo == item.categoria %}"{{ nome }}"{% endif %}
+        {% endfor %}{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    const valoresCategorias = [
+      {% for item in despesas_por_categoria %}
+        {{ item.total }}{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ];
+
+    const coresCategorias = [
+      '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+      '#9966FF', '#FF9F40', '#8AC926', '#1982C4',
+      '#6A4C93'
+    ];
+
+    const ctxCategorias = document.getElementById('graficoDespesasCategoria');
+    new Chart(ctxCategorias, {
+      type: 'pie',
+      data: {
+        labels: categorias,
+        datasets: [{
+          data: valoresCategorias,
+          backgroundColor: coresCategorias,
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              boxWidth: 12,
+              padding: 15
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                let value = context.parsed;
+                let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                let percentage = Math.round((value / total) * 100);
+                return label + ': Kz ' + value.toLocaleString() + ' (' + percentage + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Atualizar automaticamente o filtro de ano
+    document.getElementById('ano_lectivo').addEventListener('change', function() {
+      // Adiciona um pequeno feedback visual
+      this.classList.add('border-primary');
+      setTimeout(() => {
+        this.classList.remove('border-primary');
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
