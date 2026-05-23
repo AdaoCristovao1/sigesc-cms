@@ -156,8 +156,10 @@
 {% for turma, dados_turma in turmas_agrupadas.items %}
   <div class="page-break">
     <div class="header">
-      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 80px; height: auto;">
-      <h3>Complexo Escolar Veredas Encantadas</h3>
+       {% if escola.logotipo %}
+            <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+      {% endif %}
+      <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
       <h5>Pauta Final - Ano Letivo {{ ano_lectivo }}</h5>
       <p><small>Documento gerado em: {{ data|date:"d/m/Y" }}</small></p>
     </div>

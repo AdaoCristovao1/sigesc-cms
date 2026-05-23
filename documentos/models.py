@@ -1,6 +1,8 @@
 from django.db import models
+from escola.models import Escola
 
 class CartaoEstudante(models.Model):
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     aluno = models.OneToOneField('core.Usuario', on_delete=models.CASCADE, limit_choices_to={'perfil': 'aluno'})
     qr_code = models.ImageField(upload_to='qrcodes/', blank=True, null=True)
     emitido_em = models.DateField(auto_now_add=True)
@@ -9,6 +11,7 @@ class CartaoEstudante(models.Model):
         return f'Cartão - {self.aluno.username}'
 
 class Declaracao(models.Model):
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     aluno = models.ForeignKey('core.Usuario', on_delete=models.CASCADE, limit_choices_to={'perfil': 'aluno'})
     tipo = models.CharField(max_length=100) 
     numero = models.CharField(max_length=20, unique=True)
@@ -19,6 +22,7 @@ class Declaracao(models.Model):
         return f'{self.tipo} - {self.numero}'
 
 class Certificado(models.Model):
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     aluno = models.ForeignKey('core.Usuario', on_delete=models.CASCADE, limit_choices_to={'perfil': 'aluno'})
     curso = models.CharField(max_length=100)
     ano_conclusao = models.CharField(max_length=4)

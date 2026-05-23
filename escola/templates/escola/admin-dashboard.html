@@ -1,0 +1,703 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Administrativo | SIGESC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+    
+    .btn-outline-primary, .btn-outline-secondary, .btn-outline-success {
+      border-width: 2px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-primary:hover {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-secondary:hover {
+      background: linear-gradient(45deg, #6c757d, #495057);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-success:hover {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .badge {
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    
+    .card {
+      border-radius: 15px !important;
+    }
+    
+    .input-group-text {
+      border-radius: 10px 0 0 10px;
+    }
+    
+    .form-control {
+      border-radius: 0 10px 10px 0;
+    }
+    
+    .modal-content {
+      border-radius: 20px;
+    }
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --success-color: #4caf50;
+      --danger-color: #f44336;
+      --warning-color: #ff9800;
+      --info-color: #2196f3;
+      --dark-color: #2b2d42;
+      --light-color: #f8f9fa;
+      --sidebar-width: 280px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.active {
+      left: -280px;
+    }
+
+    .sidebar .logo {
+      padding: 25px 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .sidebar .user-info {
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar .user-info i {
+      font-size: 48px;
+      margin-bottom: 10px;
+      display: block;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin: 5px 10px;
+      border-radius: 10px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar a.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-weight: 500;
+    }
+
+    .sidebar a i {
+      width: 25px;
+      margin-right: 10px;
+      text-align: center;
+    }
+
+    .sidebar .sidebar-section {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .main-content.expanded {
+      margin-left: 0;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .topbar h5 {
+      margin: 0;
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    .burger {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--dark-color);
+      display: none;
+    }
+
+    /* Cards */
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      height: 100%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    /* Quick Actions */
+    .quick-action {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+      border: 2px solid transparent;
+    }
+
+    .quick-action:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      border-color: var(--primary-color);
+    }
+
+    /* Tables */
+    .table-custom {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .table-custom thead {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+    }
+
+    .table-custom th {
+      font-weight: 500;
+      padding: 12px 15px;
+    }
+
+    .table-custom td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+
+    .table-custom tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .badge-school {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .sidebar {
+        left: -280px;
+      }
+      .sidebar.active {
+        left: 0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .burger {
+        display: block;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      border-radius: 15px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-graduation-cap"></i> SIGESC
+    </div>
+    <div class="user-info">
+      <i class="fas fa-user-shield"></i>
+      <div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong></div>
+      <small>Administrador do Sistema</small>
+    </div>
+    
+    <div class="sidebar-section">PRINCIPAL</div>
+    
+    <a href="{% url 'escola:dashboard' %}" class="active">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+    <a href="{% url 'escola:escola_lista' %}">
+      <i class="fas fa-school"></i> Escolas
+    </a>
+    
+    <div class="sidebar-section">GESTÃO</div>
+    
+    <a href="{% url 'escola:form_funcionario' %}">
+      <i class="fas fa-users"></i> Funcionários
+    </a>
+    
+    <div class="sidebar-section">RELATÓRIOS</div>
+    
+    <a href="#">
+      <i class="fas fa-chart-bar"></i> Relatórios Gerais
+    </a>
+    <a href="#">
+      <i class="fas fa-file-export"></i> Exportar Dados
+    </a>
+    
+    <div class="sidebar-section">SISTEMA</div>
+    
+    <a href="{% url 'escola:configuracoes' %}">
+      <i class="fas fa-cog"></i> Configurações
+    </a>
+    <br><br>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid px-4 py-4">
+        <!-- Welcome Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+            <h2 class="page-title">
+                <i class="fas fa-tachometer-alt"></i>  Dashboard Administrativo
+            </h2>
+            </div>
+          </div>
+          <div class="welcome-banner p-4 fade-in">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h3 class="mb-2">
+                  <i class="fas fa-hand-sparkles me-2"></i> 
+                  Olá, {{ request.user.get_full_name|default:request.user.username }}!
+                </h3>
+                <p class="mb-1 opacity-75">
+                  Bem-vindo ao painel de administração geral do SIGESC
+                </p>
+                <p class="mb-0 opacity-75">
+                  <i class="fas fa-calendar-alt me-1"></i> 
+                  {% now "l, d \d\e F \d\e Y" %} | 
+                  <i class="fas fa-clock me-1"></i>
+                  {% now "H:i" %}
+                </p>
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="bg-white bg-opacity-25 rounded-3 p-3 d-inline-block">
+                  <small class="opacity-75">Ano Atual</small>
+                  <h4 class="mb-0">{{ ano_lectivo_atual|default:"2024" }}</h4>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards - Principais -->
+      <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+          <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="text-muted mb-1">Total de Escolas</p>
+                <h2 class="mb-0">{{ total_escolas|default:"0" }}</h2>
+                <small class="text-muted">cadastradas</small>
+              </div>
+              <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                <i class="fas fa-school"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="text-muted mb-1">Total de Alunos</p>
+                <h2 class="mb-0">{{ total_alunos|default:"0" }}</h2>
+                <small class="text-muted">em todas escolas</small>
+              </div>
+              <div class="stat-icon bg-success bg-opacity-10 text-success">
+                <i class="fas fa-user-graduate"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+          <div class="stat-card fade-in" style="animation-delay: 0.3s;">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="text-muted mb-1">Total de Funcionários</p>
+                <h2 class="mb-0">{{ total_funcionarios|default:"0" }}</h2>
+                <small class="text-muted">docentes: {{ total_docentes|default:"0" }}</small>
+              </div>
+              <div class="stat-icon bg-info bg-opacity-10 text-info">
+                <i class="fas fa-users"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Charts Section -->
+      <div class="row g-4 mb-4">
+        <div class="col-xl-8">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3">
+              <h6 class="mb-0">
+                <i class="fas fa-chart-bar me-2 text-primary"></i>
+                Alunos por Escola (Top 5)
+              </h6>
+            </div>
+            <div class="card-body">
+              <canvas id="schoolsChart" height="80"></canvas>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="row g-4 mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3">
+              <h6 class="mb-0">
+                <i class="fas fa-bolt me-2 text-warning"></i>
+                Ações Rápidas do Administrador
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3 col-6">
+                  <a href="{% url 'escola:escola_criar' %}" class="quick-action">
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-2">
+                      <i class="fas fa-plus-circle text-primary fs-4"></i>
+                    </div>
+                    <h6 class="mb-0">Nova Escola</h6>
+                    <small class="text-muted">Cadastrar escola</small>
+                  </a>
+                </div>
+                <div class="col-md-3 col-6"> 
+                  <a href="{% url 'escola:form_funcionario' %}" class="quick-action">
+                    <div class="bg-success bg-opacity-10 p-3 rounded-circle d-inline-block mb-2">
+                      <i class="fas fa-user-plus text-success fs-4"></i>
+                    </div>
+                    <h6 class="mb-0">Novo Funcionário</h6>
+                    <small class="text-muted">Cadastrar em escola</small>
+                  </a>
+                </div>
+                <div class="col-md-3 col-6">
+                  <a href="{% url 'escola:escola_lista' %}" class="quick-action">
+                    <div class="bg-info bg-opacity-10 p-3 rounded-circle d-inline-block mb-2">
+                      <i class="fas fa-list text-info fs-4"></i>
+                    </div>
+                    <h6 class="mb-0">Ver Escolas</h6>
+                    <small class="text-muted">Gerenciar escolas</small>
+                  </a>
+                </div>
+                
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas -->
+      <div class="row g-4 mt-2">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3">
+              <h6 class="mb-0">
+                <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                Alertas do Sistema
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                
+                <div class="col-md-4">
+                  <div class="d-flex align-items-center p-3 border rounded-3 bg-info bg-opacity-10">
+                    <i class="fas fa-school text-info fs-2 me-3"></i>
+                    <div>
+                      <strong>{{ total_escolas|default:"0" }}</strong>
+                      <p class="mb-0 text-muted">Escolas Ativas</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="d-flex align-items-center p-3 border rounded-3 bg-success bg-opacity-10">
+                    <i class="fas fa-check-circle text-success fs-2 me-3"></i>
+                    <div>
+                      <strong>Sistema</strong>
+                      <p class="mb-0 text-muted">Operacional</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+      document.getElementById("mainContent").classList.toggle("expanded");
+    }
+
+    function confirmarRemocao(nomeEscola, urlDelete) {
+      if (confirm(`Tem certeza que deseja remover a escola "${nomeEscola}"?\n\nEsta ação não pode ser desfeita e removerá todos os dados associados!`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = urlDelete;
+        
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = 'csrfmiddlewaretoken';
+        csrfToken.value = '{{ csrf_token }}';
+        
+        form.appendChild(csrfToken);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    // Gráfico de alunos por escola
+    const ctx1 = document.getElementById('schoolsChart').getContext('2d');
+    new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: {{ escolas_nomes|safe|default:"[]" }},
+        datasets: [{
+          label: 'Número de Alunos',
+          data: {{ escolas_alunos|safe|default:"[]" }},
+          backgroundColor: [
+            'rgba(67, 97, 238, 0.8)',
+            'rgba(76, 175, 80, 0.8)',
+            'rgba(255, 152, 0, 0.8)',
+            'rgba(33, 150, 243, 0.8)',
+            'rgba(156, 39, 176, 0.8)'
+          ],
+          borderColor: [
+            'rgba(67, 97, 238, 1)',
+            'rgba(76, 175, 80, 1)',
+            'rgba(255, 152, 0, 1)',
+            'rgba(33, 150, 243, 1)',
+            'rgba(156, 39, 176, 1)'
+          ],
+          borderWidth: 1,
+          borderRadius: 8,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 50
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            display: false
+          }
+        }
+      }
+    });
+
+    // Gráfico de distribuição por turno
+    const ctx2 = document.getElementById('turnChart').getContext('2d');
+    new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: ['Manhã', 'Tarde', 'Noite'],
+        datasets: [{
+          data: {{ dados_turnos|safe|default:"[0, 0, 0]" }},
+          backgroundColor: ['#4361ee', '#ff9800', '#78909c'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

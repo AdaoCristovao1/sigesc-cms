@@ -33,10 +33,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola"   
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Director Geral</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -105,18 +106,28 @@
 
     <div class="container mt-4">
       <!-- Emolumentos Section -->
-      <h3 class="page-title"><i class="fas fa-wallet me-2"></i> Lista de Emolumentos a Cobrar</h3>
-      <!-- Resumo da Configuração -->
-        <div class="alert alert-info mb-4">
-            <h6><i class="bi bi-info-circle"></i> Configuração Aplicada</h6>
-            <p class="mb-1"><strong>Valor de desconto por falta:</strong> Kz {{ desconto|floatformat:2 }}</p>
+      <h3 class="page-title"><i class="fas fa-wallet me-2"></i>Emolumentos a Cobrar - {{ escola.nome }}</h3>
+      <div class="alert alert-info mb-4">
+        <h6><i class="bi bi-info-circle"></i> Configuração Aplicada</h6>
+        {% if desconto %}
+            <p class="mb-1">
+                <strong>Valor de desconto por falta:</strong> 
+                Kz {{ desconto.valor_desconto|floatformat:2 }}
+            </p>
             <small>Este valor é descontado do salário para cada falta registrada no mês.</small>
-            <button class="btn btn-sm btn-warning" onclick="editValorFalta('{{ desconto.id }}', '{{ desconto.valor_desconto }}')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill text-light" viewBox="0 0 16 16">
-                <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
-              </svg><b> Alterar Valor</b>
+            <button class="btn btn-sm btn-warning" onclick="editValorFalta('{{ desconto.id }}', '{{ desconto.valor_desconto|stringformat:".2f"|cut:" " }}')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill text-light" viewBox="0 0 16 16">
+                    <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
+                </svg><b> Alterar Valor</b>
             </button>
-        </div>
+        {% else %}
+            <div class="alert alert-warning mb-0">
+                <i class="bi bi-exclamation-triangle"></i>
+                Nenhuma configuração de desconto encontrada. Clique em "Alterar Valor" para configurar.
+            </div>
+        {% endif %}
+    </div>
+
       <button class="btn btn-warning mb-3" data-bs-toggle="modal" data-bs-target="#addEmolumentoModal">Adicionar</button>
       <table class="table table-bordered table-hover">
         <thead class="table-primary">
@@ -272,7 +283,7 @@
             {% endfor %}
         </tbody>
       </table>
-
+      <br><br><br>
     </div>
   </div>
   
@@ -305,29 +316,30 @@
       </div>
     </div>
   </div>
-  <!-- editar falta valor -->
-  <div class="modal fade" id="editValorFaltaModal" tabindex="-1" aria-labelledby="editValorFaltaModalModalLabel" aria-hidden="true">
+  <div class="modal fade" id="editValorFaltaModal" tabindex="-1" aria-labelledby="editValorFaltaModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="editValorFaltaModalLabel">Alterar Valor a Aplicar por Falta</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <form method="post" action="{% url 'financa:editValorFalta' %}">
-          {% csrf_token %}
-          <input type="hidden" id="editValorFaltaId" name="id">
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="editValorFalta" class="form-label">Valor (Kzs)</label>
-              <input type="number" class="form-control" id="editValorFalta" name="valor" required>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editValorFaltaModalLabel">Alterar Valor a Aplicar por Falta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-          </div>
-        </form>
-      </div>
+            <form method="post" action="{% url 'financa:editValorFalta' %}">
+                {% csrf_token %}
+                <input type="hidden" id="editValorFaltaId" name="id">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="editValorFalta" class="form-label">Valor (Kzs)</label>
+                        <input type="text" class="form-control" id="editValorFalta" name="valor" required 
+                               oninput="this.value = this.value.replace(/[^0-9,]/g, '')">
+                        <small class="text-muted">Use vírgula para centavos (ex: 1000,50)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
     </div>
   </div>
   <!-- Edit Emolumento Modal -->
@@ -606,16 +618,31 @@
       var modal = new bootstrap.Modal(document.getElementById('editEmolumentoModal'));
       modal.show();
     }
-    // Emolumento functions
     function editValorFalta(id, valor) {
-      document.getElementById('editValorFaltaId').value = id;
-      if(valor){
-         document.getElementById('editValorFalta').value = valor.toString().replace(",", ".");
-      }
-      
-      var modal = new bootstrap.Modal(document.getElementById('editValorFaltaModal'));
-      modal.show();
+        console.log("editValorFalta chamado - ID:", id, "Valor:", valor);
+        
+        document.getElementById('editValorFaltaId').value = id;
+        
+        // Formatar o valor para exibição
+        if (valor && valor !== 'None') {
+            // Converter ponto para vírgula
+            var valorExibicao = valor.toString().replace('.', ',');
+            document.getElementById('editValorFalta').value = valorExibicao;
+        } else {
+            document.getElementById('editValorFalta').value = '';
+        }
+        
+        // Mostrar modal
+        var modalElement = document.getElementById('editValorFaltaModal');
+        var modal = new bootstrap.Modal(modalElement);
+        modal.show();
     }
+
+    // Debug: Verificar se o modal está sendo carregado
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Página carregada");
+        console.log("Elemento desconto:", document.querySelector('.alert-info'));
+    });
 
     // Multa functions
     function editMulta(id, emolumentoId, aplicarMulta, dataAplicacao, valorMulta) {

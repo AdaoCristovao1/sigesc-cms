@@ -76,12 +76,14 @@
     <div class="row align-items-center mb-4">
         <!-- Logo -->
         <div class="col-2 d-flex justify-content-start">
-        <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 90px; height: 90px;">
+        {% if escola.logotipo %}
+            <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+        {% endif %}
         </div>
 
-        <!-- Texto do cabeçalho -->
+        <!-- Texto do cabeçalho --> 
         <div class="col-6 d-flex flex-column justify-content-center">
-        <h6 class="mb-0"><strong>Complexo Escolar <br> Veredas Encantadas</strong></h6>
+        <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
         <h6 class="mt-1">Comprovativo de Matrícula</h6>
         </div>
 
@@ -124,18 +126,22 @@
     </div>
 
     <div class="rodape mt-3">
-        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small></p>
+        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small> <br>
+            {{ escola.provincia }} - {{ escola.municipio }} - {{ escola.endereco }} -Tel: {{ escola.contacto }}
+        </p>
     </div>
     <hr>
      <div class="row align-items-center mb-4">
         <!-- Logo -->
         <div class="col-2 d-flex justify-content-start">
-        <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 90px; height: 90px;">
+        {% if escola.logotipo %}
+            <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+        {% endif %}
         </div>
 
-        <!-- Texto do cabeçalho -->
+        <!-- Texto do cabeçalho --> 
         <div class="col-6 d-flex flex-column justify-content-center">
-        <h6 class="mb-0"><strong>Complexo Escolar <br> Veredas Encantadas</strong></h6>
+        <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
         <h6 class="mt-1">Comprovativo de Matrícula</h6>
         </div>
 
@@ -178,7 +184,9 @@
 
     <div class="rodape mt-3">
         <hr>
-        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small></p>
+        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small> <br>
+            {{ escola.provincia }} - {{ escola.municipio }} - {{ escola.endereco }} -Tel: {{ escola.contacto }}
+        </p>
     </div>
 
 </body>

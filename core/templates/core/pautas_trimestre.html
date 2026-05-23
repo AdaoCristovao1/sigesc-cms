@@ -33,10 +33,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola"   
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Director Geral</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -105,9 +106,9 @@
 
     <div class="container mt-4">
       {% if texto %}
-         <h3 class="page-title"><i class="fas fa-chart-bar me-2"></i> Pauta de Exame</h3>
+         <h3 class="page-title"><i class="fas fa-chart-bar me-2"></i> Pauta de Exame - {{ escola.nome }}</h3>
       {% else %}
-        <h3 class="page-title"><i class="fas fa-chart-bar me-2"></i> PAUTA DO {{ trimestre }}º TRIMESTRE</h3>
+        <h3 class="page-title"><i class="fas fa-chart-bar me-2"></i> PAUTA DO {{ trimestre }}º TRIMESTRE - {{ escola.nome }}</h3>
       {% endif %}
       <a href="{% url 'documentos:pautas_trimestre_print' trimestre %}" class="btn btn-success" target="_blank">
         <i class="fas fa-file-pdf me-1"></i> Imprimir Pauta</a>
@@ -163,7 +164,7 @@
                             {% if disciplina_id == disciplina.id %}
                               {% if nota %}
                                 <span class="badge {% if nota >= 10 %}bg-success{% elif nota >= 5 %}bg-warning text-dark{% else %}bg-danger{% endif %} p-2">
-                                  {{ nota }}
+                                  {{ nota|floatformat:0 }}
                                 </span>
                               {% else %}
                                 <span class="text-muted fst-italic">--</span>

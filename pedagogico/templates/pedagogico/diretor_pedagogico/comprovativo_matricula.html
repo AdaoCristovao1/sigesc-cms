@@ -76,12 +76,14 @@
     <div class="row align-items-center mb-4">
         <!-- Logo -->
         <div class="col-2 d-flex justify-content-start">
-        <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 90px; height: 90px;">
+        {% if escola.logotipo %}
+            <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+        {% endif %}
         </div>
 
-        <!-- Texto do cabeçalho -->
+        <!-- Texto do cabeçalho --> 
         <div class="col-6 d-flex flex-column justify-content-center">
-        <h6 class="mb-0"><strong>Complexo Escolar <br> Veredas Encantadas</strong></h6>
+        <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
         <h6 class="mt-1">Comprovativo de Matrícula</h6>
         </div>
 
@@ -124,32 +126,36 @@
     </div>
 
     <div class="rodape mt-3">
-        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small></p>
+        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small> <br>
+            {{ escola.provincia }} - {{ escola.municipio }} - {{ escola.endereco }} -Tel: {{ escola.contacto }}
+        </p>
     </div>
     <hr>
      <div class="row align-items-center mb-4">
         <!-- Logo -->
         <div class="col-2 d-flex justify-content-start">
-        <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 90px; height: 90px;">
+        {% if escola.logotipo %}
+            <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+        {% endif %}
         </div>
 
-        <!-- Texto do cabeçalho -->
+        <!-- Texto do cabeçalho --> 
         <div class="col-6 d-flex flex-column justify-content-center">
-        <h6 class="mb-0"><strong>Complexo Escolar <br> Veredas Encantadas</strong></h6>
+        <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
         <h6 class="mt-1">Comprovativo de Matrícula</h6>
         </div>
 
         <!-- Código de Barras -->
         <div class="col-3 d-flex justify-content-end">
-        <img src="data:image/svg+xml;base64,{{ barcode }}" alt="Código de Barras" style="width: 240px; height: 70px;">
+        <img src="data:image/svg+xml;base64,{{ barcode }}" alt="Código de Barras" style="width: 250px; height: 70px;">
         </div>
     </div>
 
     <div class="row">
         <div class="col text-truncate">
-            <p class="mb-1"><strong>Nome do Aluno:</strong> {{ aluno.nome_completo }}</p>
+            <p class="mb-1">{{ aluno.nome_completo }}</p>
             <p class="mb-1"><strong>Nº Mecanográfico:</strong> {{ aluno.numero_mecanografico }}</p>
-            <p class="mb-1"><strong>Bilhete de Identidade:</strong> {{ aluno.bi }}</p>
+            <p class="mb-1"><strong>BI:</strong> {{ aluno.bi }}</p>
         </div>
         <div class="col text-truncate">
             <p class="mb-1"><strong>Gênero:</strong> {{ aluno.get_genero_display }}</p>
@@ -178,7 +184,9 @@
 
     <div class="rodape mt-3">
         <hr>
-        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small></p>
+        <p><small>© Documento Gerado por Sistema de Gestão Escolar SIGEsc</small> <br>
+            {{ escola.provincia }} - {{ escola.municipio }} - {{ escola.endereco }} -Tel: {{ escola.contacto }}
+        </p>
     </div>
 
 </body>

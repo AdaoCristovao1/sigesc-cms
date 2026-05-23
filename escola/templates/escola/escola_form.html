@@ -1,0 +1,590 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ titulo }} | SIGEsc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+    
+    .btn-outline-primary, .btn-outline-secondary, .btn-outline-success {
+      border-width: 2px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-primary:hover {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-secondary:hover {
+      background: linear-gradient(45deg, #6c757d, #495057);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-success:hover {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .badge {
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    
+    .card {
+      border-radius: 15px !important;
+    }
+    
+    .input-group-text {
+      border-radius: 10px 0 0 10px;
+    }
+    
+    .form-control {
+      border-radius: 0 10px 10px 0;
+    }
+    
+    .modal-content {
+      border-radius: 20px;
+    }
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --success-color: #4caf50;
+      --danger-color: #f44336;
+      --warning-color: #ff9800;
+      --info-color: #2196f3;
+      --dark-color: #2b2d42;
+      --light-color: #f8f9fa;
+      --sidebar-width: 280px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.active {
+      left: -280px;
+    }
+
+    .sidebar .logo {
+      padding: 25px 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .sidebar .user-info {
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar .user-info i {
+      font-size: 48px;
+      margin-bottom: 10px;
+      display: block;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin: 5px 10px;
+      border-radius: 10px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar a.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-weight: 500;
+    }
+
+    .sidebar a i {
+      width: 25px;
+      margin-right: 10px;
+      text-align: center;
+    }
+
+    .sidebar .sidebar-section {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .main-content.expanded {
+      margin-left: 0;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .topbar h5 {
+      margin: 0;
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    .burger {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--dark-color);
+      display: none;
+    }
+
+    /* Cards */
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      height: 100%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    /* Quick Actions */
+    .quick-action {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+      border: 2px solid transparent;
+    }
+
+    .quick-action:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      border-color: var(--primary-color);
+    }
+
+    /* Tables */
+    .table-custom {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .table-custom thead {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+    }
+
+    .table-custom th {
+      font-weight: 500;
+      padding: 12px 15px;
+    }
+
+    .table-custom td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+
+    .table-custom tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .badge-school {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .sidebar {
+        left: -280px;
+      }
+      .sidebar.active {
+        left: 0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .burger {
+        display: block;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      border-radius: 15px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
+        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
+        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
+      </svg>
+      SIGEsc
+    </div>
+    <div class="user-info">
+      <i class="fas fa-user-shield"></i>
+      <div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong></div>
+      <small>Administrador do Sistema</small>
+    </div>
+    
+    <div class="sidebar-section">PRINCIPAL</div>
+    
+    <a href="{% url 'escola:dashboard' %}">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+    <a href="{% url 'escola:escola_lista' %}" class="active">
+      <i class="fas fa-school"></i> Escolas
+    </a>
+    
+    <div class="sidebar-section">GESTÃO</div>
+    
+    <a href="{% url 'escola:form_funcionario' %}">
+      <i class="fas fa-users"></i> Funcionários
+    </a>
+    
+    <div class="sidebar-section">RELATÓRIOS</div>
+    
+    <a href="#">
+      <i class="fas fa-chart-bar"></i> Relatórios Gerais
+    </a>
+    <a href="#">
+      <i class="fas fa-file-export"></i> Exportar Dados
+    </a>
+    
+    <div class="sidebar-section">SISTEMA</div>
+    
+    <a href="{% url 'escola:configuracoes' %}">
+      <i class="fas fa-cog"></i> Configurações
+    </a>
+    <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container mt-4">
+      <div class="row justify-content-center">
+        <div class="col-lg-8">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-3">
+                  <li class="breadcrumb-item">
+                    <a href="{% url 'core:dashboard' %}" class="text-decoration-none">
+                      <i class="fas fa-home me-1"></i> Dashboard
+                    </a>
+                  </li>
+                  <li class="breadcrumb-item">
+                    <a href="{% url 'escola:escola_lista' %}" class="text-decoration-none">
+                      <i class="fas fa-school me-1"></i> Escolas
+                    </a>
+                  </li>
+                  <li class="breadcrumb-item active">{{ titulo }}</li>
+                </ol>
+              </nav>
+              
+              <h2 class="page-title">
+                <i class="fas {% if titulo == 'Nova Escola' %}fa-plus-circle{% else %}fa-edit{% endif %} me-2"></i> 
+                {{ titulo }}
+              </h2>
+              <p class="text-muted">Preencha os dados da instituição de ensino</p>
+            </div>
+            
+            <div class="card-body p-4">
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+              
+              <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                  <!-- Nome da Escola -->
+                  <div class="col-md-12">
+                    <label class="form-label fw-semibold required-field">
+                      <i class="fas fa-school text-primary me-1"></i> Nome da Escola
+                    </label>
+                    <input type="text" name="nome" class="form-control" 
+                           value="{{ nome|default:'' }}" required
+                           placeholder="Digite o nome completo da escola">
+                  </div>
+                  
+                  <!-- Logotipo -->
+                  <div class="col-md-12">
+                    <label class="form-label fw-semibold">
+                      <i class="fas fa-image text-primary me-1"></i> Logotipo
+                    </label>
+                    {% if escola and escola.logotipo %}
+                      <div class="mb-2 p-3 bg-light rounded">
+                        <img src="{{ escola.logotipo.url }}" alt="Logotipo atual" 
+                             style="max-height: 100px; border-radius: 10px;">
+                        <div class="mt-2">
+                          <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="remover_logotipo" value="sim" id="removerLogotipo">
+                            <label class="form-check-label text-danger" for="removerLogotipo">
+                              <i class="fas fa-trash-alt me-1"></i> Remover logotipo atual
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    {% endif %}
+                    <input type="file" name="logotipo" class="form-control" accept="image/*">
+                    <small class="text-muted">Formatos suportados: JPG, PNG, GIF. Tamanho máximo: 5MB</small>
+                  </div>
+                  
+                  <!-- NIF e Contacto -->
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                      <i class="fas fa-id-card text-primary me-1"></i> NIF
+                    </label>
+                    <input type="text" name="nif" class="form-control" 
+                           value="{{ nif|default:'' }}"
+                           placeholder="Ex: 123456789">
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold required-field">
+                      <i class="fas fa-phone text-primary me-1"></i> Contacto
+                    </label>
+                    <input type="text" name="contacto" class="form-control" 
+                           value="{{ contacto|default:'' }}" required
+                           placeholder="Ex: 923456789">
+                  </div>
+                  
+                  <!-- Província e Município -->
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold required-field">
+                      <i class="fas fa-map-marker-alt text-primary me-1"></i> Província
+                    </label>
+                    <input type="text" name="provincia" class="form-control" 
+                           value="{{ provincia|default:'' }}" required
+                           placeholder="Digite a província">
+                  </div>
+                  
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold required-field">
+                      <i class="fas fa-city text-primary me-1"></i> Município
+                    </label>
+                    <input type="text" name="municipio" class="form-control" 
+                           value="{{ municipio|default:'' }}" required
+                           placeholder="Digite o município">
+                  </div>
+                  
+                  <!-- Endereço -->
+                  <div class="col-md-12">
+                    <label class="form-label fw-semibold required-field">
+                      <i class="fas fa-location-dot text-primary me-1"></i> Endereço
+                    </label>
+                    <textarea name="endereco" class="form-control" rows="2" required
+                              placeholder="Digite o endereço completo">{{ endereco|default:'' }}</textarea>
+                  </div>
+                  
+                  <!-- Decreto Executivo -->
+                  <div class="col-md-12">
+                    <label class="form-label fw-semibold">
+                      <i class="fas fa-file-alt text-primary me-1"></i> Decreto Executivo
+                    </label>
+                    <input type="text" name="decreto_executivo" class="form-control" 
+                           value="{{ decreto_executivo|default:'' }}"
+                           placeholder="Ex: Decreto Executivo nº 123/2024">
+                    <small class="text-muted">Documento oficial de criação/autorização da escola</small>
+                  </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="d-flex justify-content-end gap-2">
+                  <a href="{% url 'escola:escola_lista' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i> Cancelar
+                  </a>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i> {{ botao }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div> 
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+    
+    // Preview de imagem antes do upload
+    document.querySelector('input[name="logotipo"]').addEventListener('change', function(e) {
+      if (this.files && this.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const previewDiv = document.querySelector('.bg-light');
+          if (previewDiv) {
+            previewDiv.querySelector('img').src = e.target.result;
+          }
+        }
+        reader.readAsDataURL(this.files[0]);
+      }
+    });
+  </script>
+</body>
+</html>

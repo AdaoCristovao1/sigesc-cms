@@ -137,19 +137,12 @@
 
   <div class="header">
     {% if escola %}
-      <img src="{{ escola.logo.url }}" alt="Logo da Escola" style="width: 100px; height: 100px;">
+      <img src="{{ escola.logotipo.url }}" alt="Logo da Escola" style="width: 100px; height: 100px;">
       <h4>{{ escola.nome }}</h4>
-      <h5>{{ escola.endereco }}</h5>
-      <h5>Telefone: {{ escola.telefone }} | Email: {{ escola.email }}</h5>
-    {% else %}
-      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
-      <h4>Complexo Escolar Veredas Encantadas</h4>
-      <h5>Sistema Integrado de Gestão Escolar</h5>
     {% endif %}
     
     <h4>RELATÓRIO FINANCEIRO COMPLETO</h4>
     <h5>Ano Lectivo: {{ ano_lectivo }}</h5>
-    <h6>Período: {{ data_inicio|date:"d/m/Y" }} - {{ data_fim|date:"d/m/Y"|default:"Atual" }}</h6>
   </div>
 
   <div class="data-emissao">
@@ -453,9 +446,9 @@
   <!-- RODAPÉ -->
   <div class="footer text-center">
     <hr style="margin: 10px 0;">
-    <p><strong>Complexo Escolar Veredas Encantadas</strong> | Sistema Integrado de Gestão Escolar (SIGEsc)</p>
-    <p>Documento gerado automaticamente pelo Sistema SIGEsc sob a licença nº em {% now "d/m/Y à\s H:i" %}</p>
-    <p class="text-muted">Este é um documento oficial para fins de análise e arquivo financeiro</p>
+    <p>{{ escola.nome }} Nif: {{ escola.nif }} | Sistema Integrado de Gestão Escolar (SIGEsc)</p>
+    <p>Documento gerado automaticamente pelo Sistema SIGEsc sob a licença nº - Este é um documento oficial para fins de análise e arquivo financeiro</p>
+    <p class="text-muted"></p>
   </div>
 
   <script>

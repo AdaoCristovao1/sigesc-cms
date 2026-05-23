@@ -19,7 +19,7 @@
   
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
-  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}"> 
   <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
   
   <style>
@@ -165,11 +165,15 @@
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
     <div class="logo">
-      <i class="fas fa-graduation-cap"></i>
+      <i class="fas fa-graduation-cap"></i> 
       SIGEsc
     </div>
     <div class="user-info">
-      <i class="fas fa-user-circle fa-4x"></i>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola" 
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Director Administrativo</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -226,7 +230,7 @@
       <!-- Título da Página -->
        <br><br>
       <div class="page-title">
-        <h5><i class="fas fa-calendar-alt me-2"></i> Gestão de Ano Lectivo</h5>
+        <h5><i class="fas fa-calendar-alt me-2"></i>Ano Lectivo - {{ escola.nome }}</h5>
         <span class="badge bg-success ms-3">{{ anos|length }} registros</span>
       </div>
 

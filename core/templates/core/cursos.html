@@ -33,10 +33,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola"   
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Director Geral</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -104,7 +105,7 @@
     </div>
 
     <div class="container mt-4">
-      <h2 class="page-title"><i class="fas fa-book me-2"></i> Cursos</h2>
+      <h2 class="page-title"><i class="fas fa-book me-2"></i> Cursos - {{ escola.nome }}</h2>
       <div class="">
         <!-- Botões de ação -->
         <div class="mb-3">
@@ -113,25 +114,69 @@
 
         <!-- Formulário de criação -->
         <form method="POST" id="formCriar" style="display:none;" action="{% url 'core:criar_curso' %}">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="nome" class="form-label">Nome do Curso</label>
-            <input type="text" class="form-control" name="nome" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <button type="button" class="btn btn-secondary" onclick="ocultarFormularios()">Cancelar</button>
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="nome" class="form-label">Nome do Curso</label>
+                <input type="text" class="form-control" name="nome" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="tipo" class="form-label">Tipo de Curso</label>
+                <select class="form-select" name="tipo" required>
+                    <option value="">Selecione</option>
+                    <option value="Curso Técnico">Curso Técnico</option>
+                    <option value="Curso Pré-Universitário">Curso Pré-Universitário</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <button type="button" class="btn btn-secondary" onclick="ocultarFormularios()">
+                Cancelar
+            </button>
         </form>
 
         <!-- Formulário de edição -->
         <form method="POST" id="formEditar" style="display:none;" action="{% url 'core:atualizar_curso' %}">
-        {% csrf_token %}
-        <input type="hidden" name="id" id="edit_id">
-        <div class="mb-3">
-            <label class="form-label">Nome do Curso</label>
-            <input type="text" class="form-control" name="nome" id="edit_nome" required>
-        </div>
-        <button type="submit" class="btn btn-warning text-light">Atualizar</button>
-        <button type="button" class="btn btn-secondary text-light" onclick="ocultarFormularios()">Cancelar</button>
+            {% csrf_token %}
+
+            <input type="hidden" name="id" id="edit_id">
+
+            <div class="mb-3">
+                <label class="form-label">Nome do Curso</label>
+                <input type="text"
+                      class="form-control"
+                      name="nome"
+                      id="edit_nome"
+                      required>
+            </div>
+
+            <div class="mb-3">
+                <label for="edit_tipo" class="form-label">Tipo de Curso</label>
+
+                <select class="form-select"
+                        name="tipo"
+                        id="edit_tipo"
+                        required>
+
+                    <option value="">Selecione</option>
+                    <option value="Curso Técnico">Curso Técnico</option>
+                    <option value="Curso Pré-Universitário">
+                        Curso Pré-Universitário (PUNIV)
+                    </option>
+
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-warning text-light">
+                Atualizar
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary text-light"
+                    onclick="ocultarFormularios()">
+                Cancelar
+            </button>
         </form>
 
         <hr>
@@ -142,6 +187,7 @@
             <tr>
             <th class="text-dark">Ordem</th>
             <th class="text-dark">Nome do Curso</th>
+            <th class="text-dark">Tipo</th>
             <th class="text-dark">Ações</th>
             </tr>
         </thead>
@@ -150,14 +196,15 @@
             <tr>
             <td>{{ forloop.counter }}</td>
             <td>{{ curso.nome }}</td>
+            <td>{{ curso.tipo }}</td>
             <td>
-                <button class="btn btn-sm btn-warning" onclick="editarClasse('{{ curso.id }}', '{{ curso.nome }}')">
+                <button class="btn btn-sm btn-warning" onclick="editarClasse('{{ curso.id }}', '{{ curso.nome }}', '{{ curso.tipo }}')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill text-light" viewBox="0 0 16 16">
                   <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
                 </svg>
                 </button>
                 <a href="#" class="btn btn-sm btn-danger"
-                  onclick="openDeleteModal('{{ curso.id }}', '{{ curso.nome }}')">
+                  onclick="openDeleteModal('{{ curso.id }}', '{{ curso.nome }}', '{{ curso.tipo }}')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash-fill text-light" viewBox="0 0 16 16">
                     <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
                   </svg>
@@ -172,6 +219,7 @@
 
       </div>
     </div>
+    <br><br>
    <!-- Modal Exclusão -->
   <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -207,6 +255,7 @@
       document.getElementById('formEditar').style.display = 'block';
       document.getElementById('edit_id').value = id;
       document.getElementById('edit_nome').value = nome;
+      document.getElementById('edit_tipo').value = tipo;
 
     }
 

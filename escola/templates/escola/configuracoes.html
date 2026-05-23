@@ -1,0 +1,1087 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Configurações do Sistema | SIGESC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  
+  <style>
+    .sidebar {
+      overflow-y: auto;
+    }
+    
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+    
+    .btn-outline-primary, .btn-outline-secondary, .btn-outline-success {
+      border-width: 2px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-primary:hover {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-secondary:hover {
+      background: linear-gradient(45deg, #6c757d, #495057);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-success:hover {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .badge {
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    
+    .card {
+      border-radius: 15px !important;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .input-group-text {
+      border-radius: 10px 0 0 10px;
+    }
+    
+    .form-control, .form-select {
+      border-radius: 10px;
+    }
+    
+    .modal-content {
+      border-radius: 20px;
+    }
+    
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --success-color: #4caf50;
+      --danger-color: #f44336;
+      --warning-color: #ff9800;
+      --info-color: #2196f3;
+      --dark-color: #2b2d42;
+      --light-color: #f8f9fa;
+      --sidebar-width: 280px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.active {
+      left: -280px;
+    }
+
+    .sidebar .logo {
+      padding: 25px 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .sidebar .user-info {
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar .user-info i {
+      font-size: 48px;
+      margin-bottom: 10px;
+      display: block;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin: 5px 10px;
+      border-radius: 10px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar a.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-weight: 500;
+    }
+
+    .sidebar a i {
+      width: 25px;
+      margin-right: 10px;
+      text-align: center;
+    }
+
+    .sidebar .sidebar-section {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .main-content.expanded {
+      margin-left: 0;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .topbar h5 {
+      margin: 0;
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    .burger {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--dark-color);
+      display: none;
+    }
+
+    /* Config Cards */
+    .config-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      height: 100%;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .config-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .config-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .backup-item {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+
+    .backup-item:hover {
+      background: #f8f9fa;
+      transform: translateX(5px);
+    }
+
+    /* Tables */
+    .table-custom {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .table-custom thead {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+    }
+
+    .table-custom th {
+      font-weight: 500;
+      padding: 12px 15px;
+    }
+
+    .table-custom td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+
+    .table-custom tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .sidebar {
+        left: -280px;
+      }
+      .sidebar.active {
+        left: 0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .burger {
+        display: block;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+
+    /* Progress bar */
+    .progress {
+      border-radius: 10px;
+      height: 8px;
+    }
+
+    /* Toggle Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4caf50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-graduation-cap"></i> SIGESC
+    </div>
+    <div class="user-info">
+      <i class="fas fa-user-shield"></i>
+      <div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong></div>
+      <small>Administrador do Sistema</small>
+    </div>
+    
+    <div class="sidebar-section">PRINCIPAL</div>
+    
+    <a href="{% url 'escola:dashboard' %}">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+    <a href="{% url 'escola:escola_lista' %}">
+      <i class="fas fa-school"></i> Escolas
+    </a>
+    
+    <div class="sidebar-section">GESTÃO</div>
+    
+    <a href="{% url 'escola:form_funcionario' %}">
+      <i class="fas fa-users"></i> Funcionários
+    </a>
+    
+    <div class="sidebar-section">RELATÓRIOS</div>
+    
+    <a href="#">
+      <i class="fas fa-chart-bar"></i> Relatórios Gerais
+    </a>
+    <a href="#">
+      <i class="fas fa-file-export"></i> Exportar Dados
+    </a>
+    
+    <div class="sidebar-section">SISTEMA</div>
+    
+    <a href="{% url 'escola:configuracoes' %}" class="active">
+      <i class="fas fa-cog"></i> Configurações
+    </a>
+    <br><br>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="mainContent">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar - Configurações</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid px-4 py-4">
+      
+      <!-- Page Title -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="page-title">
+                <i class="fas fa-cog me-2 text-primary"></i> Configurações do Sistema
+              </h2>
+              <p class="text-muted">Gerencie backups, configutações gerais e manutenção do sistema</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show fade-in" role="alert">
+            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Backup Section -->
+      <div class="row g-4 mb-4">
+        <div class="col-lg-5">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <h5 class="mb-0">
+                <i class="fas fa-database me-2 text-success"></i>
+                Backup do Banco de Dados
+              </h5>
+              <p class="text-muted small mt-2">Crie backups completos do sistema para segurança</p>
+            </div>
+            <div class="card-body">
+              <form method="POST" action="{% url 'escola:criar_backup' %}" id="backupForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-tag me-1"></i> Descrição do Backup (opcional)
+                  </label>
+                  <input type="text" class="form-control" name="descricao" placeholder="Ex: Backup antes da matrícula 2025">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">
+                    <i class="fas fa-check-circle me-1"></i> Incluir no Backup:
+                  </label>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="database" id="backupDatabase" checked disabled>
+                        <label class="form-check-label" for="backupDatabase">
+                          Banco de Dados
+                        </label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="media" id="backupMedia" checked>
+                        <label class="form-check-label" for="backupMedia">
+                          Arquivos Mídia (Fotos, PDFs)
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="config" id="backupConfig" checked>
+                        <label class="form-check-label" for="backupConfig">
+                          Configurações do Sistema
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-success w-100" id="btnBackup">
+                  <i class="fas fa-download me-2"></i>
+                  Criar Backup Agora
+                </button>
+              </form>
+              
+              <!-- Backup Progress -->
+              <div id="backupProgress" style="display: none;" class="mt-3">
+                <div class="text-center mb-2">
+                  <i class="fas fa-spinner fa-spin text-success"></i> Criando backup...
+                </div>
+                <div class="progress">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-7">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="fas fa-history me-2 text-primary"></i>
+                Backups Recentes
+              </h5>
+              <button class="btn btn-sm btn-outline-secondary" onclick="atualizarListaBackups()">
+                <i class="fas fa-sync-alt"></i> Atualizar
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="listaBackups">
+                {% if backups %}
+                  {% for backup in backups %}
+                    <div class="backup-item">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <div class="d-flex align-items-center gap-3">
+                            <div class="config-icon bg-primary bg-opacity-10 text-primary">
+                              <i class="fas fa-archive"></i>
+                            </div>
+                            <div>
+                              <strong>{{ backup.nome }}</strong>
+                              <div class="small text-muted">
+                                <i class="fas fa-calendar me-1"></i> {{ backup.data_criacao|date:"d/m/Y H:i:s" }}
+                                <span class="mx-2">|</span>
+                                <i class="fas fa-database me-1"></i> {{ backup.tamanho|default:"N/A" }}
+                              </div>
+                              {% if backup.descricao %}
+                                <div class="small text-muted">
+                                  <i class="fas fa-comment me-1"></i> {{ backup.descricao }}
+                                </div>
+                              {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <div class="btn-group">
+                            <a href="{% url 'escola:baixar_backup' backup.id %}" class="btn btn-sm btn-outline-primary" title="Download">
+                              <i class="fas fa-download"></i>
+                            </a>
+                            <button onclick="confirmarRestore('{{ backup.id }}', '{{ backup.nome }}')" class="btn btn-sm btn-outline-warning" title="Restaurar">
+                              <i class="fas fa-undo-alt"></i>
+                            </button>
+                            <button onclick="confirmarExclusaoBackup('{{ backup.id }}', '{{ backup.nome }}')" class="btn btn-sm btn-outline-danger" title="Excluir">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                {% else %}
+                  <div class="text-center py-4 text-muted">
+                    <i class="fas fa-database fa-3x mb-3 opacity-25"></i>
+                    <p>Nenhum backup encontrado</p>
+                    <small>Clique em "Criar Backup Agora" para começar</small>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Restore Section -->
+      <div class="row g-4 mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <h5 class="mb-0">
+                <i class="fas fa-upload me-2 text-warning"></i>
+                Restaurar Backup
+              </h5>
+              <p class="text-muted small mt-2">Faça upload de um arquivo de backup para restaurar o sistema</p>
+            </div>
+            <div class="card-body">
+              <form method="POST" action="{% url 'escola:restaurar_backup' %}" enctype="multipart/form-data" id="restoreForm">
+                {% csrf_token %}
+                <div class="row align-items-end">
+                  <div class="col-md-8">
+                    <label class="form-label">
+                      <i class="fas fa-file-archive me-1"></i> Arquivo de Backup (.zip ou .sql)
+                    </label>
+                    <input type="file" class="form-control" name="arquivo_backup" accept=".zip,.sql,.gz" required>
+                    <small class="text-muted">Formatos aceitos: ZIP, SQL, GZ. Máximo: 100MB</small>
+                  </div>
+                  <div class="col-md-4">
+                    <button type="submit" class="btn btn-warning w-100" id="btnRestore">
+                      <i class="fas fa-upload me-2"></i>
+                      Restaurar Backup
+                    </button>
+                  </div>
+                </div>
+              </form>
+              
+              <!-- Aviso de Restauração -->
+              <div class="alert alert-danger mt-3">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Atenção:</strong> A restauração irá substituir todos os dados atuais do sistema. 
+                Recomendamos criar um backup antes de restaurar.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configurações Gerais do Sistema -->
+      <div class="row g-4 mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <h5 class="mb-0">
+                <i class="fas fa-sliders-h me-2 text-info"></i>
+                Configurações Gerais
+              </h5>
+            </div>
+            <div class="card-body">
+              <form method="POST" action="{% url 'escola:salvar_configuracoes' %}">
+                {% csrf_token %}
+                <div class="row g-4">
+                  <!-- Configurações do Sistema -->
+                  <div class="col-md-6">
+                    <h6 class="mb-3">
+                      <i class="fas fa-globe me-2 text-primary"></i>
+                      Configurações Básicas
+                    </h6>
+                    <div class="mb-3">
+                      <label class="form-label">Nome do Sistema</label>
+                      <input type="text" class="form-control" name="nome_sistema" value="{{ config.nome_sistema|default:'SIGESC - Sistema Integrado de Gestão Escolar' }}">
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Ano Lectivo Corrente</label>
+                      <select class="form-select" name="ano_lectivo_corrente">
+                        {% for ano in anos_lectivos %}
+                          <option value="{{ ano.ano }}" {% if ano.ano == ano_lectivo_corrente %}selected{% endif %}>{{ ano.ano }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Timezone</label>
+                      <select class="form-select" name="timezone">
+                        <option value="Africa/Luanda" {% if config.timezone == 'Africa/Luanda' %}selected{% endif %}>Africa/Luanda</option>
+                        <option value="Africa/Maputo" {% if config.timezone == 'Africa/Maputo' %}selected{% endif %}>Africa/Maputo</option>
+                        <option value="Africa/Lagos" {% if config.timezone == 'Africa/Lagos' %}selected{% endif %}>Africa/Lagos</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Configurações de Backup Automático -->
+                  <div class="col-md-6">
+                    <h6 class="mb-3">
+                      <i class="fas fa-clock me-2 text-success"></i>
+                      Backup Automático
+                    </h6>
+                    <div class="mb-3">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label mb-0">Backup Automático</label>
+                        <label class="switch">
+                          <input type="checkbox" name="backup_auto" {% if config.backup_auto %}checked{% endif %} onchange="toggleBackupFrequencia(this)">
+                          <span class="slider"></span>
+                        </label>
+                      </div>
+                      <select class="form-select" name="backup_frequencia" id="backupFrequencia" {% if not config.backup_auto %}disabled{% endif %}>
+                        <option value="daily" {% if config.backup_frequencia == 'daily' %}selected{% endif %}>Diário</option>
+                        <option value="weekly" {% if config.backup_frequencia == 'weekly' %}selected{% endif %}>Semanal</option>
+                        <option value="monthly" {% if config.backup_frequencia == 'monthly' %}selected{% endif %}>Mensal</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Manter Backups (dias)</label>
+                      <input type="number" class="form-control" name="manter_backups_dias" value="{{ config.manter_backups_dias|default:30 }}">
+                      <small class="text-muted">Backups mais antigos que este período serão automaticamente removidos</small>
+                    </div>
+                  </div>
+
+                  <!-- Configurações de Email -->
+                  <div class="col-md-12">
+                    <h6 class="mb-3">
+                      <i class="fas fa-envelope me-2 text-secondary"></i>
+                      Configurações de E-mail
+                    </h6>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <div class="mb-3">
+                          <label class="form-label">Servidor SMTP</label>
+                          <input type="text" class="form-control" name="smtp_server" value="{{ config.smtp_server|default:'smtp.gmail.com' }}">
+                        </div>
+                      </div>
+                      <div class="col-md-3">
+                        <div class="mb-3">
+                          <label class="form-label">Porta</label>
+                          <input type="text" class="form-control" name="smtp_port" value="{{ config.smtp_port|default:587 }}">
+                        </div>
+                      </div>
+                      <div class="col-md-5">
+                        <div class="mb-3">
+                          <label class="form-label">E-mail do Sistema</label>
+                          <input type="email" class="form-control" name="email_sistema" value="{{ config.email_sistema|default:'' }}">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label class="form-label">Usuário SMTP</label>
+                          <input type="text" class="form-control" name="smtp_user" value="{{ config.smtp_user|default:'' }}">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label class="form-label">Senha SMTP</label>
+                          <input type="password" class="form-control" name="smtp_password" value="">
+                          <small class="text-muted">Deixe em branco para manter a senha atual</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="border-top pt-3 mt-3">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>
+                    Salvar Configurações
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manutenção do Sistema -->
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <h5 class="mb-0">
+                <i class="fas fa-chart-line me-2 text-info"></i>
+                Estatísticas do Sistema
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row text-center">
+                <div class="col-4">
+                  <div class="p-3">
+                    <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                    <h5 class="mb-0">{{ tamanho_banco|default:"N/A" }}</h5>
+                    <small class="text-muted">Tamanho DB</small>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3">
+                    <i class="fas fa-hdd fa-2x text-warning mb-2"></i>
+                    <h5 class="mb-0">{{ espaco_utilizado|default:"N/A" }}</h5>
+                    <small class="text-muted">Espaço Mídia</small>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3">
+                    <i class="fas fa-users fa-2x text-success mb-2"></i>
+                    <h5 class="mb-0">{{ total_usuarios|default:"0" }}</h5>
+                    <small class="text-muted">Usuários</small>
+                  </div>
+                </div>
+              </div>
+              <hr>
+              <div class="progress mb-2">
+                <div class="progress-bar bg-success" style="width: {{ percentagem_espaco|default:0 }}%"></div>
+              </div>
+              <small class="text-muted">Espaço em disco utilizado: {{ percentagem_espaco|default:0 }}%</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0">
+              <h5 class="mb-0">
+                <i class="fas fa-tools me-2 text-danger"></i>
+                Ferramentas de Manutenção
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="d-grid gap-2">
+                <button class="btn btn-outline-danger" onclick="confirmarLimpezaCache()">
+                  <i class="fas fa-broom me-2"></i>
+                  Limpar Cache do Sistema
+                </button>
+                <button class="btn btn-outline-warning" onclick="confirmarOtimizacao()">
+                  <i class="fas fa-chart-line me-2"></i>
+                  Otimizar Banco de Dados
+                </button>
+                <button class="btn btn-outline-info" onclick="gerarRelatorioSistema()">
+                  <i class="fas fa-file-alt me-2"></i>
+                  Gerar Relatório do Sistema
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs do Sistema -->
+      <div class="row g-4 mt-3">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="fas fa-history me-2 text-secondary"></i>
+                Logs de Atividades
+              </h5>
+              <button class="btn btn-sm btn-outline-secondary" onclick="atualizarLogs()">
+                <i class="fas fa-sync-alt"></i> Atualizar
+              </button>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-custom mb-0">
+                  <thead>
+                    <tr>
+                      <th><i class="far fa-clock me-1"></i> Data/Hora</th>
+                      <th><i class="fas fa-user me-1"></i> Usuário</th>
+                      <th><i class="fas fa-cog me-1"></i> Ação</th>
+                      <th><i class="fas fa-info-circle me-1"></i> Detalhes</th>
+                      <th><i class="fas fa-globe me-1"></i> IP</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% if logs %}
+                      {% for log in logs %}
+                        <tr>
+                          <td>{{ log.data|date:"d/m/Y H:i:s" }}</td>
+                          <td>{{ log.usuario }}</td>
+                          <td>
+                            <span class="badge bg-{{ log.classe }}">
+                              <i class="fas fa-{{ log.icone }}"></i> {{ log.acao }}
+                            </span>
+                          </td>
+                          <td>{{ log.detalhes|truncatechars:50 }}</td>
+                          <td>{{ log.ip }}</td>
+                        </tr>
+                      {% endfor %}
+                    {% else %}
+                      <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                          <i class="fas fa-info-circle me-2"></i> Nenhum log encontrado
+                        </td>
+                      </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informação do Sistema -->
+      <div class="row g-4 mt-3 mb-4">
+        <div class="col-12">
+          <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body text-center">
+              <div class="row align-items-center">
+                <div class="col-md-4">
+                  <i class="fas fa-code-branch fa-2x text-primary"></i>
+                  <p class="mb-0 mt-2">
+                    <strong>Versão do Sistema:</strong> {{ versao_sistema|default:"1.0.0" }}
+                  </p>
+                </div>
+                <div class="col-md-4">
+                  <i class="fab fa-python fa-2x text-primary"></i>
+                  <p class="mb-0 mt-2">
+                    <strong>Django:</strong> {{ versao_django|default:"N/A" }}
+                  </p>
+                </div>
+                <div class="col-md-4">
+                  <i class="fas fa-calendar-alt fa-2x text-primary"></i>
+                  <p class="mb-0 mt-2">
+                    <strong>Última Atualização:</strong> {{ ultima_atualizacao|date:"d/m/Y"|default:"N/A" }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação - Restore -->
+  <div class="modal fade" id="modalRestore" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-exclamation-triangle me-2"></i> Confirmar Restauração
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja restaurar o backup <strong id="backupNomeRestore"></strong>?</p>
+          <div class="alert alert-danger">
+            <i class="fas fa-skull-crosswalk me-2"></i>
+            <strong>Atenção:</strong> Esta ação irá substituir TODOS os dados atuais do sistema!
+          </div>
+          <p class="mb-0">Recomendações:</p>
+          <ul class="small">
+            <li>Faça um backup do estado atual antes de prosseguir</li>
+            <li>Informe todos os usuários sobre a manutenção</li>
+            <li>O sistema ficará indisponível durante o processo</li>
+          </ul>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="POST" action="{% url 'escola:restaurar_backup_arquivo' %}" id="formRestoreBackup">
+            {% csrf_token %}
+            <input type="hidden" name="backup_id" id="backupIdRestore">
+            <button type="submit" class="btn btn-warning">
+              <i class="fas fa-undo-alt me-2"></i> Confirmar Restauração
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação - Exclusão Backup -->
+  <div class="modal fade" id="modalExcluirBackup" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">
+            <i class="fas fa-trash me-2"></i> Confirmar Exclusão
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Tem certeza que deseja excluir o backup <strong id="backupNomeExcluir"></strong>?</p>
+          <p class="text-danger mb-0">Esta ação não pode ser desfeita.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <form method="POST" action="{% url 'escola:excluir_backup' %}" id="formExcluirBackup">
+            {% csrf_token %}
+            <input type="hidden" name="backup_id" id="backupIdExcluir">
+            <button type="submit" class="btn btn-danger">
+              <i class="fas fa-trash me-2"></i> Confirmar Exclusão
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+      document.getElementById("mainContent").classList.toggle("expanded");
+    }
+
+    function toggleBackupFrequencia(checkbox) {
+      const select = document.getElementById('backupFrequencia');
+      select.disabled = !checkbox.checked;
+    }
+
+    function confirmarRestore(backupId, backupNome) {
+      document.getElementById('backupNomeRestore').innerText = backupNome;
+      document.getElementById('backupIdRestore').value = backupId;
+      new bootstrap.Modal(document.getElementById('modalRestore')).show();
+    }
+
+    function confirmarExclusaoBackup(backupId, backupNome) {
+      document.getElementById('backupNomeExcluir').innerText = backupNome;
+      document.getElementById('backupIdExcluir').value = backupId;
+      new bootstrap.Modal(document.getElementById('modalExcluirBackup')).show();
+    }
+
+    function confirmarLimpezaCache() {
+      if (confirm('Tem certeza que deseja limpar o cache do sistema?\n\nIsso pode melhorar o desempenho, mas pode temporariamente tornar o sistema mais lento.')) {
+        window.location.href = "{% url 'escola:limpar_cache' %}";
+      }
+    }
+
+    function confirmarOtimizacao() {
+      if (confirm('Tem certeza que deseja otimizar o banco de dados?\n\nEsta ação pode levar alguns minutos e o sistema ficará mais lento temporariamente.')) {
+        window.location.href = "{% url 'escola:otimizar_banco' %}";
+      }
+    }
+
+    function gerarRelatorioSistema() {
+      window.open("{% url 'escola:relatorio_sistema' %}", '_blank');
+    }
+
+    function atualizarListaBackups() {
+      location.reload();
+    }
+
+    function atualizarLogs() {
+      location.reload();
+    }
+
+    // Simular progresso do backup
+    document.getElementById('backupForm')?.addEventListener('submit', function(e) {
+      const btn = document.getElementById('btnBackup');
+      const progressDiv = document.getElementById('backupProgress');
+      const progressBar = progressDiv.querySelector('.progress-bar');
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Criando backup...';
+      progressDiv.style.display = 'block';
+      
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 10;
+        progressBar.style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+        }
+      }, 500);
+    });
+
+    // Restore form
+    document.getElementById('restoreForm')?.addEventListener('submit', function(e) {
+      const fileInput = document.querySelector('input[name="arquivo_backup"]');
+      const btn = document.getElementById('btnRestore');
+      
+      if (!fileInput.files.length) {
+        e.preventDefault();
+        alert('Por favor, selecione um arquivo de backup para restaurar.');
+        return false;
+      }
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Restaurando...';
+    });
+  </script>
+</body>
+</html>

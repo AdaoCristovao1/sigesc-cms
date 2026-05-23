@@ -35,10 +35,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola"   
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Secretário Pedagógico</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -85,87 +86,182 @@
     </div>
 
     <div class="container mt-4">
-    <h3 class="page-title w-100"><i class="fas fa-user-graduate me-2"></i>Detalhes do aluno(a) - <b>{{ aluno.nome_completo }}</b></h3>
+    <h3 class="page-title w-100"><i class="fas fa-user-graduate me-2"></i><b>{{ aluno.nome_completo }} - {{ escola.nome }} </b></h3>
     <hr>
 
     <div class="row mb-4">
-        <div class="col-md-6 position-relative">
-          <form method="POST" action="{% url 'pedagogico:upload_foto_aluno' aluno.id %}" enctype="multipart/form-data">
-            {% csrf_token %}
-            
-            <div class="position-relative d-inline-block" style="width: 150px; height: 150px;">
-              <!-- Imagem do aluno -->
-              <img id="preview-imagem" 
-                  src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}{% static 'imgs/blank-profile-picture-973460_1280.png' %}{% endif %}" 
-                  alt="Imagem do aluno" 
-                  class="img-thumbnail" 
-                  style="width: 150px; height: 150px; object-fit: cover;">
+        <!-- Coluna da Foto e Dados Pessoais -->
+      <div class="col-md-6">
+          <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                  <div class="d-flex flex-column align-items-center text-center mb-4">
+                      <!-- Container da Imagem com Overlay -->
+                      <form method="POST" action="{% url 'core:upload_foto_aluno' aluno.id %}" enctype="multipart/form-data" id="formUploadFoto">
+                          {% csrf_token %}
+                          <div class="position-relative mb-3">
+                              <div class="rounded-circle overflow-hidden border border-3 border-primary" 
+                                  style="width: 160px; height: 160px; cursor: pointer;">
+                                  <img id="preview-imagem" 
+                                      src="{% if aluno.foto %}{{ aluno.foto.url }}{% else %}{% static 'imgs/blank-profile-picture-973460_1280.png' %}{% endif %}" 
+                                      alt="Foto do aluno" 
+                                      class="w-100 h-100 object-fit-cover">
+                              </div>
+                              
+                              <!-- Botão Upload Flutuante -->
+                              <label for="input-foto" 
+                                    class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-2 me-2"
+                                    style="width: 38px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                                  <i class="bi bi-camera-fill"></i>
+                              </label>
+                              
+                              <input type="file" id="input-foto" name="foto" accept="image/*" class="d-none" 
+                                    onchange="document.getElementById('formUploadFoto').submit(); previewImagem(this)">
+                          </div>
+                          <small class="text-muted d-block">Clique na câmera para alterar a foto</small>
+                      </form>
+                  </div>
 
-              <!-- Botão de upload -->
-              <label for="input-foto" 
-                    class="btn btn-sm btn-success position-absolute bottom-0 start-0 m-1"
-                    style="cursor: pointer;">
-                    Carregar Imagem
-              </label>
+                  <!-- Informações Pessoais -->
+                  <div class="border-top pt-3">
+                      <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-2"></i>Dados Pessoais</h6>
+                      <div class="row g-2">
+                          <div class="col-12">
+                              <div class="d-flex justify-content-between border-bottom pb-2">
+                                  <span class="text-secondary">Nº Mecanográfico:</span>
+                                  <strong class="text-dark">{{ aluno.numero_mecanografico }}</strong>
+                              </div>
+                          </div>
+                          <div class="col-12">
+                              <div class="d-flex justify-content-between border-bottom pb-2">
+                                  <span class="text-secondary">BI / Identificação:</span>
+                                  <strong class="text-dark">{{ aluno.bi }}</strong>
+                              </div>
+                          </div>
+                          <div class="col-12">
+                              <div class="d-flex justify-content-between border-bottom pb-2">
+                                  <span class="text-secondary">Gênero:</span>
+                                  <strong class="text-dark">{{ aluno.get_genero_display }}</strong>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
 
-              <input type="file" id="input-foto" name="foto" accept="image/*" class="d-none" onchange="this.form.submit(); previewImagem(this)">
-            </div>
-          </form>
+      <!-- Coluna da Situação Académica e Financeira -->
+      {% if ultima_reconfirmacao %}
+      <div class="col-md-6">
+          <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                  <h6 class="text-muted mb-3"><i class="bi bi-mortarboard-fill me-2"></i>Última Reconformação</h6>
+                  
+                  <div class="row g-3">
+                      <!-- Ano Letivo -->
+                      <div class="col-12">
+                          <div class="bg-light rounded-3 p-3">
+                              <div class="d-flex align-items-center gap-2">
+                                  <i class="bi bi-calendar-event fs-5 text-primary"></i>
+                                  <div>
+                                      <small class="text-muted d-block">Ano Letivo</small>
+                                      <strong class="fs-6">{{ ultima_reconfirmacao.ano_letivo }}</strong>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
 
-            <!-- Informações do aluno -->
-            <p class="mt-3"><strong>Número Mecanográfico:</strong> {{ aluno.numero_mecanografico }}</p>
-            <p><strong>BI:</strong> {{ aluno.bi }}</p>
-            <p><strong>Gênero:</strong> {{ aluno.get_genero_display }}</p>
-        </div>
+                      <!-- Informações de Classe -->
+                      <div class="col-md-6">
+                          <div class="bg-light rounded-3 p-3">
+                              <small class="text-muted d-block">Classe</small>
+                              <strong class="fs-6">
+                                  {% if ultima_reconfirmacao.classe.numero == 0 %}
+                                      Iniciação
+                                  {% else %}
+                                      {{ ultima_reconfirmacao.classe.numero }}ª Classe
+                                  {% endif %}
+                              </strong>
+                          </div>
+                      </div>
 
-        {% if ultima_reconfirmacao %}
-        <div class="col-md-6">
-        <p><strong>Ano Letivo Atual:</strong> {{ ultima_reconfirmacao.ano_letivo }}</p>
-        <p><strong>Classe:</strong> 
-           {% if ultima_reconfirmacao.classe.numero == 0 %}
-              Iniciação
-            {% else %}
-             {{ ultima_reconfirmacao.classe.numero }}ª
-            {% endif %}
-        </p>
-        <p><strong>Turma:</strong> {{ ultima_reconfirmacao.turma.nome }}</p>
-        <p><strong>Sala:</strong> {{ ultima_reconfirmacao.sala.nome }}</p>
-        <p><strong>Curso:</strong> {{ ultima_reconfirmacao.curso.nome }}</p>
-        <p>
-          <strong>Estado:</strong> 
-          {% if ultima_reconfirmacao.estado == "Adimplente" %}
-            <span class="badge bg-success">{{ ultima_reconfirmacao.estado }}</span>
-          {% elif ultima_reconfirmacao.estado == "Inadimplente" %}
-            <span class="badge bg-danger">{{ ultima_reconfirmacao.estado }}</span>
-          {% endif %}
-        </p>
-        <p>
-          <strong>Estado da Classe:</strong> 
-          {% if ultima_reconfirmacao.estadoClasse == "Aprovado" %}
-            <span class="badge bg-success">{{ ultima_reconfirmacao.estadoClasse }}</span>
-          {% elif ultima_reconfirmacao.estadoClasse == "Reprovado" %}
-            <span class="badge bg-danger">{{ ultima_reconfirmacao.estadoClasse }}</span>
-          {% elif ultima_reconfirmacao.estadoClasse == "Pendente" %}
-            <span class="badge bg-warning">{{ ultima_reconfirmacao.estadoClasse }}</span>
-          {% endif %}
-        </p>
-        </div>
-        {% endif %}
-    </div>
+                      <div class="col-md-6">
+                          <div class="bg-light rounded-3 p-3">
+                              <small class="text-muted d-block">Turma</small>
+                              <strong class="fs-6">{{ ultima_reconfirmacao.turma.nome }}</strong>
+                          </div>
+                      </div>
 
-    <div class="mb-4">
-        <h5>Histórico Acadêmico</h5>
-        <button class="btn btn-secondary mb-3" data-bs-toggle="modal" data-bs-target="#modalLancamentoNotas">
-          Lançamento de notas
-        </button> 
-        {% if messages %}
-          {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-            </div>
-          {% endfor %}
-        {% endif %}
+                      <div class="col-md-6">
+                          <div class="bg-light rounded-3 p-3">
+                              <small class="text-muted d-block">Sala</small>
+                              <strong class="fs-6">{{ ultima_reconfirmacao.sala.nome }}</strong>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6">
+                          <div class="bg-light rounded-3 p-3">
+                              <small class="text-muted d-block">Curso</small>
+                              <strong class="fs-6">{{ ultima_reconfirmacao.curso.nome }}</strong>
+                          </div>
+                      </div>
+
+                      <!-- Estados -->
+                      <div class="col-12">
+                          <div class="d-flex justify-content-between align-items-center p-3 border rounded-3">
+                              <span class="text-secondary">Estado Financeiro:</span>
+                              {% if ultima_reconfirmacao.estado == "Adimplente" %}
+                                  <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                      <i class="bi bi-check-circle me-1"></i> Adimplente
+                                  </span>
+                              {% elif ultima_reconfirmacao.estado == "Inadimplente" %}
+                                  <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                                      <i class="bi bi-exclamation-circle me-1"></i> Inadimplente
+                                  </span>
+                              {% endif %}
+                          </div>
+                      </div>
+
+                      <div class="col-12">
+                          <div class="d-flex justify-content-between align-items-center p-3 border rounded-3">
+                              <span class="text-secondary">Estado Académico:</span>
+                              {% if ultima_reconfirmacao.estadoClasse == "Aprovado" %}
+                                  <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                                      <i class="bi bi-trophy-fill me-1"></i> Aprovado
+                                  </span>
+                              {% elif ultima_reconfirmacao.estadoClasse == "Reprovado" %}
+                                  <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">
+                                      <i class="bi bi-x-circle me-1"></i> Reprovado
+                                  </span>
+                              {% elif ultima_reconfirmacao.estadoClasse == "Pendente" %}
+                                  <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">
+                                      <i class="bi bi-clock-history me-1"></i> Pendente
+                                  </span>
+                              {% endif %}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+      {% endif %}
+
+      <!-- Mensagens -->
+      {% if messages %}
+      <div class="col-12">
+          <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+              {% for message in messages %}
+                  <div class="toast align-items-center text-white bg-{{ message.tags }} border-0 show" role="alert">
+                      <div class="d-flex">
+                          <div class="toast-body">
+                              <i class="bi bi-info-circle-fill me-2"></i>{{ message }}
+                          </div>
+                          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                      </div>
+                  </div>
+              {% endfor %}
+          </div>
+      </div>
+      {% endif %}
 
         {% for ano, disciplinas in medias.items %}
         <div class="card mb-3">

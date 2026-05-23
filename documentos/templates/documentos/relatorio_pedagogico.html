@@ -148,15 +148,9 @@
   </div>
 
   <div class="header">
-    {% if escola %} 
-      <img src="{{ escola.logo.url }}" alt="Logo da Escola" style="width: 100px; height: 100px;">
+    {% if escola %}
+      <img src="{{ escola.logotipo.url }}" alt="Logo da Escola" style="width: 100px; height: 100px;">
       <h4>{{ escola.nome }}</h4>
-      <h5>{{ escola.endereco }}</h5>
-      <h5>Telefone: {{ escola.telefone }} | Email: {{ escola.email }}</h5>
-    {% else %}
-      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
-      <h4>Complexo Escolar Veredas Encantadas</h4>
-      <h5>Sistema Integrado de Gestão Escolar</h5>
     {% endif %}
     
     <h4>RELATÓRIO PEDAGÓGICO COMPLETO</h4>

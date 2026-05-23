@@ -27,11 +27,9 @@ import io
 import base64 
 from django.http import HttpResponse
 import uuid
+from escola.models import Escola
 
 def login_view(request):
-    aluno = Aluno.objects.all()
-    for a in aluno:
-        atualizar_estado_aluno(a)
 
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -40,25 +38,135 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
 
         if user is not None:
-            login(request, user)
+            # Perfis que NÃO passam pela seleção de escola (acesso direto)
+            # Removido 'professor' da lista abaixo
+            perfis_acesso_direto = ['aluno']  # ← professor removido
             
-            perfil = user.perfil
+            if user.perfil in perfis_acesso_direto:
+                # Comportamento antigo - acesso direto
+                login(request, user)
+                
+                perfil = user.perfil
  
-            # Redirecionamento baseado no perfil 
-            if perfil in ['admin_central', 'diretor_geral', 'secretario_geral']:
-                return redirect('core:dashboard')
-            elif perfil in ['diretor_admin', 'secretario_admin', 'coordenador_turno']:
-                return redirect('administracao:dashboard')
-            elif perfil in ['diretor_pedagogico', 'secretario_ped', 'coordenador_turma', 'coordenador_disc', 'professor']:
-                return redirect('pedagogico:dashboard')
-            elif perfil in ['aluno']:
-                return redirect('estudante:aluno_home')
+                # Redirecionamento baseado no perfil 
+                if perfil in ['admin_central']:
+                    return redirect('escola:dashboard')
+                if perfil in ['admin_central', 'diretor_geral', 'secretario_geral']:
+                    return redirect('core:dashboard')
+                elif perfil in ['diretor_admin', 'secretario_admin', 'coordenador_turno']:
+                    return redirect('administracao:dashboard')
+                elif perfil in ['diretor_pedagogico', 'secretario_ped', 'coordenador_turma', 'coordenador_disc', 'professor']:
+                    return redirect('pedagogico:dashboard')
+                elif perfil in ['aluno']:
+                    return redirect('estudante:aluno_home')
+                else:
+                    messages.error(request, 'Perfil de usuário não reconhecido.')
             else:
-                messages.error(request, 'Perfil de usuário não reconhecido.')
+                # Para outros perfis (incluindo professor agora), verificar escolas vinculadas
+                # Buscar escolas através do funcionário
+                escolas_usuario = []
+                
+                try:
+                    # Tenta encontrar o funcionário vinculado ao usuário
+                    funcionario = Funcionario.objects.filter(usuario=user).first()
+                    if funcionario:
+                        escolas_usuario = funcionario.escolas.all()
+                except:
+                    pass
+                
+                # Se o usuário tiver escola diretamente no modelo Usuario
+                if not escolas_usuario and user.escola:
+                    escolas_usuario = [user.escola]
+                
+                if escolas_usuario:
+                    # Se tiver apenas uma escola, pode redirecionar direto (opcional)
+                    if len(escolas_usuario) == 1:
+                        # Faz login direto sem perguntar
+                        login(request, user)
+                        request.session['escola_atual_id'] = escolas_usuario[0].id
+                        request.session['escola_atual_nome'] = escolas_usuario[0].nome
+                        
+                        # Redireciona baseado no perfil
+                        perfil = user.perfil
+                        if perfil in ['admin_central']:
+                            return redirect('escola:dashboard')
+                        if perfil in ['diretor_geral', 'secretario_geral']:
+                            return redirect('core:dashboard')
+                        elif perfil in ['diretor_admin', 'secretario_admin', 'coordenador_turno']:
+                            return redirect('administracao:dashboard')
+                        elif perfil in ['diretor_pedagogico', 'secretario_ped', 'coordenador_turma', 'coordenador_disc', 'professor']:
+                            return redirect('pedagogico:dashboard')
+                        else:
+                            return redirect('core:dashboard')
+                    else:
+                        # Armazena o usuário na sessão sem fazer login ainda
+                        request.session['pre_login_user_id'] = user.id
+                        request.session['pre_login_password'] = password 
+                        
+                        return render(request, 'core/selecionar_escola.html', {
+                            'escolas': escolas_usuario,
+                            'user_nome': user.get_full_name() or user.username,
+                            'user_perfil': user.perfil
+                        })
+                else:
+                    # Se não tiver escolas vinculadas
+                    messages.error(request, 'Usuário não vinculado a nenhuma escola.')
+                    return render(request, 'core/index.html')
         else:
             messages.error(request, 'Usuário ou senha inválidos.')
 
     return render(request, 'core/index.html')
+
+def selecionar_escola(request):
+    """View para processar a seleção da escola"""
+    if request.method == 'POST':
+        escola_id = request.POST.get('escola_id')
+        user_id = request.session.get('pre_login_user_id')
+        
+        if not user_id:
+            messages.error(request, 'Sessão expirada. Faça login novamente.')
+            return redirect('core:login')
+        
+        try:
+            from django.contrib.auth import authenticate
+            # Recupera o usuário
+            user = Usuario.objects.get(id=user_id)
+            
+            # Autentica o usuário novamente (você pode pedir a senha novamente por segurança)
+            # Por simplicidade, vamos fazer o login direto, mas é recomendado reautenticar
+            
+            # Faz o login do usuário
+            login(request, user)
+            
+            # Armazena a escola selecionada na sessão
+            escola = Escola.objects.get(id=escola_id)
+            request.session['escola_atual_id'] = escola.id
+            request.session['escola_atual_nome'] = escola.nome
+            
+            # Limpa os dados de pré-login
+            del request.session['pre_login_user_id']
+            
+            # Redireciona baseado no perfil
+            perfil = user.perfil
+            
+            if perfil in ['admin_central', 'diretor_geral', 'secretario_geral']:
+                return redirect('core:dashboard')
+            elif perfil in ['diretor_admin', 'secretario_admin', 'coordenador_turno']:
+                return redirect('administracao:dashboard')
+            elif perfil in ['diretor_pedagogico', 'secretario_ped', 'coordenador_turma', 'coordenador_disc']:
+                return redirect('pedagogico:dashboard')
+            else:
+                messages.error(request, 'Perfil de usuário não reconhecido.')
+                return redirect('core:login')
+                
+        except Usuario.DoesNotExist:
+            messages.error(request, 'Usuário não encontrado.')
+            return redirect('core:login')
+        except Escola.DoesNotExist:
+            messages.error(request, 'Escola não encontrada.')
+            return redirect('core:login')
+    
+    return redirect('core:login')
 
 def logout_view(request):
     logout(request)
@@ -66,24 +174,99 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    aluno = Aluno.objects.all()
-    for a in aluno:
-        atualizar_estado_aluno(a)
+    # Verifica se há escola selecionada na sessão
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    # Perfis que NÃO usam seleção de escola
+    perfis_sem_selecao = ['professor', 'aluno']
+    
+    if request.user.perfil not in perfis_sem_selecao:
+        if not escola_id_sessao:
+            # Se não tem escola na sessão, tenta buscar do funcionário
+            try:
+                funcionario = Funcionario.objects.filter(usuario=request.user).first()
+                if funcionario and funcionario.escolas.count() == 1:
+                    # Se tem apenas uma escola, seleciona automaticamente
+                    escola = funcionario.escolas.first()
+                    request.session['escola_atual_id'] = escola.id
+                    request.session['escola_atual_nome'] = escola.nome
+                    escola_usuario = escola
+                else:
+                    # Se tem múltiplas escolas, redireciona para seleção
+                    return redirect('core:selecionar_escola')
+            except:
+                return redirect('core:selecionar_escola')
+        else:
+            # Usa a escola da sessão
+            try:
+                escola_usuario = Escola.objects.get(id=escola_id_sessao)
+            except Escola.DoesNotExist:
+                return redirect('core:selecionar_escola')
+    else:
+        # Para professor e aluno, usa a escola do usuário diretamente
+        escola_usuario = request.user.escola
+    
+    alunos = (
+        Aluno.objects
+        .filter(escola=escola_usuario)
+        .select_related(
+            'turma',
+            'sala',
+            'classe',
+            'curso',
+            'usuario',
+            'escola'
+        )
+    )
+    for aluno in alunos:
+        atualizar_estado_aluno(aluno, escola_usuario)
 
     perfil = request.user.perfil
-    usuario = request.user
+    usuario = request.user 
 
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
-    professores_total = Funcionario.objects.filter(funcao__icontains='professor').count()
-    funcionarios_total = Funcionario.objects.exclude(funcao__icontains='professor').count()
-    aluno_total = Reconfirmacao.objects.filter(ano_letivo=ano_letivo).count()
-    aluno_inadimplentes_total = Reconfirmacao.objects.filter(ano_letivo=ano_letivo, estado='Inadimplente').count()
-    context ={
-        'usuario':usuario,
+    # Ano letivo aberto
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
+    
+    # Dados filtrados pela escola do usuário
+    professores_total = Funcionario.objects.filter(
+        escolas=escola_usuario,
+        funcao__icontains='professor'
+    ).distinct().count()
+    
+    funcionarios_total = Funcionario.objects.filter(
+        escolas=escola_usuario
+    ).exclude(
+        funcao__icontains='professor'
+    ).distinct().count()
+    
+    # Total de alunos da escola
+    if ano_letivo:
+        aluno_total = Reconfirmacao.objects.filter(
+            ano_letivo=ano_letivo,
+            aluno__escola=escola_usuario
+        ).count()
+        
+        aluno_inadimplentes_total = Reconfirmacao.objects.filter(
+            ano_letivo=ano_letivo,
+            aluno__escola=escola_usuario,
+            estado='Inadimplente'
+        ).count()
+    else:
+        aluno_total = 0
+        aluno_inadimplentes_total = 0
+    
+    # Total de turmas da escola
+    total_turmas = Turma.objects.filter(escola=escola_usuario).count()
+    
+    context = {
+        'usuario': usuario,
+        'escola': escola_usuario,
         'professores_total': professores_total,
-        'funcionarios_total':funcionarios_total,
-        'aluno_total':aluno_total,
-        'aluno_inadimplentes_total':aluno_inadimplentes_total,
+        'funcionarios_total': funcionarios_total,
+        'aluno_total': aluno_total,
+        'aluno_inadimplentes_total': aluno_inadimplentes_total,
+        'total_turmas': total_turmas,
+        'ano_lectivo_atual': ano_letivo.ano if ano_letivo else datetime.now().year,
     }
 
     if perfil == 'secretario_geral':
@@ -137,33 +320,105 @@ def dashboard(request):
             """,
             status=401
         )
-
+        
 @login_required
 def usuarios(request):
-    q = request.GET.get('q')
-    if q:
-        filtro = Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q)
-        alunos = Usuario.objects.filter(filtro, perfil='aluno')
-        outros = Usuario.objects.filter(filtro).exclude(perfil='aluno')
+    # Obtém a escola da sessão
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    # Verifica se há uma escola selecionada na sessão (para perfis que não são aluno/professor)
+    perfis_sem_selecao = ['aluno', 'professor']
+    
+    if request.user.perfil not in perfis_sem_selecao:
+        if not escola_id_sessao:
+            messages.warning(request, 'Por favor, selecione uma escola primeiro.')
+            return redirect('core:selecionar_escola')
+        
+        try:
+            escola_usuario = Escola.objects.get(id=escola_id_sessao)
+        except Escola.DoesNotExist:
+            messages.error(request, 'Escola não encontrada.')
+            return redirect('core:selecionar_escola')
     else:
-        alunos = Usuario.objects.filter(perfil='aluno')
-        outros = Usuario.objects.exclude(perfil='aluno')
+        # Para alunos e professores, usa a escola do próprio usuário
+        escola_usuario = request.user.escola
+    
+    # Busca o funcionário vinculado ao usuário (para outros perfis)
+    funcionario_usuario = None
+    if request.user.perfil not in perfis_sem_selecao:
+        try:
+            funcionario_usuario = Funcionario.objects.filter(usuario=request.user).first()
+        except:
+            pass
+    
+    # Filtra usuários pela escola
+    # Busca todos os usuários que pertencem à escola selecionada
+    q = request.GET.get('q')
+    
+    # Alunos da escola selecionada (via modelo Aluno)
+    from pedagogico.models import Aluno
+    alunos_da_escola = Aluno.objects.filter(escola=escola_usuario).values_list('usuario_id', flat=True)
+    
+    # Funcionários da escola selecionada
+    funcionarios_da_escola = Funcionario.objects.filter(escolas=escola_usuario).values_list('usuario_id', flat=True)
+    
+    # Combina os IDs dos usuários da escola
+    usuarios_na_escola = set(list(alunos_da_escola) + list(funcionarios_da_escola))
+    
+    # Aplica o filtro de busca
+    if q:
+        filtro = Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q) | Q(email__icontains=q)
+        # Filtra apenas usuários da escola e aplica busca
+        usuarios_filtrados = Usuario.objects.filter(filtro, id__in=usuarios_na_escola)
+    else:
+        # Pega apenas usuários da escola
+        usuarios_filtrados = Usuario.objects.filter(id__in=usuarios_na_escola)
+    
+    # Separa alunos e outros perfis
+    alunos = usuarios_filtrados.filter(perfil='aluno')
+    outros = usuarios_filtrados.exclude(perfil='aluno')
+    
+    # Para cada usuário, busca informações adicionais
+    for usuario in outros:
+        try:
+            funcionario = Funcionario.objects.filter(usuario=usuario).first()
+            if funcionario:
+                usuario.funcao = funcionario.funcao
+                usuario.escolas_vinculadas = funcionario.escolas.all()
+            else:
+                usuario.funcao = usuario.perfil
+                usuario.escolas_vinculadas = [escola_usuario]
+        except:
+            usuario.funcao = usuario.perfil
+            usuario.escolas_vinculadas = [escola_usuario]
+    
+    for aluno in alunos:
+        try:
+            aluno_obj = Aluno.objects.filter(usuario=aluno).first()
+            if aluno_obj:
+                aluno.turma_atual = aluno_obj.turma
+                aluno.numero_processo = aluno_obj.numero_processo
+        except:
+            pass
     
     perfil = request.user.perfil
     usuario = request.user
+    
+    context = {
+        'alunos': alunos,
+        'outros': outros,
+        'usuario': usuario,
+        'escola': escola_usuario,
+        'funcionario_usuario': funcionario_usuario,
+        'total_usuarios': usuarios_filtrados.count(),
+        'total_alunos': alunos.count(),
+        'total_funcionarios': outros.count(),
+    }
 
     if perfil == 'diretor_geral':
-        return render(request, 'core/usuarios-list.html', {
-            'alunos': alunos,
-            'outros': outros,
-            'usuario':usuario,
-        })
+        return render(request, 'core/usuarios-list.html', context)
     elif perfil == 'secretario_geral':
-        return render(request, 'core/secretario_geral/usuarios-list.html', {
-            'alunos': alunos,
-            'outros': outros,
-            'usuario':usuario,
-        })
+        return render(request, 'core/secretario_geral/usuarios-list.html', context)
     else:
         return HttpResponse(
             """
@@ -210,7 +465,7 @@ def usuarios(request):
             """,
             status=401
         )
-
+    
 @csrf_exempt
 @login_required
 def verificar_acao_usuario(request):
@@ -304,71 +559,12 @@ def remover_acentos(texto):
 
 @login_required
 def cadastrar_funcionario(request):
-    if request.method == 'POST':
-        nome = request.POST.get('nome')
-        bilhete = request.POST.get('bilhete')
-        genero = request.POST.get('genero')
-        funcao = request.POST.get('funcao')
-        telefone = request.POST.get('telefone')
-        salario = request.POST.get('salario')
-
-        # Salva o funcionário
-        funcionario = Funcionario.objects.create(
-            nome=nome,
-            bi=bilhete,
-            genero=genero,
-            funcao=funcao,
-            telefone=telefone,
-            salario=salario
-        )
-
-        nomes = remover_acentos(nome.lower()).split()
-        primeiro_nome = nomes[0] 
-        ultimo_nome = nomes[-1] if len(nomes) > 1 else nomes[0]
-        codigo_unico = str(uuid.uuid4())[:5]
-        email = f"{primeiro_nome}{ultimo_nome}{codigo_unico}@sigesc.co.ao"
-
-        # Cria o usuário vinculado
-        usuario = Usuario.objects.create_user(
-            username=email,
-            email=email,
-            password=bilhete,
-            first_name=primeiro_nome,
-            last_name=ultimo_nome,
-            perfil=funcao,
-        )
-
-        funcionario.usuario = usuario
-        funcionario.save()
-
-        messages.success(request, f"Funcionário {nome} cadastrado com sucesso!")
-        return redirect('core:cadastrar_funcionario')
-
-    q = request.GET.get('q') 
-    if q:
-        filtro = (
-            Q(nome__icontains=q) |
-            Q(bi__icontains=q) |
-            Q(funcao__icontains=q) |
-            Q(telefone__icontains=q)
-        )
-        funcionarios = Funcionario.objects.filter(filtro)
-    else:
-        funcionarios = Funcionario.objects.all()
-    perfil = request.user.perfil
-    usuario = request.user
-
-    if perfil == 'diretor_geral':
-        return render(request, 'core/form-func.html', {
-            'funcionarios': funcionarios,
-            'usuario':usuario,
-        })
-    elif perfil == 'secretario_geral':
-        return render(request, 'core/secretario_geral/form-func.html', {
-            'funcionarios': funcionarios,
-            'usuario':usuario,
-        })
-    else:
+    # Obtém a escola da sessão
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    # Verifica permissão
+    perfis_permitidos = ['diretor_geral', 'secretario_geral']
+    if request.user.perfil not in perfis_permitidos:
         return HttpResponse(
             """
             <html>
@@ -414,6 +610,329 @@ def cadastrar_funcionario(request):
             """,
             status=401
         )
+    
+    # Verifica se há escola selecionada
+    if not escola_id_sessao:
+        messages.warning(request, 'Por favor, selecione uma escola primeiro.')
+        return redirect('core:selecionar_escola')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola não encontrada.')
+        return redirect('core:selecionar_escola')
+    
+    # Processa formulário
+    if request.method == 'POST':
+        funcionario_id = request.POST.get('funcionario_id')
+        nome = request.POST.get('nome')
+        bi = request.POST.get('bi')
+        genero = request.POST.get('genero')
+        funcao = request.POST.get('funcao')
+        telefone = request.POST.get('telefone')
+        email = request.POST.get('email')
+        salario = request.POST.get('salario', '0')
+        nivel_academico = request.POST.get('nivel_academico', '')
+        area_formacao = request.POST.get('area_formacao', '')
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Validação
+        erros = {}
+        
+        if not nome:
+            erros['nome'] = 'Nome é obrigatório'
+        if not bi:
+            erros['bi'] = 'BI é obrigatório'
+        if not genero:
+            erros['genero'] = 'Gênero é obrigatório'
+        if not funcao:
+            erros['funcao'] = 'Função é obrigatória'
+        if not telefone:
+            erros['telefone'] = 'Telefone é obrigatório'
+        
+        # Verifica se BI já existe (exceto para o mesmo funcionário)
+        if funcionario_id:
+            bi_exists = Funcionario.objects.filter(bi=bi).exclude(id=funcionario_id).exists()
+        else:
+            bi_exists = Funcionario.objects.filter(bi=bi).exists()
+        
+        if bi_exists:
+            erros['bi'] = 'Este BI já está cadastrado'
+        
+        if erros:
+            # Retorna com erros
+            q = request.GET.get('q')
+            if q:
+                filtro = (Q(nome__icontains=q) | Q(bi__icontains=q) | 
+                         Q(funcao__icontains=q) | Q(telefone__icontains=q))
+                funcionarios = Funcionario.objects.filter(filtro, escolas=escola_usuario).distinct()
+            else:
+                funcionarios = Funcionario.objects.filter(escolas=escola_usuario).distinct()
+            
+            context = {
+                'funcionarios': funcionarios,
+                'usuario': request.user,
+                'escola': escola_usuario,
+                'erros': erros,
+                'dados_post': request.POST,
+            }
+            
+            if request.user.perfil == 'diretor_geral':
+                return render(request, 'core/form-func.html', context)
+            else:
+                return render(request, 'core/secretario_geral/form-func.html', context)
+        
+        # Processa salário
+        try:
+            salario = Decimal(salario.replace(',', '.')) if salario else Decimal('0')
+        except:
+            salario = Decimal('0')
+        
+        try:
+            with transaction.atomic():
+                if funcionario_id:
+                    # Atualiza funcionário existente
+                    funcionario = get_object_or_404(Funcionario, id=funcionario_id)
+                    funcionario.nome = nome
+                    funcionario.bi = bi
+                    funcionario.genero = genero
+                    funcionario.funcao = funcao
+                    funcionario.telefone = telefone
+                    funcionario.email = email
+                    funcionario.salario = salario
+                    funcionario.nivel_academico = nivel_academico
+                    funcionario.area_formacao = area_formacao
+                    funcionario.ativo = ativo
+                    funcionario.save()
+                    
+                    # Atualiza usuário se existir
+                    if funcionario.usuario:
+                        nomes = remover_acentos(nome.lower()).split()
+                        primeiro_nome = nomes[0]
+                        ultimo_nome = nomes[-1] if len(nomes) > 1 else nomes[0]
+                        funcionario.usuario.first_name = primeiro_nome.capitalize()
+                        funcionario.usuario.last_name = ultimo_nome.capitalize()
+                        funcionario.usuario.perfil = mapear_perfil_para_funcao(funcao)
+                        funcionario.usuario.save()
+                    
+                    messages.success(request, f'Funcionário {nome} atualizado com sucesso!')
+                else:
+                    # Cria novo funcionário
+                    funcionario = Funcionario.objects.create(
+                        nome=nome,
+                        bi=bi,
+                        genero=genero,
+                        funcao=funcao,
+                        telefone=telefone,
+                        email=email,
+                        salario=salario,
+                        nivel_academico=nivel_academico,
+                        area_formacao=area_formacao,
+                        ativo=ativo
+                    )
+                    
+                    # Adiciona a escola da sessão (single)
+                    funcionario.escolas.add(escola_usuario)
+                    import re
+                    import random
+                    import string
+
+                    # 🔹 Nome original
+                    print("NOME ORIGINAL:", nome)
+
+                    # 🔹 Remove acentos
+                    nome_processado = remover_acentos(nome.lower())
+                    print("APÓS remover_acentos:", nome_processado)
+
+                    # 🔹 Divide por underscore OU espaço
+                    nomes = re.split(r'[_\s]+', nome_processado)
+                    nomes = [n for n in nomes if n]  # remove vazios
+
+                    print("LISTA NOMES:", nomes)
+
+                    # 🔹 Primeiro e último nome corretos
+                    primeiro_nome = nomes[0]
+                    ultimo_nome = nomes[-1] if len(nomes) > 1 else nomes[0]
+
+                    print("PRIMEIRO NOME:", primeiro_nome)
+                    print("ÚLTIMO NOME:", ultimo_nome)
+
+                    # 🔹 Gera código de 3 caracteres
+                    def gerar_codigo(tamanho=3):
+                        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=tamanho))
+
+                    codigo = gerar_codigo()
+
+                    # 🔹 Username final
+                    username = f"{primeiro_nome}{ultimo_nome}{codigo}@sigesc.co.ao"
+                    email = username
+
+                    # 🔹 Garante que é único
+                    while Usuario.objects.filter(username=username).exists():
+                        codigo = gerar_codigo()
+                        username = f"{primeiro_nome}{ultimo_nome}{codigo}@sigesc.co.ao"
+
+                    print("USERNAME FINAL:", username)
+
+                    # 🔹 Criação do usuário
+                    usuario = Usuario.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=bi,
+                        first_name=primeiro_nome.capitalize(),
+                        last_name=ultimo_nome.capitalize(),
+                        perfil=mapear_perfil_para_funcao(funcao),
+                        escola=escola_usuario
+                    )
+
+                    print("USUÁRIO CRIADO COM SUCESSO!")
+                    funcionario.usuario = usuario
+                    funcionario.save()
+                    
+                    messages.success(
+                        request, 
+                        f'Funcionário {nome} cadastrado com sucesso!'
+                        f'Usuário: {username}Senha inicial: {bi}'
+                    )
+                
+                return redirect('core:cadastrar_funcionario')
+                
+        except Exception as e:
+            messages.error(request, f'Erro ao salvar: {str(e)}')
+            return redirect('core:cadastrar_funcionario')
+    
+    # GET - Busca funcionários da escola selecionada
+    q = request.GET.get('q')
+    funcionario_id = request.GET.get('editar')
+    
+    # Busca funcionário para edição
+    funcionario_editar = None
+    if funcionario_id:
+        try:
+            funcionario_editar = Funcionario.objects.get(id=funcionario_id, escolas=escola_usuario)
+        except Funcionario.DoesNotExist:
+            messages.error(request, 'Funcionário não encontrado nesta escola.')
+    
+    # Filtro de busca
+    if q:
+        filtro = (Q(nome__icontains=q) | Q(bi__icontains=q) | 
+                 Q(funcao__icontains=q) | Q(telefone__icontains=q))
+        funcionarios = Funcionario.objects.filter(filtro, escolas=escola_usuario).distinct()
+    else:
+        funcionarios = Funcionario.objects.filter(escolas=escola_usuario).distinct()
+    
+    # Ordenação
+    funcionarios = funcionarios.order_by('-criado_em')
+    
+    context = {
+        'funcionarios': funcionarios,
+        'usuario': request.user,
+        'escola': escola_usuario,
+        'funcionario': funcionario_editar,
+    }
+    
+    if request.user.perfil == 'diretor_geral':
+        return render(request, 'core/form-func.html', context)
+    else:
+        return render(request, 'core/secretario_geral/form-func.html', context)
+
+def mapear_perfil_para_funcao(funcao):
+    """Mapeia a função do funcionário para o perfil no sistema"""
+    mapa = {
+        'Diretor Geral': 'diretor_geral',
+        'Diretor Pedagógico': 'diretor_pedagogico',
+        'Diretor Administrativo': 'diretor_admin',
+        'Coordenador de Turno': 'coordenador_turno',
+        'Coordenador de Turma': 'coordenador_turma',
+        'Coordenador de Disciplina': 'coordenador_disc',
+        'Secretário Geral': 'secretario_geral',
+        'Secretário Administrativo': 'secretario_admin',
+        'Secretário Pedagógico': 'secretario_ped',
+        'Professor': 'professor',
+    }
+    return mapa.get(funcao, 'funcionario')
+
+def remover_acentos(texto):
+    """Remove acentos de uma string"""
+    if not texto:
+        return texto
+    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+    return texto.replace(' ', '_').lower()
+
+
+@login_required
+def editar_funcionario(request, pk):
+    """View específica para edição via URL"""
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    if not escola_id_sessao:
+        messages.warning(request, 'Por favor, selecione uma escola primeiro.')
+        return redirect('core:selecionar_escola')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+        funcionario = get_object_or_404(Funcionario, id=pk, escolas=escola_usuario)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola não encontrada.')
+        return redirect('core:cadastrar_funcionario')
+    
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        bi = request.POST.get('bi')
+        genero = request.POST.get('genero')
+        funcao = request.POST.get('funcao')
+        telefone = request.POST.get('telefone')
+        email = request.POST.get('email')
+        salario = request.POST.get('salario', '0')
+        nivel_academico = request.POST.get('nivel_academico', '')
+        area_formacao = request.POST.get('area_formacao', '')
+        ativo = request.POST.get('ativo') == 'on'
+        
+        # Verifica se BI já existe para outro funcionário
+        if Funcionario.objects.filter(bi=bi).exclude(id=pk).exists():
+            messages.error(request, 'Este BI já está cadastrado para outro funcionário.')
+            return redirect('core:editar_funcionario', pk=pk)
+        
+        try:
+            with transaction.atomic():
+                funcionario.nome = nome
+                funcionario.bi = bi
+                funcionario.genero = genero
+                funcionario.funcao = funcao
+                funcionario.telefone = telefone
+                funcionario.email = email
+                funcionario.salario = Decimal(salario.replace(',', '.')) if salario else Decimal('0')
+                funcionario.nivel_academico = nivel_academico
+                funcionario.area_formacao = area_formacao
+                funcionario.ativo = ativo
+                funcionario.save()
+                
+                # Atualiza usuário
+                if funcionario.usuario:
+                    nomes = remover_acentos(nome.lower()).split()
+                    primeiro_nome = nomes[0]
+                    ultimo_nome = nomes[-1] if len(nomes) > 1 else nomes[0]
+                    funcionario.usuario.first_name = primeiro_nome.capitalize()
+                    funcionario.usuario.last_name = ultimo_nome.capitalize()
+                    funcionario.usuario.perfil = mapear_perfil_para_funcao(funcao)
+                    funcionario.usuario.save()
+                
+                messages.success(request, f'Funcionário {nome} atualizado com sucesso!')
+                return redirect('core:cadastrar_funcionario')
+                
+        except Exception as e:
+            messages.error(request, f'Erro ao atualizar: {str(e)}')
+            return redirect('core:editar_funcionario', pk=pk)
+    
+    # GET - Mostra formulário de edição
+    context = {
+        'funcionario': funcionario,
+        'usuario': request.user,
+        'escola': escola_usuario,
+        'modo_edicao': True,
+    }
+    
+    return render(request, 'core/form-func.html', context)
 
 @csrf_exempt
 def confirmar_acao_funcionario(request):
@@ -502,25 +1021,13 @@ def excluir_funcionario(request):
 
 @login_required
 def docentes(request):
-    q = request.GET.get('q') 
-    if q:
-        filtro = (
-            Q(nome__icontains=q) |
-            Q(bi__icontains=q) |
-            Q(telefone__icontains=q)
-        )
-        funcionarios = Funcionario.objects.filter(filtro, funcao='professor')
-    else:
-        funcionarios = Funcionario.objects.filter(funcao='professor')
-
-    perfil = request.user.perfil
-    usuario = request.user 
-
-    if perfil == 'diretor_geral':
-        return render(request, 'core/docentes.html',  {'funcionarios': funcionarios, 'usuario':usuario})
-    elif perfil == 'secretario_geral':
-        return render(request, 'core/secretario_geral/docentes.html',  {'funcionarios': funcionarios, 'usuario':usuario})
-    else:
+    # Obtém a escola da sessão
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    # Verifica se o usuário tem permissão
+    perfis_permitidos = ['diretor_geral', 'secretario_geral', 'diretor_pedagogico', 'secretario_ped']
+    
+    if request.user.perfil not in perfis_permitidos:
         return HttpResponse(
             """
             <html>
@@ -566,13 +1073,144 @@ def docentes(request):
             """,
             status=401
         )
+    
+    # Verifica se há uma escola selecionada na sessão (para perfis que não são aluno/professor)
+    perfis_sem_selecao = ['aluno', 'professor']
+    
+    if request.user.perfil not in perfis_sem_selecao:
+        if not escola_id_sessao:
+            messages.warning(request, 'Por favor, selecione uma escola primeiro.')
+            return redirect('core:selecionar_escola')
+        
+        try:
+            escola_usuario = Escola.objects.get(id=escola_id_sessao)
+        except Escola.DoesNotExist:
+            messages.error(request, 'Escola não encontrada.')
+            return redirect('core:selecionar_escola')
+    else:
+        # Para professores, usa a escola do próprio usuário
+        escola_usuario = request.user.escola
+    
+    # Busca funcionários com função de professor que estão vinculados à escola selecionada
+    q = request.GET.get('q')
+    tipo_filtro = request.GET.get('tipo')  # 'ativos', 'inativos', 'todos'
+    
+    # Query base
+    funcionarios_query = Funcionario.objects.filter(
+        funcao='Professor',
+        escolas=escola_usuario
+    ).distinct().select_related('usuario')
+    
+    # Aplica filtro de status
+    if tipo_filtro == 'ativos':
+        funcionarios_query = funcionarios_query.filter(ativo=True)
+    elif tipo_filtro == 'inativos':
+        funcionarios_query = funcionarios_query.filter(ativo=False)
+    
+    # Aplica busca
+    if q:
+        filtro = (
+            Q(nome__icontains=q) |
+            Q(bi__icontains=q) |
+            Q(telefone__icontains=q) |
+            Q(email__icontains=q) |
+            Q(area_formacao__icontains=q) |
+            Q(nivel_academico__icontains=q) |
+            Q(usuario__username__icontains=q)
+        )
+        funcionarios = funcionarios_query.filter(filtro)
+    else:
+        funcionarios = funcionarios_query
+    
+    # Ordenação
+    ordenar_por = request.GET.get('ordenar', 'nome')
+    if ordenar_por == 'nome':
+        funcionarios = funcionarios.order_by('nome')
+    elif ordenar_por == 'data_criacao':
+        funcionarios = funcionarios.order_by('-criado_em')
+    elif ordenar_por == 'area_formacao':
+        funcionarios = funcionarios.order_by('area_formacao')
+    
+    # Paginação
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    page = request.GET.get('page', 1)
+    paginator = Paginator(funcionarios, 15)
+    
+    try:
+        funcionarios_page = paginator.page(page)
+    except PageNotAnInteger:
+        funcionarios_page = paginator.page(1)
+    except EmptyPage:
+        funcionarios_page = paginator.page(paginator.num_pages)
+    
+    # Estatísticas
+    total_docentes = funcionarios_query.count()
+    docentes_ativos = funcionarios_query.filter(ativo=True).count()
+    docentes_inativos = funcionarios_query.filter(ativo=False).count()
+    
+    # Agrupamento por área de formação
+    from django.db.models import Count
+    areas_formacao = funcionarios_query.values('area_formacao').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
+    # Agrupamento por nível acadêmico
+    niveis_academicos = funcionarios_query.values('nivel_academico').annotate(
+        total=Count('id')
+    ).order_by('-total')
+    
+    perfil = request.user.perfil
+    usuario = request.user
+    
+    # Busca informação do funcionário logado (se for professor)
+    funcionario_logado = None
+    if request.user.perfil == 'professor':
+        try:
+            funcionario_logado = Funcionario.objects.filter(
+                usuario=request.user,
+                escolas=escola_usuario
+            ).first()
+        except:
+            pass
+    
+    context = {
+        'funcionarios': funcionarios_page,
+        'usuario': usuario,
+        'escola': escola_usuario,
+        'total_docentes': total_docentes,
+        'docentes_ativos': docentes_ativos,
+        'docentes_inativos': docentes_inativos,
+        'areas_formacao': areas_formacao,
+        'niveis_academicos': niveis_academicos,
+        'q': q,
+        'tipo_filtro': tipo_filtro,
+        'ordenar_por': ordenar_por,
+        'funcionario_logado': funcionario_logado,
+    }
 
+    if perfil == 'diretor_geral':
+        return render(request, 'core/docentes.html', context)
+    elif perfil == 'secretario_geral':
+        return render(request, 'core/secretario_geral/docentes.html', context)
+    elif perfil in ['diretor_pedagogico', 'secretario_ped']:
+        return render(request, 'core/pedagogico/docentes.html', context)
+    elif perfil == 'professor':
+        return render(request, 'core/professor/docentes.html', context)
+    else:
+        return redirect('core:dashboard')
+    
 @login_required
 def vinculo_docente(request, professor_id, vinculo_id=None):
     """
     View unificada para criar (se vinculo_id=None) ou editar vínculos de docentes.
     Gerencia tanto o vínculo quanto os horários associados.
     """
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'}) 
+    
     # Verificar perfil do usuário primeiro
     perfil = request.user.perfil
     if perfil not in ['diretor_geral', 'secretario_geral', 'diretor_pedagogico', 'secretario_ped']:
@@ -622,21 +1260,21 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
         )
     
     # Obter professor
-    professor = get_object_or_404(Funcionario, id=professor_id, funcao__icontains='professor')
+    professor = get_object_or_404(Funcionario, id=professor_id, funcao__icontains='professor', escolas=escola_usuario)
     
     # Determinar se é criação ou edição
     modo_edicao = vinculo_id is not None
     
     if modo_edicao:
         # Modo edição - obter vínculo existente
-        vinculo = get_object_or_404(ProfessorVinculo, id=vinculo_id, professor=professor)
+        vinculo = get_object_or_404(ProfessorVinculo, id=vinculo_id, professor=professor, escola=escola_usuario)
     else:
         # Modo criação - vínculo será criado
         vinculo = None
     
     # Obter dados para o formulário
-    turmas = Turma.objects.select_related('classe', 'curso').all()
-    disciplinas = Disciplina.objects.all()
+    turmas = Turma.objects.select_related('classe', 'curso').filter(escola=escola_usuario)
+    disciplinas = Disciplina.objects.filter(escola=escola_usuario)
     
     # Serializar turmas para JS
     turmas_json = json.dumps([
@@ -659,8 +1297,8 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
             if not turma_id or not disciplina_id:
                 messages.error(request, 'Turma e disciplina são obrigatórios.')
             else:
-                turma = get_object_or_404(Turma, id=turma_id)
-                disciplina = get_object_or_404(Disciplina, id=disciplina_id)
+                turma = get_object_or_404(Turma, id=turma_id, escola=escola_usuario)
+                disciplina = get_object_or_404(Disciplina, id=disciplina_id, escola=escola_usuario)
                 
                 # Dados das listas de horários
                 dias = request.POST.getlist('dia_semana[]')
@@ -698,7 +1336,7 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
                                 # Verificar se é um horário existente (tem ID)
                                 if i < len(horarios_ids) and horarios_ids[i]:
                                     # Atualizar horário existente
-                                    horario = get_object_or_404(HorarioAula, id=horarios_ids[i], vinculo=vinculo)
+                                    horario = get_object_or_404(HorarioAula, id=horarios_ids[i], vinculo=vinculo, escola=escola_usuario)
                                     horario.dia_semana = horario_data['dia_semana']
                                     horario.hora_inicio = horario_data['hora_inicio']
                                     horario.hora_fim = horario_data['hora_fim']
@@ -707,7 +1345,7 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
                                     horarios_para_manter.append(horario.id)
                                 else:
                                     # Criar novo horário
-                                    novo_horario = HorarioAula.objects.create(**horario_data)
+                                    novo_horario = HorarioAula.objects.create(escola=escola_usuario, **horario_data) 
                                     horarios_para_manter.append(novo_horario.id)
                         
                         # Remover horários que não estão mais no formulário
@@ -717,6 +1355,7 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
                     else:
                         # Criar novo vínculo
                         vinculo = ProfessorVinculo.objects.create(
+                            escola=escola_usuario,
                             professor=professor,
                             disciplina=disciplina,
                             turma=turma
@@ -726,6 +1365,7 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
                         for i in range(len(dias)):
                             if dias[i] and inicios[i] and fims[i]:
                                 HorarioAula.objects.create(
+                                    escola=escola_usuario,
                                     vinculo=vinculo,
                                     dia_semana=dias[i],
                                     hora_inicio=inicios[i],
@@ -755,6 +1395,7 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
         'usuario': request.user,
         'modo_edicao': modo_edicao,
         'vinculo': vinculo,
+        'escola': escola_usuario,
     }
     
     # Determinar qual template usar baseado no perfil
@@ -764,7 +1405,7 @@ def vinculo_docente(request, professor_id, vinculo_id=None):
         template = 'pedagogico/diretor_pedagogico/vinculo-docente.html'
     if perfil == 'secretario_ped':
         template = 'pedagogico/secretario_ped/vinculo-docente.html'
-    else:  # secretario_geral
+    if perfil == 'secretario_geral': 
         template = 'core/secretario_geral/vinculo-docente.html'
     
     return render(request, template, context)
@@ -880,20 +1521,23 @@ def detalhes_professor(request, id):
     })
 
 @login_required
-def alunos(request):
-    aluno = Aluno.objects.all()
-    for a in aluno:
-        atualizar_estado_aluno(a)
+def alunos(request): 
+    escola_id_sessao = request.session.get('escola_atual_id')
+    aluno = Aluno.objects.filter(escola=escola_id_sessao)
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
         
-    anos_disponiveis = AnoLectivo.objects.all().order_by('-ano')
+    anos_disponiveis = AnoLectivo.objects.filter(escola=escola_usuario).order_by('-ano')
      
     ano_letivo = request.GET.get("ano_lectivo")
 
     if not ano_letivo:
-        ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     query = request.GET.get('q', '')
-    turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(ano_letivo=ano_letivo)
+    turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(ano_letivo=ano_letivo, escola=escola_usuario)
     turmas_json = json.dumps([
         {
             'id': turma.id,
@@ -908,23 +1552,23 @@ def alunos(request):
         for turma in turmas
     ])
 
-    professores = Funcionario.objects.filter(funcao__icontains='professor')
-    disciplinas = Disciplina.objects.all
+    professores = Funcionario.objects.filter(funcao__icontains='professor', escolas=escola_usuario)
+    disciplinas = Disciplina.objects.filter(escola=escola_usuario)
 
     # Base query
     reconfirmacoes = Reconfirmacao.objects.select_related(
         'aluno', 'turma', 'sala', 'classe', 'curso'
-    ).filter(ano_letivo=ano_letivo)
+    ).filter(ano_letivo=ano_letivo, escola=escola_usuario)
 
     # Filtro de pesquisa
     if query:
         reconfirmacoes = reconfirmacoes.filter(
             Q(aluno__nome_completo__icontains=query) |
             Q(aluno__numero_mecanografico__icontains=query) |
-            Q(turma__nome__icontains=query)
+            Q(turma__nome__icontains=query, escola=escola_usuario)
         )
 
-    perfil = request.user.perfil
+    perfil = request.user.perfil 
 
     # Agrupar já filtrado
     turmas_agrupadas = {}
@@ -945,11 +1589,12 @@ def alunos(request):
         'ano_letivo': ano_letivo,
         'usuario':usuario,
         'turmas':turmas,
-        'classes': Classe.objects.all(),
+        'classes': Classe.objects.filter(escola=escola_usuario),
         'turmas_json':turmas_json,
         'professores':professores,
         'disciplinas':disciplinas,
-        'anos_disponiveis':anos_disponiveis
+        'anos_disponiveis':anos_disponiveis,
+        'escola': escola_usuario
     }
 
     # Renderizar conforme perfil
@@ -1073,16 +1718,22 @@ def editar_aluno(request, aluno_id):
 
 @login_required
 def aluno_detalhes(request, id): 
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     aluno = get_object_or_404(Aluno, pk=id)
-    atualizar_estado_aluno(aluno)
+    atualizar_estado_aluno(aluno, escola_usuario)
     
-    ultima_reconfirmacao = Reconfirmacao.objects.filter(aluno=aluno).order_by('-ano_letivo').last()
+    ultima_reconfirmacao = Reconfirmacao.objects.filter(escola=escola_usuario, aluno=aluno).order_by('-ano_letivo').last()
     
-    notas = Nota.objects.filter(aluno=aluno).select_related('disciplina', 'classe')
+    notas = Nota.objects.filter(escola=escola_usuario, aluno=aluno).select_related('disciplina', 'classe')
     
     medias = {}
-    disciplinas = Disciplina.objects.all()
-    disc = Disciplina.objects.all()
+    disciplinas = Disciplina.objects.filter(escola=escola_usuario)
+    disc = Disciplina.objects.filter(escola=escola_usuario)
 
     for nota in notas.order_by('classe__numero', 'disciplina__nome', 'trimestre'):
         ano = nota.classe.numero
@@ -1129,7 +1780,8 @@ def aluno_detalhes(request, id):
             'medias': medias,
             'disciplinas': disciplinas,
             'disc':disc,
-            'usuario':usuario
+            'usuario':usuario,
+            "escola": escola_usuario
         })
     elif perfil == 'secretario_geral':
         return render(request, 'core/secretario_geral/aluno-detalhe.html', {
@@ -1138,7 +1790,8 @@ def aluno_detalhes(request, id):
             'medias': medias,
             'disciplinas': disciplinas,
             'disc':disc,
-            'usuario':usuario
+            'usuario':usuario,
+            "escola": escola_usuario
         })
     else:
         return HttpResponse(
@@ -1202,11 +1855,17 @@ def upload_foto_aluno(request, id):
 
 @login_required
 def lancar_nota(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         aluno_id = request.POST.get('aluno_id')
         disciplina_id = request.POST.get('disciplina_id')
         classe_id = request.POST.get('classe_id')
-        ano_letivo_id = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_letivo_id = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
         if ano_letivo_id:
             ano_letivo_id = ano_letivo_id.id
  
@@ -1219,6 +1878,7 @@ def lancar_nota(request):
 
         try:
             nota_existente = Nota.objects.filter(
+                escola=escola_usuario,
                 ano_lectivo=ano_letivo_id,
                 aluno=aluno_id,
                 classe=classe_id,
@@ -1230,6 +1890,7 @@ def lancar_nota(request):
                 messages.warning(request, 'Nota já foi lançada para este aluno nesta disciplina e trimestre.')
             else:
                 Nota.objects.create(
+                    escola=escola_usuario,
                     aluno_id=aluno_id,
                     disciplina_id=disciplina_id,
                     classe_id=classe_id,
@@ -1245,6 +1906,12 @@ def lancar_nota(request):
     
 @login_required
 def deletar_nota(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         nota_id = request.POST.get('nota_id')
         trimestre = request.POST.get('trimestre')
@@ -1290,13 +1957,19 @@ def deletar_nota(request):
 
 @login_required
 def classes(request):
-    classes = Classe.objects.all().order_by('numero')
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    classes = Classe.objects.filter(escola=escola_usuario).order_by('numero')
 
     perfil = request.user.perfil 
     usuario = request.user   
      
     if perfil == 'diretor_geral':
-        return render(request, 'core/classes.html', {'classes': classes, 'usuario':usuario})
+        return render(request, 'core/classes.html', {'classes': classes, 'usuario':usuario, 'escola':escola_usuario})
     else:
         return HttpResponse(
             """
@@ -1346,8 +2019,15 @@ def classes(request):
 
 @login_required
 def criar_classe(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         Classe.objects.create(
+            escola=escola_usuario,
             designacao=request.POST['designacao'],
             numero=request.POST['numero']
         )
@@ -1355,6 +2035,12 @@ def criar_classe(request):
 
 @login_required
 def atualizar_classe(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         classe = get_object_or_404(Classe, pk=request.POST['id'])
         classe.designacao = request.POST['designacao']
@@ -1370,12 +2056,18 @@ def eliminar_classe(request, id):
 
 @login_required
 def cursos(request):
-    cursos = Curso.objects.all().order_by('nome')
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    cursos = Curso.objects.filter(escola=escola_usuario).order_by('nome')
     perfil = request.user.perfil   
     usuario = request.user
      
     if perfil == 'diretor_geral':
-        return render(request, 'core/cursos.html', {'cursos': cursos, 'usuario':usuario})
+        return render(request, 'core/cursos.html', {'cursos': cursos, 'usuario':usuario, 'escola': escola_usuario})
     else:
         return HttpResponse(
             """
@@ -1425,18 +2117,35 @@ def cursos(request):
 
 @login_required
 def criar_curso(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': 'Escola inválida.'
+        })
+
     if request.method == 'POST':
         Curso.objects.create(
+            escola=escola_usuario,
             nome=request.POST['nome'],
+            tipo=request.POST['tipo'],
         )
+
     return redirect('core:cursos')
 
 @login_required
 def atualizar_curso(request):
     if request.method == 'POST':
         curso = get_object_or_404(Curso, pk=request.POST['id'])
+
         curso.nome = request.POST['nome']
+        curso.tipo = request.POST['tipo']
+
         curso.save()
+
     return redirect('core:cursos')
 
 @login_required
@@ -1493,36 +2202,42 @@ def editar_nota(request):
 
 @login_required
 def turmas_e_salas(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         qtd_salas = int(request.POST.get('quantidade', 0))
-        total_existentes = Sala.objects.count()
+        total_existentes = Sala.objects.filter(escola=escola_usuario).count()
 
         if qtd_salas > total_existentes:
             for i in range(total_existentes + 1, qtd_salas + 1):
-                Sala.objects.create(nome=str(i))
+                Sala.objects.create(nome=str(i), escola=escola_usuario)
         elif qtd_salas < total_existentes:
-           salas_para_excluir = Sala.objects.all().order_by('-id')[:total_existentes - qtd_salas]
+           salas_para_excluir = Sala.objects.filter(escola=escola_usuario).order_by('-id')[:total_existentes - qtd_salas]
            for sala in salas_para_excluir:
                sala.delete()
 
 
         return redirect('core:turmas_e_salas')
     
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
-    salas = Sala.objects.all().order_by('id')
-    turmas = Turma.objects.filter(ano_letivo=ano_letivo).order_by('id')
-    classes = Classe.objects.all().order_by('id')
-    cursos = Curso.objects.all().order_by('id')
-    salas = Sala.objects.all().order_by('id')
+    salas = Sala.objects.filter(escola=escola_usuario).order_by('id')
+    turmas = Turma.objects.filter(ano_letivo=ano_letivo, escola=escola_usuario).order_by('id')
+    classes = Classe.objects.filter(escola=escola_usuario).order_by('id')
+    cursos = Curso.objects.filter(escola=escola_usuario).order_by('id')
+    salas = Sala.objects.filter(escola=escola_usuario).order_by('id')
 
     perfil = request.user.perfil  
     usuario = request.user 
      
     if perfil == 'diretor_geral':
-        return render(request, 'core/turmas-salas.html', {'turmas': turmas, 'classes': classes, 'cursos': cursos, 'salas': salas,'total': salas.count(), 'usuario':usuario, 'ano_letivo':ano_letivo})
+        return render(request, 'core/turmas-salas.html', {'turmas': turmas, 'classes': classes, 'cursos': cursos, 'salas': salas,'total': salas.count(), 'usuario':usuario, 'ano_letivo':ano_letivo, 'escola': escola_usuario})
     elif perfil == 'secretario_geral':
-        return render(request, 'core/secretario_geral/turmas-salas.html', {'turmas': turmas, 'classes': classes, 'cursos': cursos, 'salas': salas,'total': salas.count(), 'usuario':usuario, 'ano_letivo':ano_letivo})
+        return render(request, 'core/secretario_geral/turmas-salas.html', {'turmas': turmas, 'classes': classes, 'cursos': cursos, 'salas': salas,'total': salas.count(), 'usuario':usuario, 'ano_letivo':ano_letivo, 'escola': escola_usuario})
     else:
         return HttpResponse(
             """
@@ -1572,21 +2287,27 @@ def turmas_e_salas(request):
    
 @login_required
 def criar_turma(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         nome = request.POST.get('nome')
         turno = request.POST.get('turno')
         classe_id = request.POST.get('classe')
         curso_id = request.POST.get('curso')
         sala_id = request.POST.get('sala')
-        ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
         if not (nome and turno and classe_id and curso_id):
             messages.error(request, "Todos os campos obrigatórios devem ser preenchidos.")
             return redirect(request.META.get('HTTP_REFERER'))
 
         # Verifica se a classe e curso existem
-        classe = get_object_or_404(Classe, id=classe_id)
-        curso = get_object_or_404(Curso, id=curso_id)
+        classe = get_object_or_404(Classe, id=classe_id, escola=escola_usuario)
+        curso = get_object_or_404(Curso, id=curso_id, escola=escola_usuario)
 
         # Valida se curso é "Base" quando a classe <= 9
         if classe.numero <= 9 and curso.nome.lower() != "base":
@@ -1595,13 +2316,14 @@ def criar_turma(request):
 
         # Valida se a sala tem menos de 3 turmas
         if sala_id:
-            quantidade_turmas = Turma.objects.filter(sala_id=sala_id, ano_letivo=ano_letivo).count()
+            quantidade_turmas = Turma.objects.filter(sala_id=sala_id, ano_letivo=ano_letivo, escola=escola_usuario).count()
             if quantidade_turmas >= 3:
                 messages.error(request, "Essa sala já está associada ao número máximo de 3 turmas.")
                 return redirect(request.META.get('HTTP_REFERER'))
 
         # Verifica se já existe uma turma igual
         turma_existente = Turma.objects.filter(
+            escola=escola_usuario,
             nome=nome,
             turno=turno,
             sala_id=sala_id,
@@ -1614,6 +2336,7 @@ def criar_turma(request):
 
         # Criação da turma
         turma = Turma(
+            escola=escola_usuario,
             nome=nome,
             turno=turno,
             classe=classe,
@@ -1630,6 +2353,12 @@ def criar_turma(request):
 
 @login_required
 def editar_turma(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         turma_id = request.POST.get('id')
         turma = get_object_or_404(Turma, pk=turma_id)
@@ -1642,7 +2371,7 @@ def editar_turma(request):
 
         # Verifica se a nova sala (se for diferente) já possui 3 turmas
         if sala_id and str(turma.sala_id) != str(sala_id):
-            quantidade_turmas = Turma.objects.filter(sala_id=sala_id).count()
+            quantidade_turmas = Turma.objects.filter(sala_id=sala_id, escola=escola_usuario).count()
             if quantidade_turmas >= 3:
                 messages.error(request, "Essa sala já está associada ao número máximo de 3 turmas.")
                 return redirect(request.META.get('HTTP_REFERER'))
@@ -1672,14 +2401,20 @@ def eliminar_turma(request, turma_id):
 
 @login_required
 def listar_disciplinas(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     query = request.GET.get('q')
     if query:
-        disciplinas = Disciplina.objects.filter(nome__icontains=query)
+        disciplinas = Disciplina.objects.filter(nome__icontains=query, escola=escola_usuario)
     else:
-        disciplinas = Disciplina.objects.all()
+        disciplinas = Disciplina.objects.filter(escola=escola_usuario)
 
     vinculacoes = DisciplinasClasse.objects.select_related('disciplina', 'classe').all()
-    classes = Classe.objects.all()
+    classes = Classe.objects.filter(escola=escola_usuario)
 
     perfil = request.user.perfil
     usuario = request.user
@@ -1695,6 +2430,7 @@ def listar_disciplinas(request):
         'classes_json': json.dumps(classes_data),
         'vinculadas_json': json.dumps(vinculadas_data),
         'usuario': usuario,
+        'escola': escola_usuario,
     }
     
     if perfil == 'diretor_geral': 
@@ -1750,10 +2486,16 @@ def listar_disciplinas(request):
 
 @login_required
 def criar_disciplina(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         nome = request.POST.get('nome')
         if nome:
-            Disciplina.objects.create(nome=nome, classe = 0)
+            Disciplina.objects.create(escola=escola_usuario, nome=nome, classe = 0)
             messages.success(request, 'Disciplina criada com sucesso.')
     return redirect('core:disciplinas')
 
@@ -1845,10 +2587,16 @@ def normalizar_nome(nome):
 
 @login_required
 def matriculas_view(request):
-    turmas = Turma.objects.select_related('classe', 'curso', 'sala').all()
-    classes = Classe.objects.all()
-    cursos = Curso.objects.all()
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(escola=escola_usuario)
+    classes = Classe.objects.filter(escola=escola_usuario)
+    cursos = Curso.objects.filter(escola=escola_usuario)
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
     
     # Gerar anos para o formulário (últimos 30 anos)
     ano_atual = datetime.now().year
@@ -1915,6 +2663,7 @@ def matriculas_view(request):
         try:
             with transaction.atomic():
                 user = Usuario.objects.create_user(
+                    escola=escola_usuario,
                     username=username,
                     password=senha,
                     first_name=nome_completo.split()[0],
@@ -1924,6 +2673,7 @@ def matriculas_view(request):
 
                 # Criar aluno com todos os campos
                 aluno = Aluno.objects.create(
+                    escola=escola_usuario,
                     usuario=user,
                     nome_completo=nome_completo,
                     numero_mecanografico=numero_mecanografico,
@@ -1944,6 +2694,7 @@ def matriculas_view(request):
 
                 # Criar reconfirmação
                 Reconfirmacao.objects.create(
+                    escola=escola_usuario,
                     aluno=aluno,
                     ano_letivo=ano_letivo,
                     turma=turma,
@@ -1969,7 +2720,8 @@ def matriculas_view(request):
             'classes': classes,
             'cursos': cursos,
             'turmas_json': turmas_json,
-            'usuario':usuario
+            'usuario': usuario,
+            'escola': escola_usuario,
         })
     elif perfil == 'secretario_geral':
         return render(request, 'core/secretario_geral/matriculas.html', {
@@ -1977,7 +2729,8 @@ def matriculas_view(request):
             'classes': classes,
             'cursos': cursos,
             'turmas_json': turmas_json,
-            'usuario':usuario
+            'usuario':usuario,
+            'escola': escola_usuario,
         })
     else:
         return HttpResponse(
@@ -2028,6 +2781,12 @@ def matriculas_view(request):
 
 @login_required
 def comprovativo_matricula(request, aluno_id):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     aluno = get_object_or_404(Aluno, id=aluno_id)
     data_hoje = datetime.now()
     # Número do recibo (sequência de pagamentos)
@@ -2058,6 +2817,7 @@ def comprovativo_matricula(request, aluno_id):
             'atendido_por': request.user,
             'usuario':usuario,
             "barcode": barcode_base64,
+            'escola': escola_usuario,
         })
     elif perfil == 'secretario_geral':
         return render(request, 'core/secretario_geral/comprovativo_matricula.html', {
@@ -2066,6 +2826,7 @@ def comprovativo_matricula(request, aluno_id):
             'atendido_por': request.user,
             'usuario':usuario,
             "barcode": barcode_base64,
+            'escola': escola_usuario,
         })
     else:
         return HttpResponse(
@@ -2116,8 +2877,14 @@ def comprovativo_matricula(request, aluno_id):
 
 @login_required
 def reconfirmacao(request):
-    ano_letivo = AnoLectivo.objects.filter(estado='Fechado').last()
-    ano_aberto = AnoLectivo.objects.filter(estado='Aberto').last()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    ano_letivo = AnoLectivo.objects.filter(estado='Fechado', escola=escola_usuario).last()
+    ano_aberto = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     if request.method == 'GET':
         query = request.GET.get('q', '')
@@ -2125,9 +2892,9 @@ def reconfirmacao(request):
         # Base query
         reconfirmacoes = Reconfirmacao.objects.select_related(
             'aluno', 'turma', 'sala', 'classe', 'curso' 
-        ).filter(ano_letivo=ano_letivo)
+        ).filter(ano_letivo=ano_letivo, escola=escola_usuario)
 
-        turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(ano_letivo=ano_aberto)
+        turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(ano_letivo=ano_aberto, escola=escola_usuario)
         turmas_json = json.dumps([
             {
                 'id': turma.id,
@@ -2147,7 +2914,8 @@ def reconfirmacao(request):
             reconfirmacoes = reconfirmacoes.filter(
                 Q(aluno__nome_completo__icontains=query) |
                 Q(aluno__numero_mecanografico__icontains=query) |
-                Q(turma__nome__icontains=query)
+                Q(turma__nome__icontains=query) |
+                Q(escola=escola_usuario)
             )
 
         # Agrupar já filtrado
@@ -2167,8 +2935,9 @@ def reconfirmacao(request):
             'ano_letivo': ano_letivo,
             'usuario': request.user,
             'turmas': turmas,
-            'classes': Classe.objects.all(),
+            'classes': Classe.objects.filter(escola=escola_usuario),
             'turmas_json': turmas_json,
+            'escola': escola_usuario
         }
         
         perfil = request.user.perfil
@@ -2240,13 +3009,14 @@ def reconfirmacao(request):
         turno = request.POST.get('turno')
         
         # Obter ano letivo atual
-        ano_aberto = AnoLectivo.objects.filter(estado='Aberto').first()
+        ano_aberto = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).first()
         if not ano_aberto:
             messages.error(request, 'Não há ano letivo aberto para realizar a reconfirmação.')
             return redirect('core:reconfirmacao')
         
         # Verificar se já existe reconfirmação ativa para este aluno no ano letivo
         reconfirmacao_existente = Reconfirmacao.objects.filter(
+            escola=escola_usuario,
             aluno=aluno,
             ano_letivo=ano_letivo,
             estado='Adimplente'
@@ -2289,13 +3059,19 @@ def reconfirmacao(request):
 
 @login_required
 def pautas(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+
     perfil = request.user.perfil
     usuario = request.user
 
     if perfil == 'diretor_geral':
-        return render(request, 'core/pautas.html', {'usuario':usuario})
+        return render(request, 'core/pautas.html', {'usuario':usuario, 'escola':escola_usuario})
     elif perfil == 'secretario_geral':
-        return render(request, 'core/secretario_geral/pautas.html', {'usuario':usuario})
+        return render(request, 'core/secretario_geral/pautas.html', {'usuario':usuario, 'escola':escola_usuario})
     else:
         return HttpResponse(
             """
@@ -2345,18 +3121,25 @@ def pautas(request):
 
 @login_required
 def pautas_trimestre(request, trimestre):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     query = request.GET.get('q', '')
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     reconfirmacoes = Reconfirmacao.objects.select_related(
         'aluno', 'turma', 'sala', 'classe', 'curso'
-    ).filter(ano_letivo=ano_letivo)
+    ).filter(ano_letivo=ano_letivo, escola=escola_usuario)
 
     if query:
         reconfirmacoes = reconfirmacoes.filter(
             Q(aluno__nome_completo__icontains=query) |
             Q(aluno__numero_mecanografico__icontains=query) |
-            Q(turma__nome__icontains=query)
+            Q(turma__nome__icontains=query) |
+            Q(escola=escola_usuario)
         )
 
     turmas_agrupadas = {}
@@ -2375,6 +3158,7 @@ def pautas_trimestre(request, trimestre):
         
         # Buscar todas as notas do aluno no trimestre
         notas_aluno = Nota.objects.filter(
+            escola=escola_usuario,
             aluno=aluno,
             trimestre=trimestre
         ).select_related('disciplina')
@@ -2466,7 +3250,8 @@ def pautas_trimestre(request, trimestre):
             'search_query': query,
             'trimestre': trimestre,
             'texto': texto,
-            'usuario': usuario
+            'usuario': usuario,
+            'escola': escola_usuario,
         })
     elif perfil == 'secretario_geral':
         return render(request, 'core/secretario_geral/pautas_trimestre.html', {
@@ -2474,7 +3259,8 @@ def pautas_trimestre(request, trimestre):
             'search_query': query,
             'trimestre': trimestre,
             'texto': texto,
-            'usuario': usuario
+            'usuario': usuario,
+            'escola': escola_usuario,
         })
     else:
         return HttpResponse(
@@ -2525,18 +3311,25 @@ def pautas_trimestre(request, trimestre):
     
 @login_required 
 def pautas_final(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     query = request.GET.get('q', '')
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     reconfirmacoes = Reconfirmacao.objects.select_related(
         'aluno', 'turma', 'sala', 'classe', 'curso'
-    ).filter(ano_letivo=ano_letivo)
+    ).filter(ano_letivo=ano_letivo, escola=escola_usuario)
 
     if query:
         reconfirmacoes = reconfirmacoes.filter(
             Q(aluno__nome_completo__icontains=query) |
             Q(aluno__numero_mecanografico__icontains=query) |
-            Q(turma__nome__icontains=query)
+            Q(turma__nome__icontains=query) |
+            Q(escola=escola_usuario)
         )
 
     turmas_agrupadas = {}
@@ -2554,7 +3347,7 @@ def pautas_final(request):
         classe_numero = r.classe.numero
         
         # Buscar todas as notas do aluno para calcular média final
-        notas_aluno = Nota.objects.filter(aluno=aluno).select_related('disciplina')
+        notas_aluno = Nota.objects.filter(aluno=aluno, escola=escola_usuario).select_related('disciplina')
         
         linha = {
             'aluno': aluno.nome_completo,
@@ -2686,12 +3479,14 @@ def pautas_final(request):
     if perfil == 'diretor_geral':
         return render(request, 'core/pautas_finais.html', {
             'turmas_agrupadas': turmas_final,
-            'usuario': usuario
+            'usuario': usuario, 
+            'escola':escola_usuario
         })
     elif perfil == 'secretario_geral':
         return render(request, 'core/secretario_geral/pautas_finais.html', {
             'turmas_agrupadas': turmas_final,
-            'usuario': usuario
+            'usuario': usuario,
+            'escola':escola_usuario
         })
     else:
         return HttpResponse(
@@ -2743,7 +3538,13 @@ def pautas_final(request):
 @login_required
 def coordenacoes(request):
     perfil = request.user.perfil
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
     if not ano_letivo:
         return HttpResponse(
             """
@@ -2801,7 +3602,7 @@ def coordenacoes(request):
     contexto = {}
 
     def montar_pauta_por_turma(turma):
-        alunos = Aluno.objects.filter(turma=turma)
+        alunos = Aluno.objects.filter(turma=turma, escola=escola_usuario)
         pauta_alunos = []
         for aluno in alunos:
             linha = {
@@ -2811,9 +3612,10 @@ def coordenacoes(request):
             }
             tem_todas_notas = True
 
-            disciplinas_classe = DisciplinasClasse.objects.filter(classe=turma.classe).select_related('disciplina')
+            disciplinas_classe = DisciplinasClasse.objects.filter(classe=turma.classe, escola=escola_usuario).select_related('disciplina')
             for disc_classe in disciplinas_classe:
                 nota = Nota.objects.filter(
+                    escola=escola_usuario,
                     aluno=aluno,
                     disciplina=disc_classe.disciplina,
                     trimestre=trimestre,
@@ -2840,9 +3642,10 @@ def coordenacoes(request):
     def montar_pauta_por_disciplina(disciplina, turmas):
         pauta_alunos = []
         for turma in turmas:
-            alunos = Aluno.objects.filter(turma=turma)
+            alunos = Aluno.objects.filter(turma=turma, escola=escola_usuario)
             for aluno in alunos:
                 nota = Nota.objects.filter(
+                    escola=escola_usuario,
                     aluno=aluno,
                     disciplina=disciplina,
                     trimestre=trimestre,
@@ -2869,18 +3672,19 @@ def coordenacoes(request):
         return pauta_alunos
 
     # Para outros perfis, retorna tudo
-    professores = Funcionario.objects.filter(funcao__icontains='professor')
-    turmas = Turma.objects.all()
-    disciplinas = Disciplina.objects.all()
+    professores = Funcionario.objects.filter(funcao__icontains='professor', escolas=escola_usuario)
+    turmas = Turma.objects.filter(escola=escola_usuario)
+    disciplinas = Disciplina.objects.filter(escola=escola_usuario)
     usuario = request.user
 
     contexto.update({
-        'coordenacoes': Coordenacao.objects.select_related('funcionario', 'turma', 'disciplina'),
+        'coordenacoes': Coordenacao.objects.select_related('funcionario', 'turma', 'disciplina').filter(escola=escola_usuario),
         'professores': professores,
         'turmas': turmas,
         'disciplinas': disciplinas,
         'trimestre': trimestre,
         'usuario':usuario,
+        'escola': escola_usuario,
     })
 
     if perfil == 'diretor_geral':
@@ -2938,6 +3742,12 @@ def coordenacoes(request):
      
 @login_required
 def criar_coordenacao(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     if request.method == 'POST':
         funcionario_id = request.POST.get('funcionario_id')
         tipo = request.POST.get('tipo')
@@ -2949,6 +3759,7 @@ def criar_coordenacao(request):
         disciplina = Disciplina.objects.filter(id=disciplina_id).first() if disciplina_id else None
 
         Coordenacao.objects.create(
+            escola=escola_usuario,
             funcionario=funcionario,
             tipo=tipo,
             turma=turma,
@@ -3010,36 +3821,11 @@ def gerar_ata_prova(request):
 
 @login_required
 def ano_lectivo(request):
-    anos = AnoLectivo.objects.all().order_by("-id")
-
-    if request.method == "POST":
-        ano_id = request.POST.get("id")
-        ano_valor = request.POST.get("ano")
-        estado_valor = request.POST.get("estado")
-
-        if ano_id:  # atualização
-            ano_obj = get_object_or_404(AnoLectivo, id=ano_id)
-            ano_obj.ano = ano_valor
-            if estado_valor:
-                ano_obj.estado = estado_valor
-            ano_obj.save()
-            messages.success(request, "Ano lectivo atualizado com sucesso.")
-        else:  # criação
-            # Fecha o último ano aberto
-            ultimo_ano = AnoLectivo.objects.filter(estado="Aberto").last()
-            if ultimo_ano:
-                ultimo_ano.estado = "Fechado"
-                ultimo_ano.save()
-            AnoLectivo.objects.create(ano=ano_valor, estado="Aberto")
-            messages.success(request, "Ano lectivo cadastrado com sucesso.")
-
-        return redirect("core:ano_lectivo")
-
-    perfil = request.user.perfil
-    usuario = request.user
-    if perfil == 'diretor_geral':
-        return render(request, "core/ano-lectivo.html", {"anos": anos, "usuario":usuario})
-    else:
+    # Obtém a escola da sessão
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    # Verifica se o usuário tem permissão e se há escola selecionada
+    if request.user.perfil != 'diretor_geral':
         return HttpResponse(
             """
             <html>
@@ -3085,6 +3871,80 @@ def ano_lectivo(request):
             """,
             status=401
         )
+    
+    # Verifica se há uma escola selecionada na sessão
+    if not escola_id_sessao:
+        messages.warning(request, 'Por favor, selecione uma escola primeiro.')
+        return redirect('core:selecionar_escola')
+    
+    try:
+        escola = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola não encontrada.')
+        return redirect('core:selecionar_escola')
+    
+    # Filtra os anos lectivos pela escola selecionada
+    anos = AnoLectivo.objects.filter(escola=escola).order_by("-id")
+
+    if request.method == "POST":
+        ano_id = request.POST.get("id")
+        ano_valor = request.POST.get("ano")
+        estado_valor = request.POST.get("estado")
+
+        if ano_id:  # atualização
+            ano_obj = get_object_or_404(AnoLectivo, id=ano_id, escola=escola)
+            ano_obj.ano = ano_valor
+            if estado_valor:
+                # Se estiver fechando um ano, verificar se é o único aberto
+                if estado_valor == "Fechado" and ano_obj.estado == "Aberto":
+                    # Permite fechar o ano
+                    ano_obj.estado = estado_valor
+                elif estado_valor == "Aberto":
+                    # Se for abrir um ano, fechar o último aberto da mesma escola
+                    ultimo_ano_aberto = AnoLectivo.objects.filter(
+                        escola=escola, 
+                        estado="Aberto"
+                    ).exclude(id=ano_id).last()
+                    if ultimo_ano_aberto:
+                        ultimo_ano_aberto.estado = "Fechado"
+                        ultimo_ano_aberto.save()
+                    ano_obj.estado = estado_valor
+                else:
+                    ano_obj.estado = estado_valor
+            ano_obj.save()
+            messages.success(request, "Ano lectivo atualizado com sucesso.")
+        else:  # criação
+            # Verifica se já existe um ano com o mesmo valor para esta escola
+            if AnoLectivo.objects.filter(ano=ano_valor, escola=escola).exists():
+                messages.error(request, f"O ano {ano_valor} já está cadastrado para esta escola.")
+                return redirect("core:ano_lectivo")
+            
+            # Fecha o último ano aberto da mesma escola
+            ultimo_ano_aberto = AnoLectivo.objects.filter(
+                escola=escola, 
+                estado="Aberto"
+            ).last()
+            if ultimo_ano_aberto:
+                ultimo_ano_aberto.estado = "Fechado"
+                ultimo_ano_aberto.save()
+            
+            # Cria o novo ano lectivo para a escola específica
+            AnoLectivo.objects.create(
+                ano=ano_valor, 
+                estado="Aberto",
+                escola=escola 
+            )
+            messages.success(request, "Ano lectivo cadastrado com sucesso.")
+
+        return redirect("core:ano_lectivo")
+
+    context = {
+        "anos": anos, 
+        "usuario": request.user,
+        "escola": escola
+    }
+    
+    return render(request, "core/ano-lectivo.html", context)
 
 @login_required
 def alterar_senha(request):

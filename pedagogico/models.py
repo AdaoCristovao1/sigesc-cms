@@ -5,8 +5,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator, MinValueValidator, MaxValueValidator
 import os
 from django.utils import timezone
+from escola.models import Escola
 
 class Disciplina(models.Model):
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     nome = models.CharField(max_length=100)
     classe = models.IntegerField()
     codigo = models.CharField(max_length=10)
@@ -23,13 +25,15 @@ class Disciplina(models.Model):
         return f'{self.nome}'
 
 class DisciplinasClasse(models.Model):
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     disciplina = models.ForeignKey(Disciplina, on_delete=models.CASCADE)
     classe = models.ForeignKey(Classe, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'{self.disciplina.nome} - {self.classe.numero}ª Classe'
 
-class Nota(models.Model):
+class Nota(models.Model): 
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     ano_lectivo = models.ForeignKey('administracao.AnoLectivo', on_delete=models.CASCADE)
     aluno = models.ForeignKey('administracao.Aluno', on_delete=models.CASCADE)
     classe = models.ForeignKey('administracao.Classe', on_delete=models.CASCADE)
@@ -41,6 +45,7 @@ class Nota(models.Model):
         return f'{self.aluno.usuario.username} - {self.disciplina.nome} - T{self.trimestre}' 
  
 class ProfessorVinculo(models.Model):
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     professor = models.ForeignKey(Funcionario, on_delete=models.CASCADE, limit_choices_to={'funcao': 'professor'})
     turma = models.ForeignKey('administracao.Turma', on_delete=models.CASCADE)
     disciplina = models.ForeignKey('Disciplina', on_delete=models.CASCADE)
@@ -61,7 +66,7 @@ class HorarioAula(models.Model):
         ('6', 'Sexta-feira'),
         ('7', 'Sábado'),
     ]
-
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     vinculo = models.ForeignKey(ProfessorVinculo, on_delete=models.CASCADE, related_name='horarios')
     dia_semana = models.CharField(max_length=1, choices=DIA_SEMANA_CHOICES)
     hora_inicio = models.TimeField()
@@ -89,7 +94,7 @@ class Coordenacao(models.Model):
         ('Tarde', 'Tarde'),
         ('Noite', 'Noite'),
     ]
-
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
     tipo = models.CharField(max_length=15, choices=TIPOS)
 
@@ -126,6 +131,7 @@ class Coordenacao(models.Model):
 
 class Monografia(models.Model):
     # Campos principais
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     titulo = models.CharField(max_length=200, verbose_name="Título")
     resumo = models.TextField(verbose_name="Resumo", blank=True, null=True)
     
@@ -194,7 +200,7 @@ class Avaliacao(models.Model):
         ('concluida', 'Concluída'),
         ('cancelada', 'Cancelada'),
     ]
-    
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     monografia = models.ForeignKey('Monografia', on_delete=models.CASCADE, related_name='avaliacoes')
     avaliador = models.CharField(max_length=100, verbose_name="Avaliador")
     data_atribuicao = models.DateTimeField(default=timezone.now)

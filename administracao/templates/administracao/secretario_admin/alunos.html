@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 
-  <style>
+  <style> 
    .sidebar{
       overflow-y: auto;
     }
@@ -84,10 +84,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola" 
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Secretário Administrativo</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -138,37 +139,43 @@
 
     <div class="container mt-4">
        <div class="d-flex justify-content-between align-items-center mb-3">
-      <h2 class="page-title w-100"><i class="fas fa-user-graduate me-2"></i> Lista de Alunos Matriculados: {{ano_letivo}}</h2>
+      <h2 class="page-title w-100"><i class="fas fa-user-graduate me-2"></i>Alunos Matriculados: {{ano_letivo}} - {{ escola.nome }}</h2>
     </div>
-    <form method="GET" class="d-flex w-75 mb-4 w-100">
-          <input type="text" name="q" class="form-control me-2" placeholder="Buscar aluno, nº mecanográfico ou turma..." value="{{ search_query }}">
-          <div class="col-md-4">
-                <button type="submit" class="btn btn-primary">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
-                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
-                    </svg>
-                    Pesquisar 
-                </button>
-            </div>
-        </form>
-        <div class="row align-items-center">
-          <!-- Selecionar ano letivo -->
-          <div class="col-md-4">
-              <form method="get" class="d-flex align-items-end">
-                  <div class="me-2 flex-grow-1">
-                      <label for="ano_lectivo" class="form-label">Ano Letivo:</label>
-                      <select name="ano_lectivo" id="ano_lectivo" class="form-select">
-                          {% for ano in anos_disponiveis %}
-                              <option value="{{ ano }}" {% if ano == ano_lectivo %}selected{% endif %}>{{ ano }}</option>
-                          {% endfor %}
-                      </select>
-                  </div>
-                  <div>
-                      <button type="submit" class="btn btn-primary">Filtrar</button>
-                  </div>
-              </form>
+    <div class="mb-4">
+        <form method="GET" class="row g-3">
+          <div class="col-md-5">
+            <input type="text" name="q" class="form-control" placeholder="Buscar aluno, nº mecanográfico ou turma..." value="{{ search_query }}">
           </div>
-    <br><br>
+          <div class="col-md-3">
+            <select name="ano_lectivo" id="ano_lectivo" class="form-select">
+              <option value="">Todos os anos</option>
+              {% for ano in anos_disponiveis %}
+                  <option value="{{ ano }}" {% if ano == ano_letivo %}selected{% endif %}>{{ ano }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+              <i class="fas fa-search me-1"></i> Pesquisar 
+            </button>
+          </div>
+          <div class="col-md-2">
+            <a href="{% url 'administracao:alunos_lista' %}" class="btn btn-secondary w-100">
+              <i class="fas fa-undo-alt me-1"></i> Limpar
+            </a>
+          </div>
+        </form>
+        
+        <br>
+        <div class="btn-group" role="group">
+          <a href="{% url 'documentos:alunos_inadimpletes' %}" class="btn btn-danger" target="_blank">
+            <i class="fas fa-exclamation-triangle me-1"></i> Alunos Inadimplentes
+          </a>
+          <a href="{% url 'documentos:print_alunos' %}" class="btn btn-success">
+            <i class="fas fa-print me-1"></i> Imprimir Lista
+          </a>
+        </div>
+      </div>
      {% if messages %}
             <div class="mt-3">
             {% for message in messages %}

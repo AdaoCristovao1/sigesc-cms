@@ -47,8 +47,10 @@
     <div class="container-fluid">
         <!-- Cabeçalho -->
         <div class="header-relatorio text-center">
-            <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 80px; height: 80px;" class="mb-2">
-            <h4 class="mb-1">Complexo Escolar Veredas Encantadas</h4>
+            {% if escola.logotipo %}
+                <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+            {% endif %}
+            <h4 class="mb-1">{{ escola.nome }}</h4>
             <h5 class="text-muted">Folha de Salário - {{ mes }}/{{ ano }}</h5>
             <p class="mb-0"><strong>Ano Letivo:</strong> {{ ano_lectivo.ano_lectivo }}</p>
             <p class="text-muted"><small>Gerado em: {{ data_geracao|date:"d/m/Y H:i" }} por {{ usuario.get_full_name }}</small></p>

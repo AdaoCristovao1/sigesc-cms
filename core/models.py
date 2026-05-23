@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from escola.models import Escola
 
 class Usuario(AbstractUser):
     PERFIS = [ 
@@ -17,6 +18,7 @@ class Usuario(AbstractUser):
         ('encarregado', 'Encarregado de Educação'),
         ('aluno', 'Aluno'), 
     ]
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
     perfil = models.CharField(max_length=20, choices=PERFIS)
     telefone = models.CharField(max_length=15, blank=True, null=True)
     foto = models.ImageField(upload_to='usuarios/fotos/', blank=True, null=True)

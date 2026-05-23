@@ -11,6 +11,7 @@ urlpatterns = [
     path('documentos/', include('documentos.urls', namespace='documentos')),
     path('estudante/', include('estudante.urls', namespace='estudante')),
     path('financeiro/', include('financeiro.urls', namespace='financa')),
+    path('escola/', include('escola.urls', namespace='escola')),
 ]
 
 if settings.DEBUG:

@@ -61,13 +61,15 @@
   <!-- CABEÇALHO original-->
   <div class="row align-items-center mb-4">
     <!-- Logo -->
-    <div class="col-2 d-flex justify-content-start">
-      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 90px; height: 90px;">
+    <div class="col-2 d-flex justify-content-start"> 
+      {% if escola.logotipo %}
+        <img src="{{ escola.logotipo.url }}" alt="Logo" style="width: 80px; height: 80px;">
+      {% endif %}
     </div>
 
     <!-- Texto do cabeçalho -->
     <div class="col-6 d-flex flex-column justify-content-center">
-      <h6 class="mb-0"><strong>Complexo Escolar <br> Veredas Encantadas</strong></h6>
+      <h6 class="mb-0"><strong>{{ escola.nome }}</h6>
       <h6 class="mt-1">Factura / Recibo</h6>
     </div>
 
@@ -187,7 +189,7 @@
   </div>
   
   <p class="mt-3">
-    &copy; Documento Gerado por Sistema de Gestão SIGEsc || Complexo Escolar Privado Veredas Encantadas - NIF:5001690906 - Tel.: 932226571
+    &copy; Documento Gerado por Sistema de Gestão SIGEsc || {{ escola.nome }} - NIF:{{ escola.nif }} - Tel.: {{ escola.contacto }}
   </p>
   
   <hr class="mt-3">
@@ -196,10 +198,12 @@
   <!-- CABEÇALHO Cópia-->
   <div class="row align-items-center mb-4">
     <div class="col-2 d-flex justify-content-start">
-      <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 90px; height: 90px;">
+      {% if escola.logotipo %}
+        <img src="{{ escola.logotipo.url }}" alt="Logo" style="width: 80px; height: 80px;">
+      {% endif %}
     </div>
     <div class="col-6 d-flex flex-column justify-content-center">
-      <h6 class="mb-0"><strong>Complexo Escolar <br> Veredas Encantadas</strong></h6>
+      <h6 class="mb-0"><strong>{{ escola.nome }}</h6>
       <h6 class="mt-1">Factura / Recibo (Cópia)</h6> 
     </div>
     <div class="col-3 d-flex justify-content-end">
@@ -304,7 +308,7 @@
   </div>
   
   <p class="mt-3">
-    &copy; Documento Gerado por Sistema de Gestão SIGEsc || Complexo Escolar Privado Veredas Encantadas - NIF:5001690906 - Tel.: 932226571
+    &copy; Documento Gerado por Sistema de Gestão SIGEsc || {{ escola.nome }} - NIF:{{ escola.nif }} - Tel.: {{ escola.contacto }}
   </p>
 </body>
 </html>

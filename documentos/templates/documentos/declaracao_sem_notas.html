@@ -144,9 +144,14 @@
 </div>
 
 <div class="header">
-  <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" class="logo">
-  <h1>Complexo Escolar Veredas Encantadas</h1>
-  <h3>Criado sob Decreto Executivo </h3>
+  {% if escola.logotipo %}
+    <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+  {% endif %}
+  <br>
+  <h1>{{ escola.nome }}</h1>
+  <h3>{% if escola.decreto_executivo %}
+    {{ escola.decreto_executivo }}
+  {% endif %}</h3>
   <br><br><br>
   <h2>Declaração de Frequência</h2>
 </div>
@@ -211,13 +216,13 @@
 <div class="assinatura-container">
   <div class="assinatura-linha"></div>
   <div class="nome-cargo">
-    {{ diretor.nome|default:"Nome do Director" }}
+    {{ diretor.nome }}
   </div>
   <div>Director Geral</div>
 </div>
 <br><br><br>
 <div class="rodape">
-  <p><small>© {% now "Y" %} Documento gerado pelo sistema SIGEsc - Complexo Escolar Veredas Encantadas</small></p>
+  <p><small>© {% now "Y" %} Documento gerado pelo sistema SIGEsc</small></p>
 </div>
 
 </body>

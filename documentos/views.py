@@ -44,13 +44,19 @@ import io
 data_hoje = datetime.now() 
 @login_required
 def pauta_trimestre_print(request, epoca):
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
-    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral").first()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
+    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral", escolas=escola_usuario).first()
     data_hoje = timezone.now()  # Adicionando a data atual
 
     reconfirmacoes = Reconfirmacao.objects.select_related(
         'aluno', 'turma', 'sala', 'classe', 'curso'
-    ).filter(ano_letivo=ano_letivo, estado='Adimplente')
+    ).filter(ano_letivo=ano_letivo, estado='Adimplente', escola=escola_usuario)
 
     if epoca != 5:  # Pautas por trimestre (1, 2, 3, 4)
         turmas_agrupadas = {}
@@ -69,6 +75,7 @@ def pauta_trimestre_print(request, epoca):
             
             # Buscar todas as notas do aluno no trimestre específico
             notas_aluno = Nota.objects.filter(
+                escola=escola_usuario,
                 aluno=aluno,
                 trimestre=epoca
             ).select_related('disciplina')
@@ -148,7 +155,8 @@ def pauta_trimestre_print(request, epoca):
             'diretor': diretor,
             'data': data_hoje,
             'texto': texto,
-            'ano_lectivo':ano_letivo
+            'ano_lectivo':ano_letivo,
+            'escola': escola_usuario,
         })
     
     else:  # Pautas finais (epoca = 5)
@@ -167,7 +175,7 @@ def pauta_trimestre_print(request, epoca):
             classe_numero = r.classe.numero
             
             # Buscar todas as notas do aluno (todos os trimestres)
-            notas_aluno = Nota.objects.filter(aluno=aluno).select_related('disciplina')
+            notas_aluno = Nota.objects.filter(aluno=aluno, escola=escola_usuario).select_related('disciplina')
             
             linha = {
                 'aluno': aluno.nome_completo,
@@ -202,7 +210,6 @@ def pauta_trimestre_print(request, epoca):
                     if notas[4] is not None:  # Tem exame
                         media_trimestral = (notas[1] + notas[2] + notas[3]) / Decimal('3.0')
                         nota_final = (media_trimestral * Decimal('0.4')) + (notas[4] * Decimal('0.6'))
-                        from decimal import Decimal, ROUND_HALF_UP
 
                         nota_final = nota_final.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
                     else:
@@ -274,7 +281,8 @@ def pauta_trimestre_print(request, epoca):
             'turmas_agrupadas': turmas_final,
             'diretor': diretor,
             'data': data_hoje,
-            'ano_lectivo':ano_letivo
+            'ano_lectivo':ano_letivo,
+            'escola': escola_usuario,
         })
     
 def pauta_coordenacao(request, trimestre):
@@ -475,7 +483,13 @@ def pauta_coordenacao(request, trimestre):
             status=401
         )
  
-def boletim_aluno(request, aluno_id, classe_id=None):
+def boletim_aluno(request, aluno_id, classe_id=None): 
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     # Buscar o aluno
     aluno = get_object_or_404(Aluno, id=aluno_id)
     
@@ -486,10 +500,10 @@ def boletim_aluno(request, aluno_id, classe_id=None):
         classe = aluno.classe
     
     # Buscar o diretor geral (opcional)
-    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral").first()
+    diretor = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains="diretor_geral").first()
     
     # Buscar o ano letivo aberto
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    ano_letivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
     
     # Dados adicionais do formulário (se houver)
     dados = {
@@ -504,6 +518,7 @@ def boletim_aluno(request, aluno_id, classe_id=None):
     
     # Buscar notas do aluno para a classe específica
     notas = Nota.objects.filter(
+        escola=escola_usuario,
         aluno=aluno,
         classe=classe
     ).select_related('disciplina').order_by('disciplina__nome', 'trimestre')
@@ -555,7 +570,7 @@ def boletim_aluno(request, aluno_id, classe_id=None):
             boletim[disciplina_nome]['situacao'] = 'Pendente'
     
     # Adicionar disciplinas da classe que não têm notas registradas
-    disciplinas_classe = DisciplinasClasse.objects.filter(classe=classe).select_related('disciplina')
+    disciplinas_classe = DisciplinasClasse.objects.filter(escola=escola_usuario, classe=classe).select_related('disciplina')
     
     for dc in disciplinas_classe:
         disciplina_nome = dc.disciplina.nome
@@ -630,24 +645,32 @@ def boletim_aluno(request, aluno_id, classe_id=None):
         'data_hoje': date.today(),
         'diretor': diretor,  # Adicionado para o template
         'dados_aluno': dados,  # Dados adicionais do aluno
+        "escola": escola_usuario
     })
 
 @login_required
 def alunos_print(request):
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
-    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral").first()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
+    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral", escolas=escola_usuario).first()
 
     query = request.GET.get('q', '')
     ano_letivo = ano_letivo  
     reconfirmacoes = Reconfirmacao.objects.select_related(
         'aluno', 'turma', 'sala', 'classe', 'curso'
-    ).filter(ano_letivo=ano_letivo, estado='Adimplente')
+    ).filter(ano_letivo=ano_letivo, estado='Adimplente', escola=escola_usuario)
 
     if query:
         reconfirmacoes = reconfirmacoes.filter(
             Q(aluno__nome_completo__icontains=query) |
             Q(aluno__numero_mecanografico__icontains=query) |
-            Q(turma__nome__icontains=query)
+            Q(turma__nome__icontains=query) |
+            Q(escola=escola_usuario)
         )
 
 
@@ -666,10 +689,39 @@ def alunos_print(request):
         'ano_letivo' : ano_letivo,
         'diretor': diretor, 
         'data': data_hoje, 
+        'escola': escola_usuario,
     })
+from reportlab.pdfbase.pdfmetrics import stringWidth
+
+def quebrar_texto(texto, fonte, tamanho, largura_max):
+    palavras = texto.split()
+    linhas = []
+    linha_atual = ""
+
+    for palavra in palavras:
+        teste = f"{linha_atual} {palavra}".strip()
+        largura = stringWidth(teste, fonte, tamanho)
+
+        if largura <= largura_max:
+            linha_atual = teste
+        else:
+            if linha_atual:
+                linhas.append(linha_atual)
+            linha_atual = palavra
+
+    if linha_atual:
+        linhas.append(linha_atual)
+
+    return linhas
 
 @login_required
 def cartao_estudante(request, aluno_id):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     aluno = get_object_or_404(Aluno, pk=aluno_id)
 
     response = HttpResponse(content_type='application/pdf')
@@ -685,24 +737,51 @@ def cartao_estudante(request, aluno_id):
         p.drawImage(bg_path, 0, 0, width=width, height=height)
 
     # ========== Cabeçalho institucional ==========
-    # Logo no canto superior esquerdo
-    logo_path = os.path.join(settings.BASE_DIR, 'static', 'imgs', 'logo_transparente.png')
-    if os.path.exists(logo_path):
-        p.drawImage(logo_path, 3*mm, height - 18*mm, width=16*mm, height=16*mm, preserveAspectRatio=True, mask='auto')
-
-    # Nome da instituição (ao lado do logo)
-    p.setFont("Helvetica-Bold", 8)
+    # Logo da escola vindo do banco
+    if escola_usuario.logotipo and os.path.exists(escola_usuario.logotipo.path):
+        p.drawImage(
+            escola_usuario.logotipo.path,
+            3*mm,
+            height - 18*mm,
+            width=16*mm,
+            height=16*mm,
+            preserveAspectRatio=True,
+            mask='auto'
+        )
+  
     p.setFillColor(colors.white)
 
-    p.setFont("Helvetica", 7)
-    p.drawString(20*mm, height - 10*mm, "Complexo Escolar")
-    p.drawString(20*mm, height - 13*mm, "Veredas Encantadas")
+    nome_escola = escola_usuario.nome
+
+    fonte = "Helvetica-Bold"
+    tamanho = 8
+
+    # largura disponível (ajusta conforme teu layout)
+    largura_max = width - 25*mm  
+
+    linhas = quebrar_texto(nome_escola, fonte, tamanho, largura_max)
+
+    y = height - 9*mm
+
+    p.setFont(fonte, tamanho)
+
+    for linha in linhas[:4]:  # limita a 2 linhas para não quebrar o layout
+        p.drawString(20*mm, y, linha)
+        y -= 3.5*mm  # espaço entre linhas
+
+    # Localização (província + município)
+    p.setFont("Helvetica", 6)
+    p.drawString(
+        20*mm, 
+        height - 24*mm, 
+        f"{escola_usuario.municipio} - {escola_usuario.provincia}"
+    )
 
     # ========== Foto do aluno ==========
     if aluno.foto and os.path.exists(aluno.foto.path):
         # posição aproximada do centro superior
         foto_x = width/2 - 12*mm
-        foto_y = height - 50*mm
+        foto_y = height - 54*mm
         foto_w = 24*mm
         foto_h = 28*mm
 
@@ -806,9 +885,15 @@ def selecionar_classe_declaracao(request, aluno_id, finalidade):
 
 @login_required
 def gerar_declaracao_com_notas(request, aluno_id, classe_id, finalidade):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+
     aluno = get_object_or_404(Aluno, id=aluno_id)
     classe = get_object_or_404(Classe, id=classe_id)
-    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral").first() 
+    diretor = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains="Diretor Geral").first() 
 
     
     dados = {
@@ -822,6 +907,7 @@ def gerar_declaracao_com_notas(request, aluno_id, classe_id, finalidade):
     }
 
     notas = Nota.objects.filter(
+        escola=escola_usuario,
         aluno=aluno,
         classe=classe
     ).select_related('disciplina').order_by('disciplina__nome', 'trimestre')
@@ -847,20 +933,28 @@ def gerar_declaracao_com_notas(request, aluno_id, classe_id, finalidade):
         'boletim': boletim,
         'diretor': diretor,
         'finalidade':finalidade,
-        **dados
+        **dados,
+        'escola':escola_usuario
     })
 
 @login_required
 def declaracao_sem_notas(request, aluno_id, finalidade):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     aluno = get_object_or_404(Aluno, id=aluno_id)
-    ultima_reconfirmacao = Reconfirmacao.objects.filter(aluno=aluno).order_by('-ano_letivo').first()
+    ultima_reconfirmacao = Reconfirmacao.objects.filter(escola=escola_usuario, aluno=aluno).order_by('-ano_letivo').first()
 
     curso = ultima_reconfirmacao.curso.nome if ultima_reconfirmacao and ultima_reconfirmacao.curso else '________________'
     turma = ultima_reconfirmacao.turma.nome if ultima_reconfirmacao and ultima_reconfirmacao.turma else '______'
     classe = f"{ultima_reconfirmacao.classe.numero}ª" if ultima_reconfirmacao and ultima_reconfirmacao.classe else '___ª'
 
-    diretor = Funcionario.objects.filter(funcao__icontains="diretor_geral").first()
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    diretor = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains="Diretor Geral").first()
+    print(diretor)
+    ano_letivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
     data_emissao = datetime.now().strftime('%d/%m/%Y')
 
     return render(request, 'documentos/declaracao_sem_notas.html', {
@@ -871,25 +965,35 @@ def declaracao_sem_notas(request, aluno_id, finalidade):
         'classe': classe,
         'diretor': diretor, 
         'data_emissao': data_emissao,
-        'finalidade':finalidade
+        'finalidade':finalidade,
+        'escola':escola_usuario
     })
 
 @login_required
 def certificado(request, id):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     aluno = get_object_or_404(Aluno, id=id)
-    diretor = Funcionario.objects.filter(funcao__icontains="diretor").first()
+    diretor = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains="Diretor Geral").first()
 
     # Buscar TODAS as notas do aluno
     notas = (
         Nota.objects
-        .filter(aluno=aluno)
+        .filter(escola=escola_usuario, aluno=aluno)
         .select_related('disciplina', 'classe', 'ano_lectivo')
         .order_by('disciplina__nome', 'classe__numero', 'trimestre')
     )
     ano_conclusao = ""
     if request.method == "POST":
         ano_conclusao = request.POST.get("ano_conclusao")
-        print(ano_conclusao)
+        emissao_bi = request.POST.get("emissao_bi")
+        n_processo = request.POST.get("n_processo")
+        funcionario_conferiu = request.POST.get("funcionario_conferiu")
+        tipo_certificado_template = request.POST.get("tipo_certificado")
 
     if not notas.exists():
         return render(request, 'documentos/sem_certificado.html')
@@ -1108,11 +1212,13 @@ def certificado(request, id):
             media_geral = sum(todas_medias_finais) / len(todas_medias_finais)
             media_geral = media_geral.quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
             media_geral_extenso = numero_por_extenso(media_geral)
-
-        return render(request, 'documentos/certificado.html', {
+        context = {    
             'aluno': aluno,
             'diretor': diretor,
-            'ano_conclusao':ano_conclusao,
+            'ano_conclusao':ano_conclusao,  
+            'emissao_bi': emissao_bi,
+            'n_processo': n_processo,
+            'funcionario_conferiu': funcionario_conferiu,
             
             'todas_disciplinas': todas_disciplinas,
             'cabecalhos': cabecalhos,
@@ -1127,22 +1233,41 @@ def certificado(request, id):
             'provincia': provincia,
             'data_nascimento': data_nascimento,
             'bi': bi,
-        })
+            'escola':escola_usuario
+        }
+        if tipo_certificado_template == "1":
+           return render(request, 'documentos/certificado-primario.html', context)
+        elif tipo_certificado_template == "2":
+           return render(request, 'documentos/certificado_secundario.html', context)
+        elif tipo_certificado_template == "3":
+           return render(request, 'documentos/certificado-puniv.html', context)
+        elif tipo_certificado_template == "4":
+           return render(request, 'documentos/certificado-secundario-pedagogico.html', context)
+        elif tipo_certificado_template == "5":
+           return render(request, 'documentos/certificado-secundario-tecnico-profissional.html', context)
+       
+        return render(request, 'documentos/certificado-puniv.html', context)
     
 @login_required
 def relatorio_financeiro_pdf(request):
     """View específica para gerar o relatório impresso"""
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.')
     
     # ano letivo atual ou escolhido no select
     ano_lectivo = request.GET.get("ano_lectivo")
     if not ano_lectivo:
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
     
     # Filtra os pagamentos (RECEITAS)
-    pagamentos = Pagamento.objects.filter(ano_lectivo=ano_lectivo)
+    pagamentos = Pagamento.objects.filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
     
     # Filtra as despesas (GASTOS)
-    despesas = Despesa.objects.filter(ano_lectivo=ano_lectivo)
+    despesas = Despesa.objects.filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
     
     # Agrupamento por tipo de serviço (RECEITAS)
     por_servico = pagamentos.values("tipoServico__nome").annotate(
@@ -1176,7 +1301,7 @@ def relatorio_financeiro_pdf(request):
         .annotate(mes_pagamento=ExtractMonth("data_pagamento"))
         .values("mes_pagamento")
         .annotate(total=Sum("valor"))
-        .filter(ano_lectivo=ano_lectivo)
+        .filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
         .order_by("mes_pagamento")
     )
 
@@ -1186,6 +1311,7 @@ def relatorio_financeiro_pdf(request):
         .annotate(mes_despesa=ExtractMonth("data_despesa"))
         .values("mes_despesa")
         .annotate(total=Sum("valor"))
+        .filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
         .order_by("mes_despesa")
     )
 
@@ -1216,7 +1342,7 @@ def relatorio_financeiro_pdf(request):
 
     # Datas para o relatório
     from datetime import date
-    data_inicio = date(date.today().year, 1, 1)  # 1 de Janeiro do ano atual
+    data_inicio = date(date.today().year, 1, 1)
     data_fim = date.today()
     
     context = {
@@ -1239,8 +1365,9 @@ def relatorio_financeiro_pdf(request):
         "media_despesa_mensal": media_despesa_mensal,
         "percentual_despesas": percentual_despesas,
         "categoria_choices": Despesa.CATEGORIA_CHOICES,
-        "director_geral": Funcionario.objects.filter(funcao__icontains='diretor_geral').first(),
-        "director_admin": Funcionario.objects.filter(funcao__icontains='diretor_admin').first(),
+        "director_geral": Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='diretor_geral').first(),
+        "director_admin": Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='diretor_admin').first(),
+        'escola': escola_usuario,
     }
 
     return render(request, "documentos/relatorio_financeiro.html", context)
@@ -1251,33 +1378,42 @@ def relatorio_pedagogico(request):
     View para gerar o relatório pedagógico completo
     Versão para visualização web e impressão
     """
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.')
+
     # Obter parâmetros da requisição
     ano_lectivo = request.GET.get("ano_lectivo")
     
     # Lista de anos letivos disponíveis
-    anos_lectivos = AnoLectivo.objects.all().values_list('ano', flat=True)
+    anos_lectivos = AnoLectivo.objects.filter(escola=escola_usuario).values_list('ano', flat=True)
     if not ano_lectivo:
-        ano_lectivo_obj = AnoLectivo.objects.filter(estado='Aberto').first()
+        ano_lectivo_obj = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').first()
         ano_lectivo = ano_lectivo_obj.ano if ano_lectivo_obj else None
     
     # ============ ESTATÍSTICAS GERAIS ============
     
     # Totais gerais
-    total_alunos = Aluno.objects.count()
-    total_professores = Funcionario.objects.filter(funcao__icontains='professor').count()
-    total_funcionarios = Funcionario.objects.count()
-    total_turmas = Turma.objects.filter(ano_letivo=ano_lectivo).count()
-    total_disciplinas = Disciplina.objects.count()
+    total_alunos = Aluno.objects.filter(escola=escola_usuario).count()
+    total_professores = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='professor').count()
+    total_funcionarios = Funcionario.objects.filter(escolas=escola_usuario).count()
+    total_turmas = Turma.objects.filter(escola=escola_usuario, ano_letivo=ano_lectivo).count()
+    total_disciplinas = Disciplina.objects.filter(escola=escola_usuario).count()
     
     # Alunos por gênero
-    alunos_masculino = Aluno.objects.filter(genero='M').count()
-    alunos_feminino = Aluno.objects.filter(genero='F').count()
+    alunos_masculino = Aluno.objects.filter(escola=escola_usuario, genero='M').count()
+    alunos_feminino = Aluno.objects.filter(escola=escola_usuario, genero='F').count()
     
     # Professores por gênero
     professores_masculino = Funcionario.objects.filter(
+        escolas=escola_usuario,
         funcao__icontains='professor', genero='M'
     ).count()
     professores_feminino = Funcionario.objects.filter(
+        escolas=escola_usuario,
         funcao__icontains='professor', genero='F'
     ).count()
     
@@ -1288,11 +1424,11 @@ def relatorio_pedagogico(request):
         quantidade_alunos=Count('aluno')
     ).order_by('-quantidade_alunos')
     
-    total_alunos_ano = Aluno.objects.filter(turma__ano_letivo=ano_lectivo).count()
+    total_alunos_ano = Aluno.objects.filter(escola=escola_usuario, turma__ano_letivo=ano_lectivo).count()
     
     # Alunos por classe
     alunos_por_classe = []
-    classes = Classe.objects.all().order_by('numero')
+    classes = Classe.objects.filter(escola=escola_usuario).order_by('numero')
 
     # Preparar dados para os gráficos
     labels_classes = []
@@ -1300,6 +1436,7 @@ def relatorio_pedagogico(request):
 
     for classe in classes:
         quantidade = Aluno.objects.filter(
+            escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turma__classe=classe
         ).count()
@@ -1321,6 +1458,7 @@ def relatorio_pedagogico(request):
     alunos_por_turno = []
     for turno in ['Manhã', 'Tarde', 'Noite']:
         quantidade = Aluno.objects.filter(
+            escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turno=turno
         ).count()
@@ -1333,9 +1471,10 @@ def relatorio_pedagogico(request):
     
     # Alunos por curso
     alunos_por_curso = []
-    cursos = Curso.objects.all()
+    cursos = Curso.objects.filter(escola=escola_usuario)
     for curso in cursos:
         quantidade = Aluno.objects.filter(
+            escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             curso=curso
         ).count()
@@ -1351,10 +1490,11 @@ def relatorio_pedagogico(request):
     
     # Médias por disciplina (baseado nas notas)
     medias_disciplinas = []
-    disciplinas = Disciplina.objects.all()[:10]  # Top 10 disciplinas
+    disciplinas = Disciplina.objects.filter(escola=escola_usuario)[:10]  # Top 10 disciplinas
     
     for disciplina in disciplinas:
         notas = Nota.objects.filter(
+            escola=escola_usuario,
             disciplina=disciplina,
             ano_lectivo__ano=ano_lectivo,
             trimestre__in=[1, 2, 3]
@@ -1384,6 +1524,7 @@ def relatorio_pedagogico(request):
     desempenho_classes = []
     for classe in classes:
         alunos_classe = Aluno.objects.filter(
+            escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turma__classe=classe
         )
@@ -1391,6 +1532,7 @@ def relatorio_pedagogico(request):
         if alunos_classe.exists():
             # Calcular média geral da classe
             notas_classe = Nota.objects.filter(
+                escola=escola_usuario,
                 aluno__in=alunos_classe,
                 ano_lectivo__ano=ano_lectivo,
                 trimestre__in=[1, 2, 3]
@@ -1408,6 +1550,7 @@ def relatorio_pedagogico(request):
     
     # Status dos alunos (Adimplente/Inadimplente)
     status_alunos = Reconfirmacao.objects.filter(
+        escola=escola_usuario,
         ano_letivo=ano_lectivo
     ).values('estado').annotate(
         quantidade=Count('aluno', distinct=True)
@@ -1424,6 +1567,7 @@ def relatorio_pedagogico(request):
     
     # Status de classe (Aprovado/Reprovado/Pendente)
     status_classes = Reconfirmacao.objects.filter(
+        escola=escola_usuario,
         ano_letivo=ano_lectivo
     ).values('estadoClasse').annotate(
         quantidade=Count('aluno', distinct=True)
@@ -1448,6 +1592,7 @@ def relatorio_pedagogico(request):
     
     # Professores por disciplina
     professores_disciplina = ProfessorVinculo.objects.filter(
+        escola=escola_usuario,
         turma__ano_letivo=ano_lectivo
     ).values(
         'disciplina__nome', 'disciplina__id'
@@ -1457,25 +1602,26 @@ def relatorio_pedagogico(request):
     ).order_by('-quantidade')
     
     # Média de alunos por professor
-    total_vinculos = ProfessorVinculo.objects.filter(turma__ano_letivo=ano_lectivo).count()
+    total_vinculos = ProfessorVinculo.objects.filter(escola=escola_usuario, turma__ano_letivo=ano_lectivo).count()
     media_alunos_professor = total_alunos_ano / total_vinculos if total_vinculos > 0 else 0
     
     # Coordenações
-    coordenacoes_por_tipo = Coordenacao.objects.values('tipo').annotate(
+    coordenacoes_por_tipo = Coordenacao.objects.filter(escola=escola_usuario).values('tipo').annotate(
         quantidade=Count('id')
     )
     
     # ============ DADOS DE MONOGRAFIAS ============
     
     # Monografias por estado
-    monografias_estado = Monografia.objects.values('estado').annotate(
+    monografias_estado = Monografia.objects.filter(escola=escola_usuario).values('estado').annotate(
         quantidade=Count('id')
     )
     
-    total_monografias = Monografia.objects.count()
+    total_monografias = Monografia.objects.filter(escola=escola_usuario).count()
     
     # Média de notas das monografias
     media_notas_monografias = Avaliacao.objects.filter(
+        escola=escola_usuario,
         nota__isnull=False
     ).aggregate(Avg('nota'))['nota__avg'] or 0
     
@@ -1486,10 +1632,10 @@ def relatorio_pedagogico(request):
     matriculas_evolucao = []
     
     # Obter anos letivos ordenados
-    anos_ordenados = AnoLectivo.objects.all().order_by('-ano')[:5]
+    anos_ordenados = AnoLectivo.objects.filter(escola=escola_usuario).order_by('-ano')[:5]
     for ano in reversed(anos_ordenados):
         anos_evolucao.append(ano.ano)
-        quantidade = Aluno.objects.filter(turma__ano_letivo=ano.ano).count()
+        quantidade = Aluno.objects.filter(escola=escola_usuario, turma__ano_letivo=ano.ano).count()
         matriculas_evolucao.append(quantidade)
     
     # Dados para gráfico de distribuição por classe
@@ -1513,25 +1659,27 @@ def relatorio_pedagogico(request):
     # ============ ÚLTIMOS REGISTROS ============
     
     # Últimas notas lançadas
-    ultimas_notas = Nota.objects.select_related(
+    ultimas_notas = Nota.objects.filter(escola=escola_usuario).select_related(
         'aluno', 'disciplina', 'ano_lectivo'
     ).order_by('-id')[:10]
     
     # Últimos alunos matriculados
-    ultimos_alunos = Aluno.objects.select_related(
+    ultimos_alunos = Aluno.objects.filter(escola=escola_usuario).select_related(
         'turma', 'classe', 'curso'
     ).order_by('-id')[:10]
     
     # Últimas monografias submetidas
-    ultimas_monografias = Monografia.objects.order_by('-data_submissao')[:5]
+    ultimas_monografias = Monografia.objects.filter(escola=escola_usuario).order_by('-data_submissao')[:5]
     
     # ============ DIRETORES E COORDENADORES ============
     # Buscar diretores e coordenadores (ajuste conforme sua estrutura)
     diretor_pedagogico = Funcionario.objects.filter(
+        escolas=escola_usuario,
         funcao__icontains='diretor pedagogico'
     ).first()
     
     coordenador = Funcionario.objects.filter(
+        escolas=escola_usuario,
         funcao__icontains='coordenador'
     ).first()
     
@@ -1609,6 +1757,7 @@ def relatorio_pedagogico(request):
         # Diretores e coordenadores
         'diretor_pedagogico': diretor_pedagogico,
         'coordenador': coordenador,
+        'escola': escola_usuario,
     }
     
     return render(request, 'documentos/relatorio_pedagogico.html', context)
@@ -1655,13 +1804,19 @@ def relatorio_pedagogico_pdf(request):
 @login_required
 def alunos_inadimpletes(request):
     from django.utils import timezone
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
     
     # Filtrar apenas alunos com estado = Inadimplente
-    inadimplentes = Reconfirmacao.objects.filter(estado="Inadimplente").select_related(
+    inadimplentes = Reconfirmacao.objects.filter(estado="Inadimplente", escola=escola_usuario).select_related(
         "aluno", "turma", "classe", "curso", "sala"
     ).order_by("aluno__nome_completo")
 
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     # Diretor (se for fixo ou do request.user)
     diretor = request.user  # ou um objeto específico
@@ -1671,13 +1826,20 @@ def alunos_inadimpletes(request):
         "ano_letivo": ano_letivo,
         "diretor": diretor,
         "data": timezone.now(),
+        'escola':escola_usuario,
     }
     return render(request, "documentos/alunos-inadimplentes.html", context)
 
 @login_required
 def gerar_ata_prova(request):
     from django.utils import timezone
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    escola_id_sessao = request.session.get('escola_atual_id')
+
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     if request.method == "POST":
         turma_id = request.POST.get("turma_id") 
@@ -1685,9 +1847,9 @@ def gerar_ata_prova(request):
         disciplina = request.POST.get("disciplina")
         professor = request.POST.get("professor")
 
-        turma = Turma.objects.select_related("classe", "curso").get(id=turma_id)
+        turma = Turma.objects.select_related("classe", "curso").get(id=turma_id, escola=escola_usuario)
     
-        alunos = Aluno.objects.filter(turma=turma).order_by("nome_completo")
+        alunos = Aluno.objects.filter(turma=turma, escola=escola_usuario).order_by("nome_completo")
 
         context = {
             "turma": turma,
@@ -1696,11 +1858,13 @@ def gerar_ata_prova(request):
             "data": timezone.now(),
             "ano_letivo": ano_letivo,
             "epoca":epoca,
-            "disciplina":disciplina
+            "disciplina":disciplina,
+            'escola': escola_usuario
         }
         return render(request, "documentos/ata-prova.html", context)
     
 def estatisticas_faltas(request):
+    escola_usuario = request.session.get('escola_atual_id')
     ano_lectivo_id = request.GET.get('ano_lectivo')
     mes = request.GET.get('mes')
 
@@ -1710,14 +1874,14 @@ def estatisticas_faltas(request):
     if mes and mes.isdigit():
         filtros['mes'] = int(mes)
 
-    total_faltas = FaltaFuncionario.objects.filter(**filtros).count()
+    total_faltas = FaltaFuncionario.objects.filter(**filtros, escola=escola_usuario,).count()
 
-    desconto = DescontoFalta.objects.first()
+    desconto = DescontoFalta.objects.filter(escola=escola_usuario).first()
     valor_desconto = desconto.valor_desconto if desconto else Decimal('0.00')
     desconto_total = Decimal(total_faltas) * valor_desconto
 
     faltas_por_funcionario = (
-        FaltaFuncionario.objects.filter(**filtros)
+        FaltaFuncionario.objects.filter(**filtros, escola=escola_usuario,)
         .values('funcionario_id', 'funcionario__nome')
         .annotate(total_faltas=Count('id'))
         .order_by('-total_faltas')
@@ -1730,14 +1894,15 @@ def estatisticas_faltas(request):
     })
 
 def faltas_funcionario(request, funcionario_id):
+    escola_usuario = request.session.get('escola_atual_id')
     ano_lectivo_id = request.GET.get('ano_lectivo')
 
-    funcionario = get_object_or_404(Funcionario, id=funcionario_id)
+    funcionario = get_object_or_404(Funcionario, id=funcionario_id, escolas=escola_usuario)
 
-    faltas = FaltaFuncionario.objects.filter(funcionario=funcionario)
+    faltas = FaltaFuncionario.objects.filter(funcionario=funcionario, escola=escola_usuario)
 
     if ano_lectivo_id:
-        faltas = faltas.filter(ano_lectivo_id=ano_lectivo_id)
+        faltas = faltas.filter(ano_lectivo_id=ano_lectivo_id, escolas=escola_usuario)
 
     faltas_data = faltas.order_by(
         '-ano_lectivo__ano',
@@ -1770,6 +1935,17 @@ def faltas_funcionario(request, funcionario_id):
     })
 
 def registrar_falta_funcionario(request):
+    escola_usuario = request.session.get('escola_atual_id')
+
+    escola_id = request.session.get('escola_atual_id')
+
+    if not escola_id:
+        return JsonResponse({'success': False, 'message': 'Escola não selecionada.'})
+
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
     if request.method != 'POST':
         return JsonResponse({'success': False, 'message': 'Método não permitido.'}, status=405)
 
@@ -1794,14 +1970,15 @@ def registrar_falta_funcionario(request):
         if not (1 <= dia <= 31):
             return JsonResponse({'success': False, 'message': 'Dia inválido.'})
 
-        funcionario = Funcionario.objects.get(id=funcionario_id)
+        funcionario = Funcionario.objects.get(id=funcionario_id, escolas=escola_usuario)
 
         # Ano lectivo automático
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
         if not ano_lectivo:
             return JsonResponse({'success': False, 'message': 'Nenhum ano lectivo aberto.'})
 
         FaltaFuncionario.objects.create(
+            escola=escola_usuario,
             funcionario=funcionario,
             ano_lectivo=ano_lectivo,
             mes=mes,
@@ -1991,379 +2168,241 @@ def recoperar_comprovativo(request, aluno_id, pagamento_id):
     # Todos usam o mesmo template, mas se quiser diferenciar:
     return render(request, "financeiro/comprovativos/comprovativo_pagamento.html", contexto)
 
+# documentos/views.py
+
+import io
+from datetime import datetime
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.http import FileResponse
+from django.utils import timezone
+from django.db.models import Prefetch
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.pdfgen import canvas
+
+# Constantes
+DIAS_SEMANA = ['2ª Feira', '3ª Feira', '4ª Feira', '5ª Feira', '6ª Feira']
+HORARIOS = [
+    {'tempo': '1ª', 'inicio': '13:00', 'fim': '13:45'},
+    {'tempo': '2ª', 'inicio': '13:45', 'fim': '14:30'},
+    {'tempo': '3ª', 'inicio': '14:30', 'fim': '15:15'},
+    {'tempo': '4ª', 'inicio': '15:30', 'fim': '16:15'},
+    {'tempo': '5ª', 'inicio': '16:15', 'fim': '17:00'},
+    {'tempo': '6ª', 'inicio': '17:00', 'fim': '17:45'},
+]
+
+
 @login_required
 def gerar_horario_completo(request):
     """
-    Gera um PDF com o horário completo organizado por turma
+    Gera PDF com horário completo no formato da imagem (matriz por turma)
     """
-    # Configurar buffer para o PDF
     buffer = io.BytesIO()
     
-    # Criar o objeto canvas com orientação paisagem
+    # Criar PDF em orientação paisagem
     c = canvas.Canvas(buffer, pagesize=landscape(A4))
     width, height = landscape(A4)
     
-    # Definir margens
+    # Margens
     left_margin = 1.5 * cm
     right_margin = 1.5 * cm
     top_margin = 2.5 * cm
-    bottom_margin = 2 * cm
+    bottom_margin = 1.5 * cm
     
-    # Largura disponível para conteúdo
     content_width = width - left_margin - right_margin
     
-    # Definir estilos
-    styles = getSampleStyleSheet()
-    
-    # Estilo para título
-    title_style = ParagraphStyle(
-        'CustomTitle',
-        parent=styles['Heading1'],
-        fontSize=16,
-        textColor=colors.HexColor('#2c3e50'),
-        alignment=TA_CENTER,
-        spaceAfter=20
-    )
-    
-    # Estilo para subtítulo
-    subtitle_style = ParagraphStyle(
-        'CustomSubtitle',
-        parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor('#34495e'),
-        alignment=TA_CENTER,
-        spaceAfter=15
-    )
-    
-    # Estilo para cabeçalho da tabela
-    header_style = ParagraphStyle(
-        'TableHeader',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.white,
-        alignment=TA_CENTER,
-        fontName='Helvetica-Bold'
-    )
-    
-    # Estilo para células da tabela
-    cell_style = ParagraphStyle(
-        'TableCell',
-        parent=styles['Normal'],
-        fontSize=9,
-        alignment=TA_LEFT,
-        leftIndent=5,
-        rightIndent=5
-    )
-    
-    # Estilo para assinaturas
-    signature_style = ParagraphStyle(
-        'Signature',
-        parent=styles['Normal'],
-        fontSize=10,
-        alignment=TA_CENTER,
-        spaceBefore=20,
-        spaceAfter=5
-    )
-    
-    # Função para criar cabeçalho institucional
-    def draw_header(page_num):
-        # Logo
-        try:
-            c.drawImage('static/imgs/logoColegioVeredas.jpg', left_margin, height - top_margin, width=3*cm, height=2*cm)
-        except:
-            # Caso a imagem não exista, apenas continue
-            pass
-        
-        # Título da instituição
-        c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(width/2, height - 1.5*cm, "Complexo Escolar Privado Veredas Encantadas")
-        
-        # Subtítulo
-        c.setFont("Helvetica", 12)
-        c.drawCentredString(width/2, height - 2.2*cm, "HORÁRIO COMPLETO DE AULAS")
-        
-        # Linha divisória
-        c.setStrokeColor(colors.HexColor('#3498db'))
-        c.setLineWidth(1)
-        c.line(left_margin, height - 2.5*cm, width - right_margin, height - 2.5*cm)
-        
-        # Data de geração
-        from django.utils import timezone
-        data_geracao = timezone.now().strftime("%d/%m/%Y %H:%M")
-        c.setFont("Helvetica-Oblique", 8)
-        c.drawRightString(width - right_margin, height - 2.8*cm, f"Gerado em: {data_geracao}")
-        
-        # Número da página
-        c.drawRightString(width - right_margin, bottom_margin/2, f"Página {page_num}")
-    
-    # Função para criar rodapé em todas as páginas
-    def draw_footer(page_num):
-        # Linha divisória do rodapé
-        c.setStrokeColor(colors.HexColor('#7f8c8d'))
-        c.setLineWidth(0.5)
-        footer_line_y = bottom_margin - 0.8*cm
-        c.line(left_margin, footer_line_y, width - right_margin, footer_line_y)
-        
-        # Texto do rodapé centralizado
-        c.setFont("Helvetica-Oblique", 8)
-        c.drawCentredString(width/2, bottom_margin - 1.3*cm, "Documento gerado pelo sistema SIGEsc")
-        
-        # Número da página no canto direito
-        c.drawRightString(width - right_margin, bottom_margin - 1.3*cm, f"Pág. {page_num}")
-        
-        # Informação adicional no canto esquerdo (opcional)
-        c.drawString(left_margin, bottom_margin - 1.3*cm, "Horário Oficial")
-    
-    # Função para adicionar espaço para assinatura do diretor pedagógico
-    def draw_director_signature(y_position):
-        c.setStrokeColor(colors.HexColor('#7f8c8d'))
-        c.setLineWidth(0.2)
-
-        # Quantos centímetros subir
-        offset = 1.3 * cm 
-
-        signature_y = y_position + offset
-
-        # Linha da assinatura
-        c.line(left_margin, signature_y, left_margin + 6*cm, signature_y)
-
-        # Texto abaixo da linha
-        c.setFont("Helvetica", 9)
-        c.drawString(left_margin, signature_y - 0.4*cm, "Diretor Pedagógico")
-
-        c.setFont("Helvetica-Oblique", 8)
-    
-    # Função para adicionar espaço para assinatura do secretário
-    def draw_secretary_signature(y_position):
-        c.setStrokeColor(colors.HexColor('#7f8c8d'))
-        c.setLineWidth(0.5)
-        
-        # Linha para assinatura do secretário (centralizada)
-        offset = 0.5 * cm 
-        signature_y = y_position + offset
-        signature_x = width/2 - 4*cm
-        c.line(signature_x, signature_y, signature_x + 8*cm, signature_y)
-        
-        # Texto da assinatura do secretário
-        c.setFont("Helvetica", 9)
-        c.drawCentredString(width/2, signature_y - 0.6*cm, "Secretário Pedagógico")
-        c.setFont("Helvetica-Oblique", 8)
-    
-    # Obter todas as turmas
-    turmas = Turma.objects.all().select_related('curso', 'classe').order_by('turno', 'nome')
+    # Obter todas as turmas do I Ciclo (7ª, 8ª, 9ª)
+    turmas = Turma.objects.filter(
+        classe__numero__in=[7, 8, 9]
+    ).select_related('classe', 'curso').order_by('classe__numero', 'nome')
     
     page_num = 1
     
     for turma in turmas:
-        draw_header(page_num)
-        
-        # Adicionar espaço para assinatura do diretor pedagógico abaixo do logo
-        draw_director_signature(height - top_margin - 2.5*cm)
-        
-        # Verificar se há espaço na página atual
-        if height < 10*cm:  # Se falta pouco espaço, cria nova página
+        # Adicionar nova página se necessário
+        if page_num > 1:
             c.showPage()
-            page_num += 1
-            draw_header(page_num)
-            draw_director_signature(height - top_margin - 2.5*cm)
         
-        # Quantos centímetros subir o cabeçalho da turma
-        offset = 2 * cm   # ajuste conforme desejar
-
-        # Cabeçalho da turma - agora mais acima
-        y_position = height - top_margin - 4.5*cm + offset
-
-        c.setFont("Helvetica", 12)
-        c.setFillColor(colors.HexColor('#34495e'))
-        c.drawString(
-            left_margin,
-            y_position - 0.7*cm,
-            f"TURMA: {turma.nome} | Classe: {turma.classe.numero}ª | Curso: {turma.curso.nome} | Turno: {turma.turno}"
-        )
-
+        # ===== CABEÇALHO INSTITUCIONAL =====
+        # Título da instituição
+        c.setFont("Helvetica-Bold", 14)
+        c.drawCentredString(width/2, height - 1.2*cm, "REPÚBLICA DE ANGOLA")
+        
+        c.setFont("Helvetica-Bold", 12)
+        c.drawCentredString(width/2, height - 1.8*cm, "GOVERNO DA PROVÍNCIA DO BIÉ")
+        
+        c.setFont("Helvetica-Bold", 11)
+        c.drawCentredString(width/2, height - 2.4*cm, "ADMINISTRAÇÃO MUNICIPAL DO CUNHINGA")
+        
+        c.setFont("Helvetica-Bold", 10)
+        c.drawCentredString(width/2, height - 3.0*cm, "DIRECÇÃO MUNICIPAL DA EDUCAÇÃO")
+        
+        c.setFont("Helvetica-Bold", 11)
+        c.drawCentredString(width/2, height - 3.6*cm, "COMPLEXO ESCOLAR DE CAPESSA")
+        
         # Linha divisória
-        c.setStrokeColor(colors.HexColor('#7f8c8d'))
-        c.setLineWidth(0.5)
-        c.line(
-            left_margin,
-            y_position - 1*cm,
-            width - right_margin,
-            y_position - 1*cm
-        )
-
-        # Preparar dados da tabela
-        dias_semana = ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(1)
+        c.line(left_margin, height - 4.2*cm, width - right_margin, height - 4.2*cm)
         
-        # Obter vínculos desta turma
+        # ===== TÍTULO DO HORÁRIO =====
+        c.setFont("Helvetica-Bold", 14)
+        c.setFillColor(colors.HexColor('#2c3e50'))
+        c.drawCentredString(width/2, height - 5.0*cm, 
+                           f"HORÁRIO PARA O I CICLO (7ª, 8ª & 9ª CLASSE) ANO LECTIVO {timezone.now().year}/{(timezone.now().year + 1)}")
+        
+        # ===== CABEÇALHO DA TURMA =====
+        c.setFont("Helvetica-Bold", 12)
+        c.setFillColor(colors.black)
+        y_position = height - 6.0*cm
+        c.drawString(left_margin, y_position, f"{turma.classe.numero}ª Classe")
+        
+        # ===== PREPARAR DADOS DA TABELA =====
+        # Mapear dias da semana para índices
+        dia_map = {
+            '2ª Feira': 0,
+            '3ª Feira': 1,
+            '4ª Feira': 2,
+            '5ª Feira': 3,
+            '6ª Feira': 4,
+        }
+        
+        # Criar matriz vazia: 6 horários x 5 dias
+        matriz = [[None for _ in range(5)] for _ in range(6)]
+        
+        # Buscar vínculos e horários da turma
         vinculos = ProfessorVinculo.objects.filter(turma=turma).select_related(
             'professor', 'disciplina'
         ).prefetch_related(
-            Prefetch(
-                'horarios',
-                queryset=HorarioAula.objects.order_by('tempo_aula')
-            )
+            Prefetch('horarios', queryset=HorarioAula.objects.all())
         )
         
-        # Criar estrutura de dados por dia
-        dados_por_dia = {dia: [] for dia in dias_semana}
-        
+        # Preencher a matriz
         for vinculo in vinculos:
-            for horario in vinculo.horarios.all().order_by('dia_semana', 'hora_inicio'):
-                dia_nome = horario.get_dia_semana_display()
-                
-                # Formatar hora
-                hora_inicio_str = horario.hora_inicio.strftime("%H:%M")
-                hora_fim_str = horario.hora_fim.strftime("%H:%M")
-                periodo = f"{hora_inicio_str} - {hora_fim_str}"
-                
-                # Adicionar aos dados do dia
-                dados_por_dia[dia_nome].append({
-                    'periodo': periodo,
-                    'disciplina': vinculo.disciplina.nome,
-                    'professor': vinculo.professor.nome,
-                    'tempo': f"{horario.tempo_aula}º tempo" if horario.tempo_aula else "Aula",
-                })
-        
-        # Criar tabela
+            for horario in vinculo.horarios.all():
+                dia_idx = dia_map.get(horario.get_dia_semana_display())
+                if dia_idx is not None:
+                    # Encontrar o índice do horário baseado no tempo
+                    for i, h in enumerate(HORARIOS):
+                        if h['inicio'] == horario.hora_inicio.strftime("%H:%M"):
+                            matriz[i][dia_idx] = vinculo.disciplina.nome
+    
+        # ===== CRIAR TABELA =====
+        # Cabeçalho da tabela
         table_data = []
         
-        # Cabeçalho da tabela
-        header = ['Dia da Semana', 'Período', 'Disciplina', 'Professor', 'Tempo']
-        table_data.append(header)
+        # Linha de cabeçalho dos dias
+        header_row = ['Tempo', 'Hora', '2ª Feira', '3ª Feira', '4ª Feira', '5ª Feira', '6ª Feira']
+        table_data.append(header_row)
         
-        # Preencher dados
-        for dia in dias_semana:
-            if dados_por_dia[dia]:
-                # Ordenar por horário
-                dados_por_dia[dia].sort(key=lambda x: x['periodo'])
-                
-                for i, aula in enumerate(dados_por_dia[dia]):
-                    if i == 0:
-                        # Primeira linha do dia - mostrar dia
-                        row = [
-                            Paragraph(dia, cell_style),
-                            Paragraph(aula['periodo'], cell_style),
-                            Paragraph(aula['disciplina'], cell_style),
-                            Paragraph(aula['professor'], cell_style),
-                            Paragraph(aula['tempo'], cell_style)
-                        ]
-                    else:
-                        # Linhas subsequentes - deixar dia em branco
-                        row = [
-                            Paragraph('', cell_style),
-                            Paragraph(aula['periodo'], cell_style),
-                            Paragraph(aula['disciplina'], cell_style),
-                            Paragraph(aula['professor'], cell_style),
-                            Paragraph(aula['tempo'], cell_style)
-                        ]
-                    table_data.append(row)
-            else:
-                # Dia sem aulas
-                row = [
-                    Paragraph(dia, cell_style),
-                    Paragraph('-', cell_style),
-                    Paragraph('Sem aula', cell_style),
-                    Paragraph('-', cell_style),
-                    Paragraph('-', cell_style)
-                ]
-                table_data.append(row)
+        # Preencher linhas da tabela
+        for i, horario in enumerate(HORARIOS):
+            row = [
+                horario['tempo'],
+                f"{horario['inicio']}-{horario['fim']}",
+                matriz[i][0] or '',  # 2ª Feira
+                matriz[i][1] or '',  # 3ª Feira
+                matriz[i][2] or '',  # 4ª Feira
+                matriz[i][3] or '',  # 5ª Feira
+                matriz[i][4] or '',  # 6ª Feira
+            ]
+            table_data.append(row)
         
-        # Calcular altura necessária para a tabela
-        # Cada linha tem aproximadamente 0.6cm de altura
-        table_height = len(table_data) * 0.6 * cm
+        # Adicionar linha de intervalo
+        table_data.append(['Intervalo', '', '', '', '', '', ''])
+        table_data.append(['', '', '', '', '', '', ''])
         
-        # Posição Y para a tabela (abaixo do cabeçalho da turma)
-        table_y = y_position - 2*cm - table_height
-        
-        # Verificar se há espaço suficiente na página atual
-        if table_y < bottom_margin + 4*cm:  # Deixar espaço para assinatura do secretário
-            c.showPage()
-            page_num += 1
-            draw_header(page_num)
-            draw_director_signature(height - top_margin - 2.5*cm)
-            
-            # Reposicionar cabeçalho da turma
-            y_position = height - top_margin - 4*cm
-            c.setFont("Helvetica-Bold", 14)
-            c.setFillColor(colors.HexColor('#2c3e50'))
-            c.drawString(left_margin, y_position, f"TURMA: {turma.nome}")
-            
-            c.setFont("Helvetica", 12)
-            c.setFillColor(colors.HexColor('#34495e'))
-            c.drawString(left_margin, y_position - 0.7*cm, f"Classe: {turma.classe.numero}ª | Curso: {turma.curso.nome} | Turno: {turma.turno}")
-            
-            c.setStrokeColor(colors.HexColor('#7f8c8d'))
-            c.setLineWidth(0.5)
-            c.line(left_margin, y_position - 1*cm, width - right_margin, y_position - 1*cm)
-            
-            table_y = y_position - 2*cm - table_height
-        
-        # Calcular larguras das colunas proporcionalmente
+        # Calcular larguras das colunas
         col_widths = [
-            content_width * 0.25,  # Dia da Semana: 25%
-            content_width * 0.15,  # Período: 15%
-            content_width * 0.25,  # Disciplina: 25%
-            content_width * 0.25,  # Professor: 25%
-            content_width * 0.10,  # Tempo: 10%
+            content_width * 0.08,  # Tempo
+            content_width * 0.12,  # Hora
+            content_width * 0.16,  # 2ª Feira
+            content_width * 0.16,  # 3ª Feira
+            content_width * 0.16,  # 4ª Feira
+            content_width * 0.16,  # 5ª Feira
+            content_width * 0.16,  # 6ª Feira
         ]
         
-        # Criar a tabela com largura total
+        # Criar tabela
         table = Table(table_data, colWidths=col_widths)
         
-        # Estilizar a tabela
-        table.setStyle(TableStyle([
+        # Estilizar tabela
+        style = TableStyle([
             # Cabeçalho
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
             
-            # Borda da tabela
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            # Bordas
+            ('GRID', (0, 0), (-1, -3), 0.5, colors.black),
             ('BOX', (0, 0), (-1, -1), 1, colors.black),
             
-            # Alternar cores das linhas
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')]),
+            # Linha do intervalo
+            ('BACKGROUND', (0, -2), (-1, -2), colors.HexColor('#f0f0f0')),
+            ('SPAN', (0, -2), (-1, -2)),  # Mesclar células do intervalo
+            ('ALIGN', (0, -2), (-1, -2), 'CENTER'),
+            ('FONTNAME', (0, -2), (-1, -2), 'Helvetica-Bold'),
+            
+            # Linha vazia após intervalo
+            ('BACKGROUND', (0, -1), (-1, -1), colors.white),
+            ('SPAN', (0, -1), (-1, -1)),
             
             # Alinhamento das células
-            ('ALIGN', (1, 1), (1, -1), 'CENTER'),  # Período centralizado
-            ('ALIGN', (4, 1), (4, -1), 'CENTER'),  # Tempo centralizado
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 1), (0, -3), 'CENTER'),  # Coluna Tempo
+            ('ALIGN', (1, 1), (1, -3), 'CENTER'),  # Coluna Hora
+            ('ALIGN', (2, 1), (-1, -3), 'CENTER'),  # Colunas das disciplinas
             
-            # Espaçamento interno
-            ('PADDING', (0, 0), (-1, -1), 6),
+            # Tamanho da fonte
+            ('FONTSIZE', (0, 1), (-1, -3), 8),
             
-            # Destaque para dias com aulas
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            
-            # Bordas mais escuras para separar dias
-            ('LINEABOVE', (0, 1), (-1, 1), 0.5, colors.HexColor('#bdc3c7')),
-        ]))
+            # Altura das linhas
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ])
         
-        # Posicionar tabela no PDF ocupando largura total (respeitando margens)
+        table.setStyle(style)
+        
+        # Posicionar tabela
+        table_y = y_position - 1.5*cm - (len(table_data) * 0.6 * cm)
+        
+        # Verificar se cabe na página
+        if table_y < bottom_margin:
+            c.showPage()
+            page_num += 1
+            # Redesenhar cabeçalho da página
+            table_y = height - 8*cm
+        
         table.wrapOn(c, content_width, height)
         table.drawOn(c, left_margin, table_y)
         
-        # Adicionar assinatura do secretário pedagógico centralizada abaixo da tabela
-        draw_secretary_signature(table_y - 1.5*cm)
+        # ===== ASSINATURAS =====
+        signature_y = table_y - 1.5*cm
         
-        # Verificar se a próxima turma caberá na página atual
-        # Deixar espaço para pelo menos o cabeçalho da próxima turma e assinatura
-        if table_y - table_height - 8*cm < bottom_margin + 4*cm:
-            c.showPage()
-            page_num += 1
+        # Assinatura do Director da Escola
+        c.setFont("Helvetica", 9)
+        c.drawString(left_margin, signature_y, "VISTO O DIRECTOR DA ESCOLA")
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(left_margin, signature_y - 0.5*cm, "Lic. José Velemo")
+        
+        # Assinatura do Subdirector Pedagógico (canto direito)
+        c.setFont("Helvetica", 9)
+        c.drawRightString(width - right_margin, signature_y, "O Subdirector Pedagógico")
+        c.setFont("Helvetica-Bold", 9)
+        c.drawRightString(width - right_margin, signature_y - 0.5*cm, "Elias António")
+        
+        page_num += 1
     
-    # Salvar o PDF
     c.save()
-    
-    # Preparar resposta
     buffer.seek(0)
     
-    # Criar nome do arquivo
-    from django.utils import timezone
-    data_str = timezone.now().strftime("%Y%m%d_%H%M")
-    filename = f'horario_completo_{data_str}.pdf'
+    filename = f'horario_completo_{timezone.now().strftime("%Y%m%d_%H%M")}.pdf'
     
     return FileResponse(
         buffer,
@@ -2372,70 +2411,61 @@ def gerar_horario_completo(request):
         content_type='application/pdf'
     )
 
+
 @login_required
 def visualizar_horario_completo(request):
     """
-    Visualização HTML do horário completo (prévia antes do PDF)
+    Visualização HTML do horário completo no formato matriz
     """
-    # Obter todas as turmas com seus vínculos e horários
-    turmas = Turma.objects.all().select_related('curso', 'classe').prefetch_related(
-        Prefetch(
-            'professorvinculo_set',
-            queryset=ProfessorVinculo.objects.select_related('professor', 'disciplina').prefetch_related(
-                Prefetch(
-                    'horarios',
-                    queryset=HorarioAula.objects.order_by('dia_semana', 'hora_inicio')
-                )
-            ),
-            to_attr='vinculos_completos'
-        )
-    ).order_by('turno', 'nome')
+    # Obter todas as turmas do I Ciclo (7ª, 8ª, 9ª)
+    turmas = Turma.objects.filter(
+        classe__numero__in=[7, 8, 9]
+    ).select_related('classe', 'curso').order_by('classe__numero', 'nome')
     
-    # Organizar dados por turma e por dia
-    horarios_organizados = []
+    # Mapear dias
+    dia_map = {
+        '2ª Feira': 0,
+        '3ª Feira': 1,
+        '4ª Feira': 2,
+        '5ª Feira': 3,
+        '6ª Feira': 4,
+    }
+    
+    turmas_horarios = []
     
     for turma in turmas:
-        turma_info = {
-            'nome': turma.nome,
-            'classe': turma.classe.numero,
-            'curso': turma.curso.nome,
-            'turno': turma.turno,
-            'dias': {
-                'Segunda-feira': [],
-                'Terça-feira': [],
-                'Quarta-feira': [],
-                'Quinta-feira': [],
-                'Sexta-feira': [],
-                'Sábado': [],
-            }
-        }
+        # Criar matriz vazia
+        matriz = [[None for _ in range(5)] for _ in range(6)]
         
-        # Processar vínculos desta turma
-        for vinculo in turma.vinculos_completos:
+        # Buscar vínculos e horários
+        vinculos = ProfessorVinculo.objects.filter(turma=turma).select_related(
+            'professor', 'disciplina'
+        ).prefetch_related(
+            Prefetch('horarios', queryset=HorarioAula.objects.all())
+        )
+        
+        # Preencher matriz
+        for vinculo in vinculos:
             for horario in vinculo.horarios.all():
-                dia = horario.get_dia_semana_display()
-                
-                aula_info = {
-                    'hora_inicio': horario.hora_inicio.strftime("%H:%M"),
-                    'hora_fim': horario.hora_fim.strftime("%H:%M"),
-                    'disciplina': vinculo.disciplina.nome,
-                    'professor': vinculo.professor.nome,
-                    'tempo': f"{horario.tempo_aula}º" if horario.tempo_aula else "",
-                    'periodo': f"{horario.hora_inicio.strftime('%H:%M')} - {horario.hora_fim.strftime('%H:%M')}"
-                }
-                
-                turma_info['dias'][dia].append(aula_info)
+                dia_idx = dia_map.get(horario.get_dia_semana_display())
+                if dia_idx is not None:
+                    for i, h in enumerate(HORARIOS):
+                        if h['inicio'] == horario.hora_inicio.strftime("%H:%M"):
+                            matriz[i][dia_idx] = vinculo.disciplina.nome
+                            break
         
-        # Ordenar aulas por horário em cada dia
-        for dia in turma_info['dias']:
-            turma_info['dias'][dia].sort(key=lambda x: x['hora_inicio'])
-        
-        horarios_organizados.append(turma_info)
+        turmas_horarios.append({
+            'classe': turma.classe.numero,
+            'turma_nome': turma.nome,
+            'matriz': matriz,
+            'horarios': HORARIOS,
+            'dias': DIAS_SEMANA
+        })
     
     context = {
-        'horarios_turmas': horarios_organizados,
-        'total_turmas': len(horarios_organizados),
-        'dias_semana': ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'],
+        'turmas_horarios': turmas_horarios,
+        'ano_letivo': f"{timezone.now().year}/{(timezone.now().year + 1)}",
+        'total_turmas': len(turmas_horarios),
     }
     
     return render(request, 'documentos/horario_completo.html', context)

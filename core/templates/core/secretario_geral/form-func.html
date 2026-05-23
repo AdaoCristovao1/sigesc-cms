@@ -33,10 +33,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola" 
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Secretário Geral</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -91,7 +92,7 @@
       </div>
     </div>
     <div class="container mt-4">
-      <h2 class="page-title"><i class="fas fa-user-tie me-2"></i>Lista de Funcionários</h2>
+      <h2 class="page-title"><i class="fas fa-user-tie me-2"></i>Funcionários - {{ escola.nome }}</h2>
       <form method="GET" class="row g-3 mt-3 mb-4">
       <div class="col-md-8">
         <input type="text" name="q" class="form-control" placeholder="Pesquise aqui!..." value="{{ request.GET.q }}">
@@ -108,7 +109,7 @@
     <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
       <div>
         <button class="btn btn-outline-primary" onclick="mostrarLista('outros')">Lista de Funcionários</button>
-        <button class="btn btn-outline-success" onclick="mostrarLista('alunos')">Novo Funcionário</button>
+        <!--- <button class="btn btn-outline-success" onclick="mostrarLista('alunos')">Novo Funcionário</button>-->
       </div>
     </div>
     <div id="lista-outros" class="table-responsive" style="overflow-x: auto;">
@@ -142,7 +143,7 @@
             <td>{{ funcionario.get_genero_display }}</td>
             <td>{{ funcionario.funcao }}</td>
             <td>{{ funcionario.telefone }}</td>
-            <td><button class="btn btn-warning" onclick="openModalEditar(this)"
+            <td><!--<button class="btn btn-warning" onclick="openModalEditar(this)"
                 data-id="{{ funcionario.id }}"
                 data-nome="{{ funcionario.nome }}"
                 data-bi="{{ funcionario.bi }}"
@@ -152,7 +153,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pen-fill text-light" viewBox="0 0 16 16">
                 <path d="m13.498.795.149-.149a1.207 1.207 0 1 1 1.707 1.708l-.149.148a1.5 1.5 0 0 1-.059 2.059L4.854 14.854a.5.5 0 0 1-.233.131l-4 1a.5.5 0 0 1-.606-.606l1-4a.5.5 0 0 1 .131-.232l9.642-9.642a.5.5 0 0 0-.642.056L6.854 4.854a.5.5 0 1 1-.708-.708L9.44.854A1.5 1.5 0 0 1 11.5.796a1.5 1.5 0 0 1 1.998-.001"/>
                 </svg>
-              </button>
+              </button>-->
             </td>
           </tr>
           {% empty %}
@@ -163,186 +164,333 @@
     </div>
     
     <!-- FORMULÁRIO DE CADASTRO -->
-<div id="lista-alunos" class="table-responsive d-none">
-  <div class="container mt-4">
-    <div class="row justify-content-center">
-      <div class="col-md-10 col-lg-8">
-        <div class="card shadow-sm border-0">
-          <div class="card-header bg-primary bg-gradient text-white py-3">
-            <h4 class="mb-0 fw-semibold">
-              <i class="bi bi-person-plus-fill me-2"></i>Cadastro de Funcionários
-            </h4>
-            <p class="text-white-50 mb-0 small mt-1">Preencha todos os campos obrigatórios</p>
+    <div id="lista-alunos" class="table-responsive d-none">
+      <div class="container mt-4">
+        <div class="row justify-content-center">
+          <div class="col-md-10 col-lg-8">
+            <div class="card shadow-sm border-0">
+              <div class="card-header bg-primary bg-gradient text-white py-3">
+                <h4 class="mb-0 fw-semibold">
+                  <i class="bi bi-person-plus-fill me-2"></i>Cadastro de Funcionários
+                </h4>
+                <p class="text-white-50 mb-0 small mt-1">Preencha todos os campos obrigatórios</p>
+              </div>
+              
+              <div class="card-body px-4 pb-4">
+              <!-- Informação da Escola (readonly) -->
+              <div class="alert alert-info mb-4">
+                  <div class="d-flex align-items-center">
+                      <i class="fas fa-school fa-2x me-3"></i>
+                      <div>
+                          <strong>Escola:</strong> {{ escola.nome }}<br>
+                          <small>{{ escola.provincia }}, {{ escola.municipio }}</small>
+                      </div>
+                  </div>
+              </div>
+
+              <form method="POST" 
+                    action="{% if funcionario %}{% url 'core:editar_funcionario' funcionario.id %}{% else %}{% url 'core:cadastrar_funcionario' %}{% endif %}" 
+                    id="funcionarioForm"
+                    novalidate>
+                  {% csrf_token %}
+                  
+                  {% if funcionario %}
+                  <input type="hidden" name="funcionario_id" value="{{ funcionario.id }}">
+                  {% endif %}
+
+                  <!-- Seção: Dados Pessoais -->
+                  <div class="form-section">
+                      <h5 class="form-section-title">
+                          <i class="fas fa-user me-2"></i> Dados Pessoais
+                      </h5>
+                      <div class="row g-3">
+                          <div class="col-md-8">
+                              <label for="nome" class="form-label required">Nome Completo</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">
+                                      <i class="fas fa-user text-muted"></i>
+                                  </span>
+                                  <input type="text" 
+                                        class="form-control" 
+                                        id="nome" 
+                                        name="nome" 
+                                        placeholder="Digite o nome completo"
+                                        value="{% if funcionario %}{{ funcionario.nome }}{% elif dados_post.nome %}{{ dados_post.nome }}{% endif %}"
+                                        required>
+                              </div>
+                              <div class="invalid-feedback" id="nomeError">
+                                  {% if erros.nome %}{{ erros.nome }}{% endif %}
+                              </div>
+                          </div>
+                          
+                          <div class="col-md-4">
+                              <label for="genero" class="form-label required">Gênero</label>
+                              <select class="form-select" id="genero" name="genero" required>
+                                  <option value="">Selecione...</option>
+                                  <option value="M" {% if funcionario and funcionario.genero == 'M' %}selected{% elif dados_post.genero == 'M' %}selected{% endif %}>
+                                      Masculino
+                                  </option>
+                                  <option value="F" {% if funcionario and funcionario.genero == 'F' %}selected{% elif dados_post.genero == 'F' %}selected{% endif %}>
+                                      Feminino
+                                  </option>
+                                  <option value="O" {% if funcionario and funcionario.genero == 'O' %}selected{% elif dados_post.genero == 'O' %}selected{% endif %}>
+                                      Outro
+                                  </option>
+                              </select>
+                              <div class="invalid-feedback" id="generoError">
+                                  {% if erros.genero %}{{ erros.genero }}{% endif %}
+                              </div>
+                          </div>
+                          
+                          <div class="col-md-4">
+                              <label for="bi" class="form-label required">Nº do Bilhete de Identidade</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">
+                                      <i class="fas fa-id-card text-muted"></i>
+                                  </span>
+                                  <input type="text" 
+                                        class="form-control" 
+                                        id="bi" 
+                                        name="bi" 
+                                        placeholder="Ex: 123456789LA123"
+                                        value="{% if funcionario %}{{ funcionario.bi }}{% elif dados_post.bi %}{{ dados_post.bi }}{% endif %}"
+                                        required>
+                              </div>
+                              <div class="invalid-feedback" id="biError">
+                                  {% if erros.bi %}{{ erros.bi }}{% endif %}
+                              </div>
+                          </div>
+                          
+                          <div class="col-md-4">
+                              <label for="telefone" class="form-label required">Telefone</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">
+                                      <i class="fas fa-phone text-muted"></i>
+                                  </span>
+                                  <input type="tel" 
+                                        class="form-control" 
+                                        id="telefone" 
+                                        name="telefone" 
+                                        placeholder="Ex: 923456789"
+                                        value="{% if funcionario %}{{ funcionario.telefone }}{% elif dados_post.telefone %}{{ dados_post.telefone }}{% endif %}"
+                                        required>
+                              </div>
+                              <div class="invalid-feedback" id="telefoneError">
+                                  {% if erros.telefone %}{{ erros.telefone }}{% endif %}
+                              </div>
+                          </div>
+                          
+                          <div class="col-md-4">
+                              <label for="email" class="form-label">E-mail</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">
+                                      <i class="fas fa-envelope text-muted"></i>
+                                  </span>
+                                  <input type="email" 
+                                        class="form-control" 
+                                        id="email" 
+                                        name="email" 
+                                        placeholder="email@exemplo.com"
+                                        value="{% if funcionario and funcionario.email %}{{ funcionario.email }}{% elif dados_post.email %}{{ dados_post.email }}{% endif %}">
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Seção: Dados Profissionais -->
+                  <div class="form-section">
+                      <h5 class="form-section-title">
+                          <i class="fas fa-briefcase me-2"></i> Dados Profissionais
+                      </h5>
+                      <div class="row g-3">
+                          <div class="col-md-6">
+                              <label for="funcao" class="form-label required">Função/Cargo</label>
+                              <select class="form-select" id="funcao" name="funcao" required>
+                                  <option value="">Selecione a função...</option>
+                                  <option value="Diretor Geral" {% if funcionario and funcionario.funcao == 'Diretor Geral' %}selected{% elif dados_post.funcao == 'Diretor Geral' %}selected{% endif %}>
+                                      Diretor Geral
+                                  </option>
+                                  <option value="Diretor Pedagógico" {% if funcionario and funcionario.funcao == 'Diretor Pedagógico' %}selected{% elif dados_post.funcao == 'Diretor Pedagógico' %}selected{% endif %}>
+                                      Diretor Pedagógico
+                                  </option>
+                                  <option value="Diretor Administrativo" {% if funcionario and funcionario.funcao == 'Diretor Administrativo' %}selected{% elif dados_post.funcao == 'Diretor Administrativo' %}selected{% endif %}>
+                                      Diretor Administrativo
+                                  </option>
+                                  <option value="Coordenador de Turno" {% if funcionario and funcionario.funcao == 'Coordenador de Turno' %}selected{% elif dados_post.funcao == 'Coordenador de Turno' %}selected{% endif %}>
+                                      Coordenador de Turno
+                                  </option>
+                                  <option value="Coordenador de Turma" {% if funcionario and funcionario.funcao == 'Coordenador de Turma' %}selected{% elif dados_post.funcao == 'Coordenador de Turma' %}selected{% endif %}>
+                                      Coordenador de Turma
+                                  </option>
+                                  <option value="Coordenador de Disciplina" {% if funcionario and funcionario.funcao == 'Coordenador de Disciplina' %}selected{% elif dados_post.funcao == 'Coordenador de Disciplina' %}selected{% endif %}>
+                                      Coordenador de Disciplina
+                                  </option>
+                                  <option value="Secretário Geral" {% if funcionario and funcionario.funcao == 'Secretário Geral' %}selected{% elif dados_post.funcao == 'Secretário Geral' %}selected{% endif %}>
+                                      Secretário Geral
+                                  </option>
+                                  <option value="Secretário Administrativo" {% if funcionario and funcionario.funcao == 'Secretário Administrativo' %}selected{% elif dados_post.funcao == 'Secretário Administrativo' %}selected{% endif %}>
+                                      Secretário Administrativo
+                                  </option>
+                                  <option value="Secretário Pedagógico" {% if funcionario and funcionario.funcao == 'Secretário Pedagógico' %}selected{% elif dados_post.funcao == 'Secretário Pedagógico' %}selected{% endif %}>
+                                      Secretário Pedagógico
+                                  </option>
+                                  <option value="Professor" {% if funcionario and funcionario.funcao == 'Professor' %}selected{% elif dados_post.funcao == 'Professor' %}selected{% endif %}>
+                                      Professor
+                                  </option>
+                                  <option value="Auxiliar Administrativo" {% if funcionario and funcionario.funcao == 'Auxiliar Administrativo' %}selected{% elif dados_post.funcao == 'Auxiliar Administrativo' %}selected{% endif %}>
+                                      Auxiliar Administrativo
+                                  </option>
+                                  <option value="Auxiliar de Limpeza" {% if funcionario and funcionario.funcao == 'Auxiliar de Limpeza' %}selected{% elif dados_post.funcao == 'Auxiliar de Limpeza' %}selected{% endif %}>
+                                      Auxiliar de Limpeza
+                                  </option>
+                                  <option value="Segurança" {% if funcionario and funcionario.funcao == 'Segurança' %}selected{% elif dados_post.funcao == 'Segurança' %}selected{% endif %}>
+                                      Segurança
+                                  </option>
+                                  <option value="Motorista" {% if funcionario and funcionario.funcao == 'Motorista' %}selected{% elif dados_post.funcao == 'Motorista' %}selected{% endif %}>
+                                      Motorista
+                                  </option>
+                                  <option value="Outro" {% if funcionario and funcionario.funcao == 'Outro' %}selected{% elif dados_post.funcao == 'Outro' %}selected{% endif %}>
+                                      Outro
+                                  </option>
+                              </select>
+                              <div class="invalid-feedback" id="funcaoError">
+                                  {% if erros.funcao %}{{ erros.funcao }}{% endif %}
+                              </div>
+                          </div>
+                          
+                          <div class="col-md-6">
+                            <label for="salario" class="form-label">Salário (Kz)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-money-bill text-muted"></i>
+                                </span>
+                                <input type="text" 
+                                      class="form-control" 
+                                      id="salario" 
+                                      name="salario" 
+                                      placeholder="0,00"
+                                      value="{% if funcionario %}{{ funcionario.salario|stringformat:'.2f'|cut:'.'|slice:'-2'|join:',' }}{% elif dados_post.salario %}{{ dados_post.salario }}{% else %}0,00{% endif %}">
+                                <span class="input-group-text">Kz</span>
+                            </div>
+                            <div class="invalid-feedback" id="salarioError"></div>
+                        </div>
+                          
+                          <div class="col-md-6">
+                              <label for="nivel_academico" class="form-label">Nível Acadêmico</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">
+                                      <i class="fas fa-graduation-cap text-muted"></i>
+                                  </span>
+                                  <input type="text" 
+                                        class="form-control" 
+                                        id="nivel_academico" 
+                                        name="nivel_academico" 
+                                        placeholder="Ex: Licenciatura, Mestrado..."
+                                        value="{% if funcionario %}{{ funcionario.nivel_academico }}{% elif dados_post.nivel_academico %}{{ dados_post.nivel_academico }}{% endif %}">
+                              </div>
+                          </div>
+                          
+                          <div class="col-md-6">
+                              <label for="area_formacao" class="form-label">Área de Formação</label>
+                              <div class="input-group">
+                                  <span class="input-group-text">
+                                      <i class="fas fa-book text-muted"></i>
+                                  </span>
+                                  <input type="text" 
+                                        class="form-control" 
+                                        id="area_formacao" 
+                                        name="area_formacao" 
+                                        placeholder="Ex: Matemática, Física..."
+                                        value="{% if funcionario %}{{ funcionario.area_formacao }}{% elif dados_post.area_formacao %}{{ dados_post.area_formacao }}{% endif %}">
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Seção: Status -->
+                  <div class="form-section">
+                      <h5 class="form-section-title">
+                          <i class="fas fa-toggle-on me-2"></i> Status
+                      </h5>
+                      <div class="row">
+                          <div class="col-md-12">
+                              <div class="form-check form-switch">
+                                  <input class="form-check-input" 
+                                        type="checkbox" 
+                                        id="ativo" 
+                                        name="ativo"
+                                        {% if funcionario and funcionario.ativo or not funcionario %}checked{% endif %}
+                                        {% if dados_post.ativo %}checked{% endif %}>
+                                  <label class="form-check-label" for="ativo">
+                                      <strong>Funcionário Ativo</strong>
+                                  </label>
+                              </div>
+                              <small class="text-muted">
+                                  Desmarque esta opção se o funcionário não estiver mais em atividade
+                              </small>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Seção: Informações de Acesso -->
+                  {% if not funcionario %}
+                  <div class="form-section bg-info bg-opacity-10">
+                      <h5 class="form-section-title">
+                          <i class="fas fa-key me-2"></i> Informações de Acesso
+                      </h5>
+                      <div class="preview-info">
+                          <p class="mb-2">
+                              <i class="fas fa-info-circle me-2 text-info"></i>
+                              <strong>Atenção:</strong> O usuário de acesso será criado automaticamente com:
+                          </p>
+                          <ul class="mb-0">
+                              <li><strong>Usuário:</strong> primeiro_nome.ultimo_nome</li>
+                              <li><strong>Senha inicial:</strong> Número do BI</li>
+                              <li><strong>Escola vinculada:</strong> {{ escola.nome }}</li>
+                          </ul>
+                          <small class="text-muted d-block mt-2">
+                              O funcionário poderá alterar a senha após o primeiro acesso.
+                          </small>
+                      </div>
+                  </div>
+                  {% endif %}
+
+                  {% if funcionario and funcionario.usuario %}
+                  <div class="form-section bg-light">
+                      <h5 class="form-section-title">
+                          <i class="fas fa-link me-2"></i> Usuário Vinculado
+                      </h5>
+                      <div class="d-flex align-items-center">
+                          <i class="fas fa-user-circle fs-1 me-3 text-primary"></i>
+                          <div>
+                              <strong>{{ funcionario.usuario.username }}</strong>
+                              <br>
+                              <small class="text-muted">{{ funcionario.usuario.email }}</small>
+                              <br>
+                              <small class="text-muted">Escola: {{ escola.nome }}</small>
+                          </div>
+                      </div>
+                  </div>
+                  {% endif %}
+
+                  <!-- Botões de Ação -->
+                  <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                      <a href="{% url 'core:cadastrar_funcionario' %}" class="btn btn-outline-secondary btn-lg">
+                          <i class="fas fa-arrow-left me-2"></i> Cancelar
+                      </a>
+                      <button type="submit" class="btn btn-primary btn-lg px-5">
+                          <i class="fas fa-{% if funcionario %}save{% else %}plus-circle{% endif %} me-2"></i>
+                          {% if funcionario %}Salvar Alterações{% else %}Cadastrar Funcionário{% endif %}
+                      </button>
+                  </div>
+              </form>
           </div>
-          
-          <div class="card-body p-4">
-            <form method="POST" action="">
-                {% csrf_token %}
-                
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label for="nome" class="form-label fw-medium">Nome Completo <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="nome" name="nome" placeholder="Digite o nome completo" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label for="bilhete" class="form-label fw-medium">Bilhete de Identidade <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="bilhete" name="bilhete" placeholder="000000000 LA000" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label class="form-label fw-medium d-block">Gênero <span class="text-danger">*</span></label>
-                    <div class="d-flex gap-4 pt-1">
-                      <div class="form-check">
-                        <input class="form-check-input" type="radio" name="genero" id="genero_m" value="M" required>
-                        <label class="form-check-label" for="genero_m">Masculino</label>
-                      </div>
-                      <div class="form-check">
-                        <input class="form-check-input" type="radio" name="genero" id="genero_f" value="F">
-                        <label class="form-check-label" for="genero_f">Feminino</label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label for="funcao" class="form-label fw-medium">Função <span class="text-danger">*</span></label>
-                    <select class="form-select" id="funcao" name="funcao" required>
-                        <option value="" selected disabled>— Selecione uma função —</option>
-                        <option value="diretor_geral">Diretor Geral</option>
-                        <option value="diretor_pedagogico">Diretor Pedagógico</option>
-                        <option value="diretor_admin">Diretor Administrativo</option>
-                        <option value="coordenador_turno">Coordenador de Turno</option>
-                        <option value="coordenador_turma">Coordenador de Turma</option>
-                        <option value="coordenador_disc">Coordenador de Disciplina</option>
-                        <option value="secretario_geral">Secretário Geral</option>
-                        <option value="secretario_admin">Secretário Administrativo</option>
-                        <option value="secretario_ped">Secretário Pedagógico</option>
-                        <option value="professor">Professor</option>
-                    </select>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label for="telefone" class="form-label fw-medium">Telefone <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="telefone" name="telefone" placeholder="+244 900 000 000" required>
-                  </div>
-
-                  <div class="col-md-6">
-                    <label for="salario" class="form-label fw-medium">Salário a receber <span class="text-danger">*</span></label>
-                    <div class="input-group">
-                      <span class="input-group-text">Kz</span>
-                      <input type="text" class="form-control" id="salario" name="salario" placeholder="0,00" required>
-                    </div>
-                  </div>
-
-                  <div class="col-12 mt-4">
-                    <hr class="mb-4">
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                      <button type="reset" class="btn btn-outline-secondary px-4">Limpar</button>
-                      <button type="submit" class="btn btn-primary px-5"
-                        onclick="if (this.form.checkValidity()) {
-                          this.disabled = true; this.form.submit();
-                        } else { 
-                          this.form.reportValidity(); return false; 
-                        }">Cadastrar Funcionário</button>
-                    </div>
-                  </div>
-                </div>
-            </form>
+            </div>
+            <br><br>
           </div>
         </div>
-        <br><br>
       </div>
     </div>
-  </div>
-</div>
-   <!-- Modal de Edição de Funcionário -->
-  <div class="modal fade" id="confirmacaoModal" tabindex="-1" aria-labelledby="confirmacaoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <form method="POST" action="{% url 'core:confirmar_acao_funcionario' %}">
-        {% csrf_token %}
-
-        <!-- Campos ocultos para o ID do funcionário e tipo de ação -->
-        <input type="hidden" name="funcionario_id" id="funcionarioIdInput">
-        <input type="hidden" name="acao" id="acaoInput">
-
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="confirmacaoModalLabel">Editar Funcionário</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-
-          <div class="modal-body">
-            <!-- Nome -->
-            <div class="mb-3">
-              <label for="nome" class="form-label">Nome Completo:</label>
-              <input type="text" class="form-control" id="modal_nome" name="nome" required>
-            </div>
-
-            <!-- BI -->
-            <div class="mb-3">
-              <label for="bilhete" class="form-label">Bilhete de Identidade:</label>
-              <input type="text" class="form-control" id="modal_bilhete" name="bilhete" required>
-            </div>
-
-            <!-- Gênero -->
-            <div class="mb-3">
-              <label class="form-label">Gênero:</label><br>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="genero" id="modal_genero_m" value="M" required>
-                <label class="form-check-label" for="genero_m">Masculino</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="genero" id="modal_genero_f" value="F">
-                <label class="form-check-label" for="genero_f">Feminino</label>
-              </div>
-            </div>
-
-            <!-- Função -->
-            <div class="mb-3">
-              <label for="funcao" class="form-label">Função:</label>
-              <select class="form-select" id="modal_funcao" name="funcao" required>
-                <option value="">Selecione uma função</option>
-                <option value="diretor_geral">Diretor Geral</option>
-                <option value="diretor_pedagogico">Diretor Pedagógico</option>
-                <option value="diretor_admin">Diretor Administrativo</option>
-                <option value="coordenador_turno">Coordenador de Turno</option>
-                <option value="coordenador_turma">Coordenador de Turma</option>
-                <option value="coordenador_disc">Coordenador de Disciplina</option>
-                <option value="secretario_geral">Secretário Geral</option>
-                <option value="secretario_admin">Secretário Administrativo</option>
-                <option value="secretario_ped">Secretário Pedagógico</option>
-                <option value="professor">Professor</option>
-              </select>
-            </div>
-
-            <!-- Telefone -->
-            <div class="mb-3">
-              <label for="telefone" class="form-label">Telefone:</label>
-              <input type="text" class="form-control" id="modal_telefone" name="telefone" required>
-            </div>
-
-            <!-- Salário -->
-            <div class="mb-3">
-              <label for="salario" class="form-label">Salário a Receber:</label>
-              <input type="text" class="form-control" id="modal_salario" name="salario" required>
-            </div>
-
-            <!-- Confirmação de Senha -->
-            <div class="mb-3">
-              <label for="senha" class="form-label">Digite a chave Master:</label>
-              <input type="password" class="form-control" name="senha" required>
-            </div>
-            <p class="text-muted">Digite sua senha para confirmar a edição deste funcionário e do usuário correspondente.</p>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Confirmar Edição</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
 <!-- Modal Exclusão -->
 <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
   <div class="modal-dialog">

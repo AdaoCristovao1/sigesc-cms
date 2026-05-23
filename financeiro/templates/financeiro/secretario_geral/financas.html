@@ -33,10 +33,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola" 
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Secretário Geral</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -92,7 +93,7 @@
     </div>
 
     <div class="container mt-4">
-      <h2 class="page-title w-100"><i class="fas fa-wallet me-2"></i>Controle Financeiro</h2>
+      <h2 class="page-title w-100"><i class="fas fa-wallet me-2"></i>Controle Financeiro - {{ escola.nome }}</h2>
       <form method="GET" class="row g-3 mt-3 mb-4">
         <div class="col-md-8">
           <input type="text" name="q" class="form-control" placeholder="Pesquise pelo aluno!..." value="{{ q }}">

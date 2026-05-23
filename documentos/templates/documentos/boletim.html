@@ -12,7 +12,7 @@
         margin: 0.5cm;
       }
       @page {
-        margin: 0.5cm;
+        margin: 0.5cm; 
         size: A4;
       }
     }
@@ -141,10 +141,11 @@
 <body>
 
   <div class="header">
-    <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" class="logo">
-    <h3>Complexo Escolar Privado</h3>
-    <h3>Veredas Encantadas</h3>
-    <div style="background-color: #e63946; color: white; padding: 5px; font-weight: bold;">
+    {% if escola.logotipo %}
+      <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+    {% endif %}
+    <h4>{{ escola.nome }}</h4>
+    <div style="background-color: #5a5b5c; color: white; padding: 5px; font-weight: bold;">
       BOLETIM DE NOTAS
     </div>
   </div>

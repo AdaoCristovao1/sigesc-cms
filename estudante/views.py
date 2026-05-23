@@ -9,19 +9,21 @@ from financeiro.models import *
 from django.db.models import Avg, Count, Q
 from decimal import Decimal
 import json
+from escola.models import Escola
 
 @login_required
-def aluno_home(request):
+def aluno_home(request): 
+   
     
     perfil = request.user.perfil
     usuario = request.user
-    aluno = Aluno.objects.get(usuario=usuario)
+    aluno = Aluno.objects.get(escola=usuario.escola, usuario=usuario)
 
-    return render(request, 'estudante/aluno-home.html', {"usuario":usuario, "aluno": aluno})
+    return render(request, 'estudante/aluno-home.html', {"usuario":usuario, "aluno": aluno, 'escola': usuario.escola})
 
 @login_required
 def alunos_geral(request):
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('q', '').strip()  
     
     alunos = Aluno.objects.select_related('usuario', 'turma', 'classe', 'curso', 'sala')
 
@@ -136,13 +138,13 @@ def meus_professores(request):
     usuario = request.user
     
     # Obter o aluno logado
-    aluno = Aluno.objects.filter(usuario=usuario).first()
+    aluno = Aluno.objects.filter(escola=usuario.escola, usuario=usuario).first()
     if not aluno:
         messages.error(request, "Nenhum aluno associado a este usuário.")
         return redirect("estudante:aluno_home")
 
     # Buscar a turma activa via Reconfirmacao
-    reconf = Reconfirmacao.objects.filter(aluno=aluno).last()
+    reconf = Reconfirmacao.objects.filter(escola=usuario.escola, aluno=aluno).last()
 
     if not reconf:
         messages.error(request, "Nenhuma reconfirmação/turma encontrada para este aluno.")
@@ -151,11 +153,11 @@ def meus_professores(request):
     turma = reconf.turma
 
     # Buscar os professores ligados à mesma turma
-    professores = ProfessorVinculo.objects.filter(turma=turma).select_related(
+    professores = ProfessorVinculo.objects.filter(escola=usuario.escola, turma=turma).select_related(
         "professor", "disciplina"
     )
 
-    return render(
+    return render( 
         request,
         "estudante/meus-professores.html",
         {
@@ -163,6 +165,7 @@ def meus_professores(request):
             "aluno": aluno,
             "turma": turma,
             "professores": professores,
+            'escola': usuario.escola
         }
     )
 
@@ -174,7 +177,7 @@ def historico_academico(request):
     aluno = get_object_or_404(Aluno, usuario=usuario)
 
     # Todas as notas do aluno
-    notas = Nota.objects.filter(aluno=aluno).select_related(
+    notas = Nota.objects.filter(escola=usuario.escola, aluno=aluno).select_related(
         'disciplina', 'classe'
     ).order_by('classe__numero', 'disciplina__nome', 'trimestre')
 
@@ -214,7 +217,7 @@ def historico_academico(request):
     return render(
         request,
         "estudante/historico-academico.html",
-        {"usuario": usuario, "aluno": aluno, "historico": medias}
+        {"usuario": usuario, "aluno": aluno, "historico": medias, 'escola':usuario.escola}
     )
 
 @login_required
@@ -223,7 +226,7 @@ def historico_financeiro(request):
     aluno = usuario.aluno  # Assumindo relação OneToOne entre User e Aluno
 
     # Buscar todos os pagamentos do aluno
-    pagamentos = Pagamento.objects.filter(aluno=aluno).order_by("ano_lectivo", "data_pagamento")
+    pagamentos = Pagamento.objects.filter(escola=usuario.escola, aluno=aluno).order_by("ano_lectivo", "data_pagamento")
 
     # Agrupar por ano lectivo
     historico = {}
@@ -236,6 +239,7 @@ def historico_financeiro(request):
     context = {
         "usuario": usuario,
         "historico": historico,
+        'escola': usuario.escola
     }
     return render(request, "estudante/historico-financeiro.html", context)
 
@@ -245,6 +249,7 @@ def recados(request):
     aluno = usuario.aluno
     return render(request, 'estudante/recados.html', {
         "usuario": usuario,
+        'escola': usuario.escola
     })
 
 @login_required
@@ -253,15 +258,17 @@ def aproveitamento_escolar(request):
     aluno = usuario.aluno
     
     # Buscar anos letivos disponíveis
-    anos_letivos = AnoLectivo.objects.all().order_by('-ano')
+    anos_letivos = AnoLectivo.objects.filter(escola=usuario.escola).order_by('-ano')
     
     # Buscar disciplinas do aluno
     disciplinas = Disciplina.objects.filter(
+        escola=usuario.escola,
         nota__aluno=aluno
     ).distinct()
     
     # Buscar classes do aluno
     classes = Classe.objects.filter(
+        escola=usuario.escola,
         nota__aluno=aluno
     ).distinct()
     
@@ -271,6 +278,7 @@ def aproveitamento_escolar(request):
         "anos_letivos": anos_letivos,
         "disciplinas": disciplinas,
         "classes": classes,
+        'escola': usuario.escola
     }
     
     return render(request, 'estudante/aproveitamento-escolar.html', context)
@@ -392,5 +400,6 @@ def pagamentos(request):
     # Dados para o template
     context = {
         "usuario": usuario,
+        'escola': usuario.escola
     }
     return render(request, 'estudante/pagamentos.html', context)

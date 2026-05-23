@@ -176,9 +176,14 @@
     </button>
   </div>
   <div class="header">
-    <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" class="logo">
-    <h1>Complexo Escolar Veredas Encantadas</h1>
-    <h3>Criado sob Decreto Executivo </h3>
+    {% if escola.logotipo %}
+      <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+    {% endif %}
+    <br>
+    <h1>{{ escola.nome }}</h1>
+    <h3>{% if escola.decreto_executivo %}
+      {{ escola.decreto_executivo }}
+    {% endif %}</h3>
     <br><br><br>
     <h2>Declaração com Notas</h2>
   </div>
@@ -236,7 +241,7 @@
         {% endfor %}
     </tbody>
     </table>
-
+    <br><br>
     <div class="assinatura" style="text-align: center;">
         <p>O Director Geral</p>
         <p>______________________________</p>

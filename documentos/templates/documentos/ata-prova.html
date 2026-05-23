@@ -37,11 +37,20 @@
 <div class="no-print mb-3">
   <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button>
 </div>
-<div class="header">
-  <img src="{% static 'imgs/logoColegioVeredas.jpg' %}" alt="Logo" style="width: 100px; height: 100px;">
-  <h3>Complexo Escolar Veredas Encantadas</h3>
-  <h5>Ata de Prova - Ano Lectivo: {{ ano_letivo }}</h5>
-  <h6>{{epoca}}</h6>
+<div class="header" style="text-align: center; margin-bottom: 20px;">
+  
+  {% if escola.logotipo %}
+    <img src="{{ escola.logotipo.url }}" alt="Logo" style="height: 80px;">
+  {% else %}
+    <img src="{% static 'imgs/logo-default.png' %}" alt="Logo" style="height: 80px;">
+  {% endif %}
+  
+  <h4>{{ escola.nome }}</h4>
+
+  <h5>
+    Lista de Alunos Inadimplentes - Ano Lectivo: {{ ano_letivo }}
+  </h5>
+
 </div>
 
 <p><strong>Turma:</strong> {{ turma.nome }} - {{ turma.classe.numero }} ª Classe - {{ turma.curso.nome }}</p>
@@ -79,6 +88,9 @@
 <div class="rodape mt-5 text-center">
   <hr>
   <p><small>© {{ data|date:"Y" }} Documento gerado pelo sistema SIGEsc</small></p>
+    {{ escola.provincia }} - {{ escola.municipio }} - {{ escola.endereco }} -Tel: {{ escola.contacto }}
+  </small>
+  </p>
 </div>
 </body>
 </html>

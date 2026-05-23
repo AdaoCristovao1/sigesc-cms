@@ -1,0 +1,811 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestão de Escolas | SIGEsc</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="apple-touch-icon" sizes="300x300" href="{% static 'imgs/apple-touch-icon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
+  <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    .sidebar{
+      overflow-y: auto;
+    }
+    .hover-lift {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .hover-lift:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 1rem 3rem rgba(0,0,0,.175) !important;
+    }
+    
+    .btn-outline-primary, .btn-outline-secondary, .btn-outline-success {
+      border-width: 2px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline-primary:hover {
+      background: linear-gradient(45deg, #667eea, #764ba2);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-secondary:hover {
+      background: linear-gradient(45deg, #6c757d, #495057);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .btn-outline-success:hover {
+      background: linear-gradient(45deg, #28a745, #20c997);
+      border-color: transparent;
+      color: white;
+    }
+    
+    .badge {
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+    
+    .card {
+      border-radius: 15px !important;
+    }
+    
+    .input-group-text {
+      border-radius: 10px 0 0 10px;
+    }
+    
+    .form-control {
+      border-radius: 0 10px 10px 0;
+    }
+    
+    .modal-content {
+      border-radius: 20px;
+    }
+    .funcionario-card {
+      border-left: 4px solid transparent;
+      transition: all 0.3s ease;
+    }
+    
+    .funcionario-card:hover {
+      border-left-color: #4361ee;
+    }
+    
+    .funcionario-card.ativo {
+      border-left-color: #4caf50;
+    }
+    
+    .funcionario-card.inativo {
+      border-left-color: #f44336;
+      opacity: 0.7;
+    }
+    
+    .badge-soft-primary {
+      background-color: rgba(67, 97, 238, 0.1);
+      color: #4361ee;
+    }
+    
+    .badge-soft-success {
+      background-color: rgba(76, 175, 80, 0.1);
+      color: #4caf50;
+    }
+    
+    .badge-soft-danger {
+      background-color: rgba(244, 67, 54, 0.1);
+      color: #f44336;
+    }
+    
+    .badge-soft-info {
+      background-color: rgba(33, 150, 243, 0.1);
+      color: #2196f3;
+    }
+    
+    .badge-soft-warning {
+      background-color: rgba(255, 152, 0, 0.1);
+      color: #ff9800;
+    }
+    
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    
+    .avatar-masculino {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+    }
+    
+    .avatar-feminino {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+      color: white;
+    }
+    
+    .avatar-outro {
+      background: linear-gradient(135deg, #4facfe, #00f2fe);
+      color: white;
+    }
+    
+    .stats-card {
+      background: white;
+      border-radius: 15px;
+      transition: all 0.3s ease;
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    :root {
+      --primary-color: #4361ee;
+      --secondary-color: #3f37c9;
+      --success-color: #4caf50;
+      --danger-color: #f44336;
+      --warning-color: #ff9800;
+      --info-color: #2196f3;
+      --dark-color: #2b2d42;
+      --light-color: #f8f9fa;
+      --sidebar-width: 280px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f2f5;
+      overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: var(--sidebar-width);
+      height: 100vh;
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.active {
+      left: -280px;
+    }
+
+    .sidebar .logo {
+      padding: 25px 20px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .sidebar .user-info {
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+
+    .sidebar .user-info i {
+      font-size: 48px;
+      margin-bottom: 10px;
+      display: block;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: rgba(255,255,255,0.8);
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin: 5px 10px;
+      border-radius: 10px;
+    }
+
+    .sidebar a:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      transform: translateX(5px);
+    }
+
+    .sidebar a.active {
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-weight: 500;
+    }
+
+    .sidebar a i {
+      width: 25px;
+      margin-right: 10px;
+      text-align: center;
+    }
+
+    .sidebar .sidebar-section {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 600;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: var(--sidebar-width);
+      transition: all 0.3s ease;
+      min-height: 100vh;
+    }
+
+    .main-content.expanded {
+      margin-left: 0;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 999;
+    }
+
+    .topbar h5 {
+      margin: 0;
+      color: var(--dark-color);
+      font-weight: 600;
+    }
+
+    .burger {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--dark-color);
+      display: none;
+    }
+
+    /* Cards */
+    .stat-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      transition: all 0.3s ease;
+      border: none;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      height: 100%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .stat-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    /* Quick Actions */
+    .quick-action {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      height: 100%;
+      border: 2px solid transparent;
+    }
+
+    .quick-action:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      border-color: var(--primary-color);
+    }
+
+    /* Tables */
+    .table-custom {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    .table-custom thead {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      color: white;
+    }
+
+    .table-custom th {
+      font-weight: 500;
+      padding: 12px 15px;
+    }
+
+    .table-custom td {
+      padding: 12px 15px;
+      vertical-align: middle;
+    }
+
+    .table-custom tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .badge-school {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .sidebar {
+        left: -280px;
+      }
+      .sidebar.active {
+        left: 0;
+      }
+      .main-content {
+        margin-left: 0;
+      }
+      .burger {
+        display: block;
+      }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+      border-radius: 15px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-graduation-cap"></i> SIGESC
+    </div>
+    <div class="user-info">
+      <i class="fas fa-user-shield"></i>
+      <div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong></div>
+      <small>Administrador do Sistema</small>
+    </div>
+    
+    <div class="sidebar-section">PRINCIPAL</div>
+    
+    <a href="{% url 'escola:dashboard' %}">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+    <a href="{% url 'escola:escola_lista' %}">
+      <i class="fas fa-school"></i> Escolas
+    </a>
+    
+    <div class="sidebar-section">GESTÃO</div>
+    
+    <a href="{% url 'escola:form_funcionario' %}" class="active">
+      <i class="fas fa-users"></i> Funcionários
+    </a>
+    
+    <div class="sidebar-section">RELATÓRIOS</div>
+    
+    <a href="#">
+      <i class="fas fa-chart-bar"></i> Relatórios Gerais
+    </a>
+    <a href="#">
+      <i class="fas fa-file-export"></i> Exportar Dados
+    </a>
+    
+    <div class="sidebar-section">SISTEMA</div>
+    
+    <a href="{% url 'escola:configuracoes' %}">
+      <i class="fas fa-cog"></i> Configurações
+    </a>
+    <br><br>
+  </div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h5>Sistema Integrado de Gestão Escolar</h5>
+      <div class="d-flex align-items-center gap-3">
+        <button class="burger" onclick="toggleSidebar()">☰</button>
+        <a class="logout btn btn-danger" href="{% url 'core:logout' %}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+            <path d="M7.5 1v7h1V1z"/>
+            <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+          </svg>
+          Sair
+        </a>
+      </div>
+    </div>
+
+    <div class="container-fluid px-4 py-4">
+      
+      <!-- Cabeçalho -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="mb-1">
+            <i class="fas fa-users me-2 text-primary"></i> Gestão de Funcionários
+          </h2>
+          <p class="text-muted mb-0">Gerencie todos os funcionários do sistema</p>
+        </div>
+        <a href="{% url 'escola:funcionario_criar' %}" class="btn btn-primary btn-lg">
+          <i class="fas fa-plus me-2"></i> Novo Funcionário
+        </a>
+      </div>
+
+      <!-- Mensagens -->
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      <!-- Cards de Estatísticas -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="stats-card p-3 shadow-sm">
+            <div class="d-flex align-items-center">
+              <div class="avatar bg-primary bg-opacity-10 me-3">
+                <i class="fas fa-users text-primary fs-4"></i>
+              </div>
+              <div>
+                <h3 class="mb-0">{{ total_funcionarios }}</h3>
+                <small class="text-muted">Total de Funcionários</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stats-card p-3 shadow-sm">
+            <div class="d-flex align-items-center">
+              <div class="avatar bg-success bg-opacity-10 me-3">
+                <i class="fas fa-check-circle text-success fs-4"></i>
+              </div>
+              <div>
+                <h3 class="mb-0">{{ total_ativos }}</h3>
+                <small class="text-muted">Funcionários Ativos</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <form method="GET" action="{% url 'escola:form_funcionario' %}" class="row g-3">
+            <div class="col-md-4">
+              <div class="input-group">
+                <span class="input-group-text bg-white">
+                  <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" name="search" class="form-control" 
+                       placeholder="Nome, BI ou Função..." 
+                       value="{{ search }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <select name="escola" class="form-select">
+                <option value="">Todas as Escolas</option>
+                {% for escola in escolas %}
+                  <option value="{{ escola.id }}" {% if escola_filter == escola.id|stringformat:"s" %}selected{% endif %}>
+                    {{ escola.nome }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select name="funcao" class="form-select">
+                <option value="">Todas as Funções</option>
+                {% for funcao in funcoes %}
+                  <option value="{{ funcao.0 }}" {% if funcao_filter == funcao.0 %}selected{% endif %}>
+                    {{ funcao.1 }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-2">
+              <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-filter me-1"></i> Filtrar
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Lista de Funcionários -->
+      <div class="row g-4">
+        {% for funcionario in funcionarios %}
+        <div class="col-xl-6 col-lg-12">
+          <div class="card border-0 shadow-sm funcionario-card {% if funcionario.ativo %}ativo{% else %}inativo{% endif %}">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="d-flex align-items-center">
+                  <!-- Avatar -->
+                  <div class="avatar avatar-{{ funcionario.genero|lower }} me-3" style="width: 60px; height: 60px; border-radius: 15px;">
+                    {% if funcionario.genero == 'M' %}
+                      <i class="fas fa-male fs-3"></i>
+                    {% elif funcionario.genero == 'F' %}
+                      <i class="fas fa-female fs-3"></i>
+                    {% else %}
+                      <i class="fas fa-user fs-3"></i>
+                    {% endif %}
+                  </div>
+                  
+                  <div>
+                    <h5 class="mb-1">{{ funcionario.nome }}</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                      <span class="badge badge-soft-primary">
+                        <i class="fas fa-briefcase me-1"></i> {{ funcionario.funcao }}
+                      </span>
+                      {% if funcionario.ativo %}
+                        <span class="badge badge-soft-success">Ativo</span>
+                      {% else %}
+                        <span class="badge badge-soft-danger">Inativo</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Ações -->
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-ellipsis-v"></i>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <a class="dropdown-item" href="{% url 'escola:funcionario_editar' funcionario.pk %}">
+                        <i class="fas fa-edit text-primary me-2"></i> Editar
+                      </a>
+                    </li>
+                    <li>
+                      <button class="dropdown-item text-danger" data-bs-toggle="modal" 
+                              data-bs-target="#deleteModal{{ funcionario.pk }}">
+                        <i class="fas fa-trash me-2"></i> Excluir
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              <hr>
+              
+              <!-- Informações -->
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <small class="text-muted d-block mb-1">
+                    <i class="fas fa-id-card me-1"></i> BI:
+                  </small>
+                  <strong>{{ funcionario.bi }}</strong>
+                </div>
+                <div class="col-md-6">
+                  <small class="text-muted d-block mb-1">
+                    <i class="fas fa-phone me-1"></i> Telefone:
+                  </small>
+                  <strong>{{ funcionario.telefone }}</strong>
+                </div>
+                {% if funcionario.email %}
+                <div class="col-md-12">
+                  <small class="text-muted d-block mb-1">
+                    <i class="fas fa-envelope me-1"></i> Email:
+                  </small>
+                  <strong>{{ funcionario.email }}</strong>
+                </div>
+                {% endif %}
+                <div class="col-md-6">
+                  <small class="text-muted d-block mb-1">
+                    <i class="fas fa-graduation-cap me-1"></i> Nível Acadêmico:
+                  </small>
+                  <strong>{{ funcionario.nivel_academico|default:"Não informado" }}</strong>
+                </div>
+                <div class="col-md-6">
+                  <small class="text-muted d-block mb-1">
+                    <i class="fas fa-money-bill me-1"></i> Salário:
+                  </small>
+                  <strong class="text-success">{{ funcionario.salario|floatformat:2 }} Kz</strong>
+                </div>
+                
+                <!-- Escolas Vinculadas -->
+                <div class="col-md-12">
+                  <small class="text-muted d-block mb-2">
+                    <i class="fas fa-school me-1"></i> Escolas Vinculadas ({{ funcionario.total_escolas }}):
+                  </small>
+                  <div class="d-flex flex-wrap gap-1">
+                    {% for escola in funcionario.escolas.all %}
+                      <span class="badge badge-soft-info">
+                        <i class="fas fa-building me-1"></i> {{ escola.nome }}
+                      </span>
+                    {% endfor %}
+                  </div>
+                </div>
+                
+                {% if funcionario.usuario %}
+                <div class="col-md-12">
+                  <small class="text-muted d-block mb-1">
+                    <i class="fas fa-user me-1"></i> Usuário de Acesso:
+                  </small>
+                  <code class="bg-light p-1 rounded">{{ funcionario.usuario.username }}</code>
+                </div>
+                {% endif %}
+              </div>
+              
+              <div class="mt-3 pt-2 border-top">
+                <small class="text-muted">
+                  <i class="fas fa-calendar-alt me-1"></i> 
+                  Contratado em: {{ funcionario.data_contratacao|date:"d/m/Y" }}
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modal de Confirmação -->
+        <div class="modal fade" id="deleteModal{{ funcionario.pk }}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                  <i class="fas fa-exclamation-triangle me-2"></i> Confirmar Exclusão
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <p>Tem certeza que deseja excluir o funcionário <strong>{{ funcionario.nome }}</strong>?</p>
+                <p class="text-danger small">Esta ação removerá também o usuário de acesso vinculado.</p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="POST" action="{% url 'escola:funcionario_deletar' funcionario.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger">Sim, Excluir</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {% empty %}
+        <div class="col-12">
+          <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+              <i class="fas fa-users fa-4x text-muted mb-3"></i>
+              <h4 class="text-muted">Nenhum funcionário encontrado</h4>
+              <p class="text-muted mb-3">Clique no botão "Novo Funcionário" para cadastrar.</p>
+              <a href="{% url 'escola:funcionario_criar' %}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i> Cadastrar Primeiro Funcionário
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Paginação -->
+      {% if funcionarios.has_other_pages %}
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if funcionarios.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if escola_filter %}&escola={{ escola_filter }}{% endif %}{% if funcao_filter %}&funcao={{ funcao_filter }}{% endif %}">
+                <i class="fas fa-angle-double-left"></i>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ funcionarios.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if escola_filter %}&escola={{ escola_filter }}{% endif %}{% if funcao_filter %}&funcao={{ funcao_filter }}{% endif %}">
+                <i class="fas fa-angle-left"></i>
+              </a>
+            </li>
+          {% endif %}
+          
+          {% for num in funcionarios.paginator.page_range %}
+            {% if funcionarios.number == num %}
+              <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > funcionarios.number|add:'-3' and num < funcionarios.number|add:'3' %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if escola_filter %}&escola={{ escola_filter }}{% endif %}{% if funcao_filter %}&funcao={{ funcao_filter }}{% endif %}">{{ num }}</a>
+              </li>
+            {% endif %}
+          {% endfor %}
+          
+          {% if funcionarios.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ funcionarios.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if escola_filter %}&escola={{ escola_filter }}{% endif %}{% if funcao_filter %}&funcao={{ funcao_filter }}{% endif %}">
+                <i class="fas fa-angle-right"></i>
+              </a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ funcionarios.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if escola_filter %}&escola={{ escola_filter }}{% endif %}{% if funcao_filter %}&funcao={{ funcao_filter }}{% endif %}">
+                <i class="fas fa-angle-double-right"></i>
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+  </div>
+
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script>
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("active");
+    }
+  </script>
+</body>
+</html>

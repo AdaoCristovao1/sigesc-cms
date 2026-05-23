@@ -1,0 +1,369 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<!-- Removidos metadados para evitar cabeçalhos na impressão -->
+<link href="{% static 'bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+<style>
+@media print {
+  .no-print { display: none; }
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    margin: 0.5cm; /* Margem ainda mais reduzida */
+  }
+  @page {
+    margin: 0.5cm; /* Margem reduzida para impressão */
+    size: A4;
+  }
+}
+body{
+    font-family:"Times New Roman", serif;
+    color:#000;
+    font-size:12px;
+    line-height:1.2;
+    margin:0;
+}
+
+.certificado-container{
+    border:4px solid #000;
+    padding:28px 35px;
+    min-height:96vh;
+    position:relative;
+}
+
+.text-center{
+    text-align:center;
+}
+
+.logo{
+    width:75px;
+    margin-bottom:5px;
+}
+
+.republica{
+    font-size:16px;
+    text-transform:uppercase;
+}
+
+.ministerio{
+    font-size:15px;
+    text-transform:uppercase;
+    margin-top:-2px;
+}
+
+.titulo{
+    text-align:center;
+    font-size:12pt;
+    font-weight:bold;
+    margin-top:18px;
+    margin-bottom:20px;
+    text-transform:uppercase;
+}
+
+.texto{
+    text-align:justify;
+    font-size:13px;
+    line-height:1.8;
+}
+
+.linha{
+    display:inline-block;
+    border-bottom:1px solid #000;
+    min-width:120px;
+    height:12px;
+}
+
+.linha-media{
+    display:inline-block;
+    border-bottom:1px solid #000;
+    min-width:180px;
+    height:12px;
+}
+
+.linha-grande{
+    display:inline-block;
+    border-bottom:1px solid #000;
+    min-width:240px;
+    height:12px;
+}
+
+.nome{
+    font-weight:bold;
+    color: red;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    font-size:10px;
+}
+
+table, th, td{
+    border:1px solid #000;
+}
+
+th{
+    text-align:center;
+    padding:2px;
+    font-weight:bold;
+}
+
+td{
+    padding:2px;
+    text-align:center;
+}
+
+td:first-child{
+    text-align:left;
+}
+
+.rodape{
+    margin-top:14px;
+    text-align:justify;
+    font-size:12px;
+    line-height:1.5;
+}
+
+.local-data{
+    margin-top:18px;
+    text-align:center;
+    font-size:13px;
+}
+
+.assinaturas{
+    margin-top:25px;
+    width:100%;
+}
+
+.ass-esq{
+    float:left;
+    width:40%;
+    text-align:center;
+}
+
+.ass-dir{
+    float:right;
+    width:40%;
+    text-align:center;
+}
+
+.clear{
+    clear:both;
+}
+
+.no-print{
+    margin-bottom:15px;
+}
+
+@media print{
+
+    .no-print{
+        display:none;
+    }
+
+    body{
+        margin:0;
+    }
+
+}
+.assinaturas-container {
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 50px;
+}
+
+.assinatura-box {
+  text-align: center;
+  width: 40%;
+  font-size: 12px;
+}
+
+.assinatura-linha {
+  margin-top: 10px;
+  border-top: 1px solid #000;
+  display: inline-block;
+  width: 100%;
+}
+</style>
+</head>
+
+<body>
+
+<div class="no-print">
+    <button class="btn btn-primary" onclick="window.print()">Imprimir Certificado</button>
+</div>
+
+<div class="certificado-container">
+
+    <div class="text-center">
+
+        <img src="{% static 'imgs/insignia.png' %}" class="logo">
+
+        <div class="republica">
+            REPÚBLICA DE ANGOLA
+        </div>
+
+        <div class="ministerio">
+            MINISTÉRIO DA EDUCAÇÃO
+            <br>
+            I CICLO DO ENSINO SECUNDÁRIO GERAL
+        </div>
+
+        <div class="titulo">
+            CERTIFICADO
+        </div>
+
+    </div>
+
+    <div class="texto">
+        <span>{{ diretor.nome }}</span>, 
+        {% if diretor.genero == 'M' %}
+           Director
+        {% else %}
+           Directora
+        {% endif %}
+        do(a)
+        <span>{{ escola.nome }}</span>
+
+        criada(o) sob o Decreto Executivo nº
+        {{ escola.decreto_executivo }}, certifica que
+        <span class="nome">{{ aluno.nome_completo }}</span>,
+        filho(a) de
+        <strong>{{ aluno.nome_pai }}</strong>
+        e de
+        <strong>{{ aluno.nome_mae }}</strong>, nascido(a) aos
+        {{ aluno.dia_nasc }} de {{ aluno.mes_nasc }} de {{ aluno.ano_nasc }},
+        natural de
+        <strong>{{ aluno.naturalidade }}</strong>, província de
+        <strong>{{ aluno.naturalidade }}</strong>,
+        portador(a) do B.I / Cédula Pessoal nº
+        <strong>{{ aluno.bi }}</strong>,
+        Passado pelo Arquivo de Identificação do
+        Registo Civil de {{ aluno.naturalidade }}, aos
+        {{ emissao_bi }}.
+
+        <br><br>
+
+        Concluiu no ano lectivo de
+        <strong>{{ ano_conclusao }}</strong>,
+        sob nº
+        <span>{{ aluno.numero_mecanografico }}</span>,
+        da pauta o I CICLO DO ENSINO SECUNDÁRIO GERAL,
+        conforme o disposto na Lei de Bases nº 17/16 de 07 de Outubro,
+        com a média final de
+        <strong>{{ media_geral }}</strong>
+        (
+        {{ media_geral_extenso }}
+        )
+        valores,
+        obtida nas seguintes classificações:
+    </div>
+
+    <table>
+
+        <thead>
+
+            <tr>
+                <th rowspan="2">Disciplinas</th>
+
+                {% for cabecalho in cabecalhos %}
+                    <th>
+                        {{ cabecalho.texto }}
+                    </th>
+                {% endfor %}
+
+                <th rowspan="2">
+                    Média final por disciplina
+                </th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        {% for disciplina in todas_disciplinas %}
+
+            <tr>
+
+                <td>{{ disciplina.nome }}</td>
+
+                {% for dados_coluna in disciplina.notas_ordenadas %}
+
+                    <td>
+
+                        {% if dados_coluna %}
+                            {% if dados_coluna.media %}
+                                {{ dados_coluna.media|floatformat:0 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+
+                    </td>
+
+                {% endfor %}
+
+                <td>
+                    {{ disciplina.media_final|floatformat:0 }}
+                </td>
+
+            </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <div class="rodape">
+
+        Para efeitos legais, lhe é passado o presente CERTIFICADO,
+        que consta no livro de termos nº
+        <b>{{ n_processo }}</b>,
+        folhas
+        <span class="linha"></span>,
+        assinado e autenticado com o carimbo
+        em uso neste estabelecimento de ensino.
+
+    </div>
+
+    <div class="local-data">
+        <strong>Malanje, aos 
+            {% if data %}
+            {{ data|date:"d \\d\\e F \\d\\e Y" }}
+            {% else %}
+            {% now "d" %} de {% now "F" %} de {% now "Y" %}
+            {% endif %}
+        </strong>
+    </div>
+
+    <div class="assinaturas-container">
+        <div class="assinatura-box">
+            <p>Conferido por</p>
+            <div class="assinatura-linha"></div>
+            <p><strong>{{ funcionario_conferiu }}</strong></p>
+        </div>
+        
+        <div class="assinatura-box">
+            {% if diretor.genero == 'M' %}
+                <p>O Director</p>
+            {% else %}
+                <p>A Directora</p>
+            {% endif %}
+            <div class="assinatura-linha"></div>
+            <p><strong>{{ diretor.nome }}</strong></p>
+        </div>
+    </div>
+
+    <div class="clear"></div>
+
+</div>
+
+</body>
+</html>

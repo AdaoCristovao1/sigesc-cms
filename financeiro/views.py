@@ -31,7 +31,13 @@ from django.template.loader import render_to_string
 
 @login_required
 def financas(request):
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
     query = request.GET.get('q', '').strip()
 
     aluno = None
@@ -41,13 +47,15 @@ def financas(request):
         # Busca por nome, número mecanográfico ou BI (insensível a maiúsculas/minúsculas)
         aluno = Aluno.objects.select_related('usuario', 'turma', 'classe', 'curso', 'sala') \
             .filter(
+                escola=escola_usuario 
+            ).filter(
                 Q(nome_completo__icontains=query) |
                 Q(numero_mecanografico__icontains=query) |
                 Q(bi__icontains=query)
             ).first()
 
         if aluno:
-            historico = Pagamento.objects.filter(aluno=aluno, ano_lectivo=ano_letivo).order_by('-data_pagamento')
+            historico = Pagamento.objects.filter(aluno=aluno, ano_lectivo=ano_letivo, escola=escola_usuario).order_by('-data_pagamento')
         else:
             messages.error(request, "Aluno não encontrado.")
 
@@ -57,8 +65,8 @@ def financas(request):
         tipo_id = request.POST.get('tipo_pagamento')
         valor = request.POST.get('valor')
 
-        aluno = Aluno.objects.filter(id=aluno_id).first()
-        tipo_pagamento = TipoPagamento.objects.filter(id=tipo_id).first()
+        aluno = Aluno.objects.filter(id=aluno_id, escola=escola_usuario).first()
+        tipo_pagamento = TipoPagamento.objects.filter(id=tipo_id, escola=escola_usuario).first()
 
         if not aluno or not tipo_pagamento:
             messages.error(request, "Aluno ou tipo de pagamento inválido.")
@@ -72,6 +80,7 @@ def financas(request):
 
         with transaction.atomic():
             pagamento = Pagamento.objects.create(
+                escola=escola_usuario,
                 aluno=aluno,
                 tipo=tipo_pagamento,
                 valor=valor_decimal,
@@ -79,6 +88,7 @@ def financas(request):
             )
 
             Recibo.objects.create(
+                escola=escola_usuario,
                 pagamento=pagamento,
                 codigo=f"REC-{uuid.uuid4().hex[:8].upper()}"
             )
@@ -86,7 +96,7 @@ def financas(request):
         messages.success(request, f"Pagamento de {valor_decimal:.2f} Kz registrado com sucesso!")
         return redirect(f"{request.path}?q={aluno.nome_completo}")
 
-    tipos_pagamento = TipoPagamento.objects.all()
+    tipos_pagamento = TipoPagamento.objects.filter(escola=escola_usuario)
     perfil = request.user.perfil 
     usuario = request.user   
 
@@ -96,7 +106,8 @@ def financas(request):
             'aluno': aluno,
             'historico': historico,
             'tipos_pagamento': tipos_pagamento, 
-            "usuario":usuario
+            "usuario":usuario,
+            'escola':escola_usuario
         }) 
     elif perfil == 'diretor_admin':
         return render(request, 'financeiro/diretor_admin/financas.html', {
@@ -104,7 +115,8 @@ def financas(request):
             'aluno': aluno,
             'historico': historico,
             'tipos_pagamento': tipos_pagamento,
-            "usuario":usuario
+            "usuario":usuario,
+            'escola':escola_usuario
         })
     elif perfil == 'secretario_admin':
         return render(request, 'financeiro/secretario_admin/financas.html', {
@@ -112,7 +124,8 @@ def financas(request):
             'aluno': aluno,
             'historico': historico,
             'tipos_pagamento': tipos_pagamento,
-            "usuario":usuario
+            "usuario":usuario,
+            'escola':escola_usuario
         })
     elif perfil == 'secretario_geral':
         return render(request, 'financeiro/secretario_geral/financas.html', {
@@ -120,7 +133,8 @@ def financas(request):
             'aluno': aluno,
             'historico': historico,
             'tipos_pagamento': tipos_pagamento,
-            "usuario":usuario
+            "usuario":usuario,
+            'escola':escola_usuario
         })
     else:
         return HttpResponse(
@@ -171,15 +185,21 @@ def financas(request):
 
 @login_required
 def pagamento_servico(request, aluno_id, servico):
-    aluno = get_object_or_404(Aluno, id=aluno_id)
-    tipos_pagamento = TipoPagamento.objects.all()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id, escola=escola_usuario)
+    tipos_pagamento = TipoPagamento.objects.filter(escola=escola_usuario)
     hoje = date.today()
 
     if servico.lower() == 'propina':
-        ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
         
         # Buscar todos os emolumentos que contenham "propina" no nome (case insensitive)
-        emolumentos_propina = Emolumentos.objects.filter(nome__icontains='propina')
+        emolumentos_propina = Emolumentos.objects.filter(nome__icontains='propina', escola=escola_usuario)
         
         if not emolumentos_propina.exists():
             messages.error(request, "Nenhum tipo de propina encontrado.")
@@ -188,13 +208,14 @@ def pagamento_servico(request, aluno_id, servico):
         # Se um emolumento específico foi selecionado via GET
         emolumento_id = request.GET.get('emolumento_id')
         if emolumento_id:
-            emolumento_selecionado = get_object_or_404(Emolumentos, id=emolumento_id)
+            emolumento_selecionado = get_object_or_404(Emolumentos, id=emolumento_id, escola=escola_usuario)
         else:
             # Seleciona o primeiro por padrão
             emolumento_selecionado = emolumentos_propina.first()
 
         meses = MesesPagar.objects.exclude(
             id__in=Pagamento.objects.filter( 
+                escola=escola_usuario,
                 aluno=aluno,
                 tipoServico=emolumento_selecionado,
                 ano_lectivo=ano_letivo
@@ -215,7 +236,8 @@ def pagamento_servico(request, aluno_id, servico):
                 'emolumentos_propina': emolumentos_propina,
                 'meses': meses,
                 'tipos_pagamento': tipos_pagamento,
-                "usuario":usuario
+                "usuario":usuario,
+                'escola':escola_usuario
             })  
         elif perfil == 'diretor_admin':
             return render(request, 'financeiro/diretor_admin/pagamento_servico.html', {
@@ -225,7 +247,8 @@ def pagamento_servico(request, aluno_id, servico):
                 'emolumentos_propina': emolumentos_propina, 
                 'meses': meses,
                 'tipos_pagamento': tipos_pagamento,
-                "usuario":usuario
+                "usuario":usuario,
+                'escola':escola_usuario
             })
         elif perfil == 'secretario_admin':
             return render(request, 'financeiro/secretario_admin/pagamento_servico.html', {
@@ -235,7 +258,8 @@ def pagamento_servico(request, aluno_id, servico):
                 'emolumentos_propina': emolumentos_propina,
                 'meses': meses,
                 'tipos_pagamento': tipos_pagamento,
-                "usuario":usuario
+                "usuario":usuario,
+                'escola':escola_usuario
             })
         elif perfil == 'secretario_geral':
             return render(request, 'financeiro/secretario_geral/pagamento_servico.html', {
@@ -245,7 +269,8 @@ def pagamento_servico(request, aluno_id, servico):
                 'emolumentos_propina': emolumentos_propina,
                 'meses': meses,
                 'tipos_pagamento': tipos_pagamento,
-                "usuario":usuario
+                "usuario":usuario,
+                'escola':escola_usuario
             })
         else:
             return HttpResponse(
@@ -295,29 +320,31 @@ def pagamento_servico(request, aluno_id, servico):
             )
 
     else:
-        ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
         if not ano_letivo:
             messages.error(request, "Nenhum ano letivo encontrado.")
             return redirect("financa:financas")
 
         # Serviços diferentes de "Propina"
-        emolumentos = Emolumentos.objects.exclude(nome__icontains="propina")
+        emolumentos = Emolumentos.objects.exclude(nome__icontains="propina").filter(escola=escola_usuario)
 
         # Serviços que o aluno já pagou no ano letivo atual
         pagos_ids = Pagamento.objects.filter(
+            escola=escola_usuario,
             aluno=aluno,
             ano_lectivo=ano_letivo
         ).values_list("tipoServico_id", flat=True)
 
         emolumento_id = request.GET.get('emolumento_id')
         if emolumento_id:
-            emolumento_selecionado = get_object_or_404(Emolumentos, id=emolumento_id)
+            emolumento_selecionado = get_object_or_404(Emolumentos, id=emolumento_id, escola=escola_usuario)
         else:
             # Seleciona o primeiro por padrão
             emolumento_selecionado = emolumentos.first()
 
         meses = MesesPagar.objects.exclude(
             id__in=Pagamento.objects.filter( 
+                escola=escola_usuario,
                 aluno=aluno,
                 tipoServico=emolumento_selecionado,
                 ano_lectivo=ano_letivo,
@@ -346,7 +373,8 @@ def pagamento_servico(request, aluno_id, servico):
             "tipos_pagamento": tipos_pagamento,
             "emolumentos_com_multa": emolumentos_com_multa,
             'meses': meses,
-            "usuario":usuario
+            "usuario":usuario,
+            'escola': escola_usuario
         }
         if perfil == 'diretor_geral':
            return render(request, "financeiro/diretor_geral/pagamento_servico.html", contexto)
@@ -405,19 +433,25 @@ def pagamento_servico(request, aluno_id, servico):
 
 @login_required
 def processar_pagamento_propina(request, aluno_id):
-    aluno = get_object_or_404(Aluno, id=aluno_id)
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'}) 
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id, escola=escola_usuario)
     tipos_pagamento = TipoPagamento.objects.all()
 
     if request.method == "POST":
         emolumento_id = request.POST.get("emolumento_id")
-        emolumento = get_object_or_404(Emolumentos, id=emolumento_id)
+        emolumento = get_object_or_404(Emolumentos, id=emolumento_id, escola=escola_usuario)
     
         meses_selecionados = request.POST.getlist("meses")
         multas_selecionadas = request.POST.getlist("multas") 
         tipo_pagamento_id = request.POST.get("tipo_pagamento")
-        tipo_pagamento = get_object_or_404(TipoPagamento, id=tipo_pagamento_id)
+        tipo_pagamento = get_object_or_404(TipoPagamento, id=tipo_pagamento_id, escola=escola_usuario)
 
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
         data_pagamento = timezone.now()
 
         meses_info = []
@@ -436,6 +470,7 @@ def processar_pagamento_propina(request, aluno_id):
 
             # Garantir que não seja duplicado
             pagamento, created = Pagamento.objects.get_or_create(
+                escola=escola_usuario,
                 aluno=aluno,
                 tipo=tipo_pagamento,
                 tipoServico=emolumento,
@@ -458,7 +493,7 @@ def processar_pagamento_propina(request, aluno_id):
                 })
         
         # Número do recibo (sequência de pagamentos)
-        recibo_numero = Pagamento.objects.count()
+        recibo_numero = Pagamento.objects.filter(escola=escola_usuario).count()
 
         # Gerar código de barras
         barcode_value = str(recibo_numero)
@@ -485,6 +520,7 @@ def processar_pagamento_propina(request, aluno_id):
             "atendente": request.user,
             "recibo": {"numero": recibo_numero},
             "barcode": barcode_base64,
+            'escola': escola_usuario
         }
         return render(request, "financeiro/comprovativos/comprovativo_pagamento.html", context)
 
@@ -548,20 +584,26 @@ def processar_pagamento_propina(request, aluno_id):
 
 @login_required
 def processar_pagamento_servicos(request, aluno_id):
-    aluno = get_object_or_404(Aluno, id=aluno_id)
-    tipos_pagamento = TipoPagamento.objects.all()
-    emolumentos = Emolumentos.objects.exclude(nome__icontains="propina")
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'}) 
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id, escola=escola_usuario)
+    tipos_pagamento = TipoPagamento.objects.filter(escola=escola_usuario)
+    emolumentos = Emolumentos.objects.filter(escola=escola_usuario).exclude(nome__icontains="propina")
 
     if request.method == "POST":
         emolumento_id = request.POST.get("emolumento_id")
         tipo_pagamento_id = request.POST.get("tipo_pagamento")
         tipo_pagamento_selecionado = request.POST.get("tipo_pagamento_selecionado", "unico")
         
-        emolumento = get_object_or_404(Emolumentos, id=emolumento_id)
-        tipo_pagamento = get_object_or_404(TipoPagamento, id=tipo_pagamento_id)
+        emolumento = get_object_or_404(Emolumentos, id=emolumento_id, escola=escola_usuario)
+        tipo_pagamento = get_object_or_404(TipoPagamento, id=tipo_pagamento_id, escola=escola_usuario)
         meses_selecionados = request.POST.getlist("meses")
         multas_selecionadas = request.POST.getlist("multas") 
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
         data_pagamento = timezone.now()
 
         meses_info = []
@@ -579,6 +621,7 @@ def processar_pagamento_servicos(request, aluno_id):
 
             # Criar pagamento sem associar a um mês específico
             pagamento = Pagamento.objects.create(
+                escola=escola_usuario,
                 aluno=aluno,
                 tipo=tipo_pagamento, 
                 tipoServico=emolumento,
@@ -601,7 +644,7 @@ def processar_pagamento_servicos(request, aluno_id):
         # PAGAMENTO MENSAL (com meses selecionados)
         else:
             for mes_id in meses_selecionados:
-                mes_obj = MesesPagar.objects.get(id=mes_id)
+                mes_obj = MesesPagar.objects.get(id=mes_id, escola=escola_usuario)
 
                 multa_valor = 0
                 if mes_id in multas_selecionadas:
@@ -612,6 +655,7 @@ def processar_pagamento_servicos(request, aluno_id):
                 valor_total_mes = emolumento.valor + multa_valor
 
                 pagamento = Pagamento.objects.create(
+                    escola=escola_usuario,
                     aluno=aluno,
                     tipo=tipo_pagamento, 
                     tipoServico=emolumento,
@@ -630,7 +674,7 @@ def processar_pagamento_servicos(request, aluno_id):
                         "data_pagamento": data_pagamento,
                     })
         # Número do recibo
-        recibo_numero = Pagamento.objects.count()
+        recibo_numero = Pagamento.objects.filter(escola=escola_usuario).count()
 
         # Gerar código de barras
         barcode_value = str(recibo_numero)
@@ -655,6 +699,7 @@ def processar_pagamento_servicos(request, aluno_id):
             "atendente": request.user,
             "recibo": {"numero": recibo_numero},
             "barcode": barcode_base64,
+            'escola': escola_usuario
         }
         return render(request, "financeiro/comprovativos/comprovativo_pagamento.html", context)
     usuario = request.user
@@ -663,7 +708,8 @@ def processar_pagamento_servicos(request, aluno_id):
         "aluno": aluno,
         "emolumentos": emolumentos,
         "tipos_pagamento": tipos_pagamento,
-        "usuario":usuario
+        "usuario":usuario,
+        'escola': escola_usuario
     }
     perfil = request.user.perfil
     if perfil == 'diretor_geral':
@@ -722,9 +768,15 @@ def processar_pagamento_servicos(request, aluno_id):
         )
 @login_required
 def pagamento_manual(request, aluno_id):
-    aluno = get_object_or_404(Aluno, id=aluno_id)
-    tipos_pagamento = TipoPagamento.objects.all()
-    emolumentos = Emolumentos.objects.all()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})  
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id, escola=escola_usuario)
+    tipos_pagamento = TipoPagamento.objects.filter(escola=escola_usuario)
+    emolumentos = Emolumentos.objects.filter(escola=escola_usuario)
     perfil = request.user.perfil
     
     # Verificar permissões
@@ -775,12 +827,12 @@ def pagamento_manual(request, aluno_id):
             status=401
         )
     
-    ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+    ano_lectivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     if request.method == "POST":
         emolumento_id = request.POST.get("emolumento_id")
         tipo_pagamento_id = request.POST.get("tipo_pagamento")
-        tipo_pagamento = get_object_or_404(TipoPagamento, id=tipo_pagamento_id)
+        tipo_pagamento = get_object_or_404(TipoPagamento, id=tipo_pagamento_id, escola=escola_usuario)
         
         # Obter o tipo de pagamento (único ou mensal)
         tipo_pagamento_radio = request.POST.get("tipo_pagamento_radio", "unico")
@@ -789,7 +841,7 @@ def pagamento_manual(request, aluno_id):
             messages.error(request, "Por favor, selecione um serviço.")
             return redirect('financa:pagamento_manual', aluno_id=aluno_id)
             
-        emolumento = get_object_or_404(Emolumentos, id=emolumento_id)
+        emolumento = get_object_or_404(Emolumentos, id=emolumento_id, escola=escola_usuario)
         
         # Obter valor manual inserido pelo usuário
         valor_manual_str = request.POST.get("valor_manual", "0")
@@ -819,13 +871,14 @@ def pagamento_manual(request, aluno_id):
 
             # Criar pagamento único
             pagamento = Pagamento.objects.create(
-                aluno=aluno,
+                escola=escola_usuario,
+                aluno=aluno, 
                 tipo=tipo_pagamento,
                 tipoServico=emolumento,
                 valor=valor_total,
                 data_pagamento=data_pagamento,
                 ano_lectivo=ano_lectivo,
-                pago_por=request.user,
+                #pago_por=request.user,
                 mes=None  # Pagamento único não tem mês
             )
 
@@ -854,12 +907,13 @@ def pagamento_manual(request, aluno_id):
             
             for mes_id in meses_selecionados:
                 try:
-                    mes_obj = MesesPagar.objects.get(id=mes_id)
+                    mes_obj = MesesPagar.objects.get(id=mes_id, escola=escola_usuario)
                 except MesesPagar.DoesNotExist:
                     continue
                 
                 # Verificar se este mês já foi pago
                 ja_pago = Pagamento.objects.filter(
+                    escola=escola_usuario,
                     aluno=aluno,
                     tipoServico=emolumento,
                     mes=mes_obj,
@@ -877,6 +931,7 @@ def pagamento_manual(request, aluno_id):
 
                 # Criar pagamento para o mês
                 pagamento = Pagamento.objects.create(
+                    escola=escola_usuario,
                     aluno=aluno,
                     tipo=tipo_pagamento,
                     tipoServico=emolumento,
@@ -900,7 +955,7 @@ def pagamento_manual(request, aluno_id):
             return redirect('financa:pagamento_manual', aluno_id=aluno_id)
         
         # Número do recibo
-        recibo_numero = Pagamento.objects.count()
+        recibo_numero = Pagamento.objects.filter(escola=escola_usuario).count()
 
         # Gerar código de barras
         barcode_value = str(recibo_numero)
@@ -925,6 +980,7 @@ def pagamento_manual(request, aluno_id):
             "atendente": request.user,
             "recibo": {"numero": recibo_numero},
             "barcode": barcode_base64,
+            'escola': escola_usuario
         }
         return render(request, "financeiro/comprovativos/comprovativo_pagamento.html", contexto)
 
@@ -933,9 +989,10 @@ def pagamento_manual(request, aluno_id):
         "aluno": aluno,
         "emolumentos": emolumentos,
         "tipos_pagamento": tipos_pagamento,
-        "meses": MesesPagar.objects.all(),
+        "meses": MesesPagar.objects.filter(escola=escola_usuario),
         "usuario": request.user,
         "ano": ano_lectivo,
+        'escola': escola_usuario
     }
     
     if perfil == 'diretor_geral':
@@ -949,14 +1006,20 @@ def pagamento_manual(request, aluno_id):
 
 @login_required
 def obter_meses(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})  
+    
     emolumento_id = request.GET.get("emolumento_id")
     aluno_id = request.GET.get("aluno_id")
     ano_lectivo_id = request.GET.get("ano_lectivo_id")
     
     try:
-        emolumento = Emolumentos.objects.get(id=emolumento_id)
-        aluno = Aluno.objects.get(id=aluno_id)
-        ano_lectivo = AnoLectivo.objects.get(id=ano_lectivo_id)
+        emolumento = Emolumentos.objects.get(id=emolumento_id, escola=escola_usuario)
+        aluno = Aluno.objects.get(id=aluno_id, escola=escola_usuario)
+        ano_lectivo = AnoLectivo.objects.get(id=ano_lectivo_id, escola=escola_usuario)
         
         # Buscar valor da multa do emolumento
         multa_valor = 0
@@ -966,13 +1029,14 @@ def obter_meses(request):
         
         # Buscar os IDs dos meses que JÁ foram pagos
         meses_pagos = Pagamento.objects.filter(
+            escola=escola_usuario,
             aluno=aluno,
             tipoServico=emolumento,
             ano_lectivo=ano_lectivo
         ).exclude(mes__isnull=True).values_list('mes_id', flat=True)
         
         # Filtrar meses NÃO pagos ainda
-        meses_disponiveis = MesesPagar.objects.exclude(
+        meses_disponiveis = MesesPagar.objects.filter(escola=escola_usuario).exclude(
             id__in=meses_pagos
         ).order_by('numero')
         
@@ -996,11 +1060,21 @@ def obter_meses(request):
             
 @login_required
 def emolumentos(request):
-    tipoPagamentos = TipoPagamento.objects.all()
-    emolumentos = Emolumentos.objects.all()
-    multas = Multa.objects.all()
-    mesesPagar = MesesPagar.objects.all()
-    desconto = DescontoFalta.objects.first()
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})  
+    
+    tipoPagamentos = TipoPagamento.objects.filter(escola=escola_usuario)
+    emolumentos = Emolumentos.objects.filter(escola=escola_usuario)
+    multas = Multa.objects.filter(escola=escola_usuario)
+    mesesPagar = MesesPagar.objects.filter(escola=escola_usuario)
+    desconto, created = DescontoFalta.objects.get_or_create(
+        escola=escola_usuario,
+        defaults={'valor_desconto': 0.00}
+    )
+    print(desconto)
     usuario = request.user
     context ={
         'tipoPagamentos': tipoPagamentos,
@@ -1008,7 +1082,8 @@ def emolumentos(request):
         'multas': multas,
         'mesesPagar': mesesPagar,
         "usuario":usuario,
-        "desconto":desconto
+        "desconto":desconto,
+        'escola': escola_usuario
     }
     perfil = request.user.perfil
     
@@ -1065,6 +1140,12 @@ def emolumentos(request):
 
 @login_required
 def add_emolumento(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})  
+    
     if request.method == 'POST':
         nome = request.POST.get('nome')
         valor = request.POST.get('valor')
@@ -1073,7 +1154,7 @@ def add_emolumento(request):
             messages.error(request, 'Todos os campos são obrigatórios!')
             return redirect('financa:servicos')
         
-        Emolumentos.objects.create(nome=nome, valor=valor)
+        Emolumentos.objects.create(escola=escola_usuario, nome=nome, valor=valor)
         messages.success(request, 'Emolumento adicionado com sucesso!')
         return redirect('financa:servicos')
     
@@ -1081,6 +1162,7 @@ def add_emolumento(request):
 
 @login_required
 def edit_emolumento(request):
+    
     if request.method == 'POST':
         emolumento_id = request.POST.get('id')
         nome = request.POST.get('nome')
@@ -1100,27 +1182,98 @@ def edit_emolumento(request):
     
     return redirect('financa:servicos')
 
+from decimal import Decimal, InvalidOperation
+
 @login_required
 def editValorFalta(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.')
+        return redirect('financa:servicos')
+    
     if request.method == 'POST':
         valor_falta_id = request.POST.get('id')
         valor = request.POST.get('valor')
+        
+        print(f"Debug - ID: {valor_falta_id}")
+        print(f"Debug - Valor original: '{valor}'")
         
         if not valor_falta_id or not valor:
             messages.error(request, 'Todos os campos são obrigatórios!')
             return redirect('financa:servicos')
         
-        valor_falta = get_object_or_404(DescontoFalta, id=valor_falta_id)
-        valor_falta.valor_desconto = valor
-        valor_falta.save()
+        # Limpar e converter o valor
+        try:
+            # Remover espaços
+            valor_limpo = valor.strip()
+            
+            # Substituir vírgula por ponto
+            valor_limpo = valor_limpo.replace(',', '.')
+            
+            # Remover qualquer coisa que não seja número ou ponto
+            import re
+            valor_limpo = re.sub(r'[^\d.-]', '', valor_limpo)
+            
+            # Se tiver múltiplos pontos, manter apenas o último
+            if valor_limpo.count('.') > 1:
+                partes = valor_limpo.split('.')
+                valor_limpo = ''.join(partes[:-1]) + '.' + partes[-1]
+            
+            print(f"Debug - Valor limpo: '{valor_limpo}'")
+            
+            # Converter para Decimal
+            from decimal import Decimal, InvalidOperation
+            valor_decimal = Decimal(valor_limpo)
+            print(f"Debug - Decimal: {valor_decimal}")
+            
+        except (InvalidOperation, AttributeError, ValueError) as e:
+            print(f"Debug - Erro na conversão: {e}")
+            messages.error(request, f'Valor inválido: "{valor}". Use formato como 1000,50 ou 1000.50')
+            return redirect('financa:servicos')
         
-        messages.success(request, 'Emolumento atualizado com sucesso!')
+        # Buscar o objeto
+        try:
+            valor_falta = DescontoFalta.objects.get(
+                id=valor_falta_id,
+                escola=escola_usuario
+            )
+            print(f"Debug - Objeto encontrado: {valor_falta.id}")
+            print(f"Debug - Valor antigo: {valor_falta.valor_desconto}")
+            
+            # Atualizar o valor
+            valor_falta.valor_desconto = valor_decimal
+            valor_falta.save()
+            
+            print(f"Debug - Novo valor salvo: {valor_falta.valor_desconto}")
+            
+            # VERIFICAÇÃO: Buscar novamente para confirmar
+            valor_confirmado = DescontoFalta.objects.get(id=valor_falta_id)
+            print(f"Debug - Valor confirmado no banco: {valor_confirmado.valor_desconto}")
+            
+            messages.success(request, f'✅ Valor de falta atualizado para Kz {valor_decimal:,.2f}')
+            
+        except DescontoFalta.DoesNotExist:
+            messages.error(request, 'Configuração de desconto não encontrada!')
+        except Exception as e:
+            print(f"Debug - Erro ao salvar: {e}")
+            messages.error(request, f'Erro ao atualizar: {str(e)}')
+        
         return redirect('financa:servicos')
     
     return redirect('financa:servicos')
 
 @login_required
 def add_multa(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.')
+
     if request.method == 'POST':
         emolumento_id = request.POST.get('emolumento')
         aplicar_multa = request.POST.get('aplicar_multa') == 'Sim'
@@ -1133,6 +1286,7 @@ def add_multa(request):
         
         emolumento = get_object_or_404(Emolumentos, id=emolumento_id)
         Multa.objects.create(
+            escola=escola_usuario,
             emolumento=emolumento,
             aplicar_multa=aplicar_multa,
             data_aplicacao=data_aplicacao,
@@ -1172,6 +1326,13 @@ def edit_multa(request):
 
 @login_required
 def add_pagamento(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.')
+
     if request.method == 'POST':
         nome = request.POST.get('nome')
         
@@ -1179,7 +1340,7 @@ def add_pagamento(request):
             messages.error(request, 'O campo nome é obrigatório!')
             return redirect('financa:servicos')
         
-        TipoPagamento.objects.create(nome=nome)
+        TipoPagamento.objects.create(escola=escola_usuario, nome=nome)
         messages.success(request, 'Forma de pagamento adicionada com sucesso!')
         return redirect('financa:servicos')
     
@@ -1206,6 +1367,13 @@ def edit_pagamento(request):
 
 @login_required
 def add_mes(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.') 
+
     if request.method == 'POST':
         nome = request.POST.get('nome')
         numero = request.POST.get('numero')
@@ -1214,7 +1382,7 @@ def add_mes(request):
             messages.error(request, 'O campo nome é obrigatório!')
             return redirect('financa:servicos')
         
-        MesesPagar.objects.create(nome=nome, numero=numero)
+        MesesPagar.objects.create(escola=escola_usuario, nome=nome, numero=numero)
         messages.success(request, 'Mês adicionado com sucesso!')
         return redirect('financa:servicos')
     
@@ -1273,18 +1441,25 @@ def delete_item(request):
 
 @login_required
 def relatorio_view(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.') 
+
     # ano letivo atual ou escolhido no select
     ano_lectivo = request.GET.get("ano_lectivo")
-    ano_lectivos_disponiveis = AnoLectivo.objects.all()
+    ano_lectivos_disponiveis = AnoLectivo.objects.filter(escola=escola_usuario)
     if not ano_lectivo:
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
 
     # Filtra os pagamentos (RECEITAS)
-    pagamentos = Pagamento.objects.filter(ano_lectivo=ano_lectivo)
+    pagamentos = Pagamento.objects.filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
     
     # Filtra as despesas (GASTOS)
     # Se quiser filtrar despesas por ano também, adicione um campo ano na model Despesa
-    despesas = Despesa.objects.filter(ano_lectivo=ano_lectivo)  # ou filtre por ano se tiver campo
+    despesas = Despesa.objects.filter(escola=escola_usuario, ano_lectivo=ano_lectivo)  # ou filtre por ano se tiver campo
     
     # Agrupamento por tipo de serviço (RECEITAS)
     por_servico = pagamentos.values("tipoServico__nome").annotate(
@@ -1318,7 +1493,7 @@ def relatorio_view(request):
         .annotate(mes_pagamento=ExtractMonth("data_pagamento"))
         .values("mes_pagamento")
         .annotate(total=Sum("valor"))
-        .filter(ano_lectivo=ano_lectivo)
+        .filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
         .order_by("mes_pagamento")
     )
 
@@ -1328,7 +1503,7 @@ def relatorio_view(request):
         .annotate(mes_despesa=ExtractMonth("data_despesa"))
         .values("mes_despesa")
         .annotate(total=Sum("valor"))
-        .filter(ano_lectivo=ano_lectivo)
+        .filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
         .order_by("mes_despesa")
     )
 
@@ -1378,6 +1553,7 @@ def relatorio_view(request):
         "percentual_despesas": percentual_despesas,
         "usuario": usuario,
         "categoria_choices": Despesa.CATEGORIA_CHOICES,  # Para exibir nomes das categorias
+        'escola': escola_usuario,
     }
 
     perfil = request.user.perfil
@@ -1403,11 +1579,18 @@ def relatorio_view(request):
     
 @login_required
 def historico_financeiro(request, aluno_id):
-    aluno = get_object_or_404(Aluno, id=aluno_id)
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.') 
+
+    aluno = get_object_or_404(Aluno, id=aluno_id, escola=escola_usuario)
     usuario = request.user
 
     # Buscar todos os pagamentos do aluno
-    pagamentos = Pagamento.objects.filter(aluno=aluno).order_by("ano_lectivo", "data_pagamento")
+    pagamentos = Pagamento.objects.filter(aluno=aluno, escola=escola_usuario).order_by("ano_lectivo", "data_pagamento")
 
     # Agrupar por ano lectivo
     historico = {}
@@ -1419,24 +1602,32 @@ def historico_financeiro(request, aluno_id):
     context = {
         "aluno": aluno,
         "historico": historico,
-        "usuario":usuario
+        "usuario":usuario,
+        'escola': escola_usuario,
     }
     return render(request, "financeiro/comprovativos/historico-financeiro.html", context)
 
 @login_required
 def relatorio_financeiro_pdf(request):
     """View específica para gerar o relatório impresso"""
+
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.') 
     
     # ano letivo atual ou escolhido no select
     ano_lectivo = request.GET.get("ano_lectivo")
     if not ano_lectivo:
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
     
     # Filtra os pagamentos (RECEITAS)
-    pagamentos = Pagamento.objects.filter(ano_lectivo=ano_lectivo)
+    pagamentos = Pagamento.objects.filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
     
     # Filtra as despesas (GASTOS)
-    despesas = Despesa.objects.all()
+    despesas = Despesa.objects.filter(escola=escola_usuario)
     
     # Agrupamento por tipo de serviço (RECEITAS)
     por_servico = pagamentos.values("tipoServico__nome").annotate(
@@ -1470,7 +1661,7 @@ def relatorio_financeiro_pdf(request):
         .annotate(mes_pagamento=ExtractMonth("data_pagamento"))
         .values("mes_pagamento")
         .annotate(total=Sum("valor"))
-        .filter(ano_lectivo=ano_lectivo)
+        .filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
         .order_by("mes_pagamento")
     )
 
@@ -1480,6 +1671,7 @@ def relatorio_financeiro_pdf(request):
         .annotate(mes_despesa=ExtractMonth("data_despesa"))
         .values("mes_despesa")
         .annotate(total=Sum("valor"))
+        .filter(escola=escola_usuario)
         .order_by("mes_despesa")
     )
 
@@ -1533,14 +1725,47 @@ def relatorio_financeiro_pdf(request):
         "media_despesa_mensal": media_despesa_mensal,
         "percentual_despesas": percentual_despesas,
         "categoria_choices": Despesa.CATEGORIA_CHOICES,
+        'escola': escola_usuario,
     }
 
     return render(request, "financeiro/relatorio_completo.html", context)
 
 logger = logging.getLogger(__name__)
+def calcular_saldo_disponivel(escola, ano_lectivo):
+    """
+    Calcula o saldo disponível = Total de Pagamentos - Total de Despesas Pagas
+    """
+    # Total de pagamentos dos alunos
+    total_pagamentos = Pagamento.objects.filter(
+        escola=escola,
+        ano_lectivo=ano_lectivo
+    ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+    
+    # Total de despesas já pagas (status='pago')
+    total_despesas_pagas = Despesa.objects.filter(
+        escola=escola,
+        ano_lectivo=ano_lectivo,
+        status='pago'
+    ).aggregate(total=Sum('valor'))['total'] or Decimal('0.00')
+    
+    # Saldo disponível
+    saldo_disponivel = total_pagamentos - total_despesas_pagas
+    
+    return {
+        'total_pagamentos': total_pagamentos,
+        'total_despesas_pagas': total_despesas_pagas,
+        'saldo_disponivel': saldo_disponivel
+    }
 
 @login_required
-def despesas(request):
+def despesas(request): 
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.') 
+
     usuario = request.user
     
     # Buscar filtros
@@ -1549,7 +1774,7 @@ def despesas(request):
     mes = request.GET.get('mes')
     ano = request.GET.get('ano')
     
-    despesas_lista = Despesa.objects.all()
+    despesas_lista = Despesa.objects.filter(escola=escola_usuario)
     
     # Aplicar filtros
     if categoria:
@@ -1573,8 +1798,8 @@ def despesas(request):
         if total_cat > 0:
             categorias_stats[categoria_nome] = total_cat
     
-    ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
-    desconto_ativo = DescontoFalta.objects.first()
+    ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
+    desconto_ativo = DescontoFalta.objects.filter(escola=escola_usuario).first()
     
     context = {
         "usuario": usuario,
@@ -1586,9 +1811,10 @@ def despesas(request):
         "categoria_choices": Despesa.CATEGORIA_CHOICES,
         "status_choices": Despesa.STATUS_CHOICES,
         'ano_lectivo': ano_lectivo,
-        'desconto_ativo': desconto_ativo,
-        "director_geral": Funcionario.objects.filter(funcao__icontains='diretor_geral').first(),
-        "director_admin": Funcionario.objects.filter(funcao__icontains='diretor_admin').first(),
+        'desconto_ativo': desconto_ativo, 
+        'escola': escola_usuario,
+        "director_geral": Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='diretor_geral').first(),
+        "director_admin": Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='diretor_admin').first(),
     }
     perfil = request.user.perfil   
     usuario = request.user 
@@ -1649,45 +1875,99 @@ def despesas(request):
 
 @login_required
 def adicionar_despesa(request):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.')
+        return redirect('financa:despesas')
+    
     if request.method == 'POST':
         try:
             descricao = request.POST.get('descricao')
-            valor = request.POST.get('valor')
+            valor_str = request.POST.get('valor')
             categoria = request.POST.get('categoria')
             data_despesa = request.POST.get('data_despesa')
-            responsavel = 'Director Geral'
             observacoes = request.POST.get('observacoes')
             status = request.POST.get('status', 'pendente')
-            ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
-
-            perfil = request.user.perfil   
-            usuario = request.user 
-
+            
+            # Buscar ano letivo aberto
+            ano_lectivo_obj = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
+            
+            if not ano_lectivo_obj:
+                messages.error(request, 'Nenhum ano letivo aberto encontrado!')
+                return redirect('financa:despesas')
+            
+            # Usar o ID do ano letivo como string ou o ano
+            ano_lectivo = str(ano_lectivo_obj.ano) if hasattr(ano_lectivo_obj, 'ano') else str(ano_lectivo_obj.id)
+            
+            # Converter valor para Decimal
+            valor_str = valor_str.replace(',', '.')
+            valor = Decimal(valor_str)
+            
+            # Determinar responsável
+            perfil = request.user.perfil
+            usuario = request.user
+            
             if perfil == 'diretor_admin':
-               responsavel = 'Director Administrativo'
-        
+                responsavel = 'Director Administrativo'
             elif perfil == 'diretor_geral':
-               responsavel = 'Director Geral'
+                responsavel = 'Director Geral'
             elif perfil == 'secretario_admin':
-               responsavel = f'Secretário {usuario}'
-            # Criar nova despesa
-            despesa = Despesa(
-                descricao=descricao,
-                valor=valor,
-                categoria=categoria,
-                data_despesa=data_despesa,
-                registro_por=responsavel,
-                observacoes=observacoes,
-                status=status,
-                ano_lectivo = ano_lectivo
-            )
+                responsavel = f'Secretário {usuario.username}'
+            else:
+                responsavel = 'Director Geral'
             
-            # Processar arquivo se existir
-            if 'comprovante' in request.FILES:
-                despesa.comprovante = request.FILES['comprovante']
+            # Se o status for 'pago', verificar saldo disponível
+            if status == 'pago':
+                saldo_info = calcular_saldo_disponivel(escola_usuario, ano_lectivo)
+                saldo_disponivel = saldo_info['saldo_disponivel']
+                
+                if valor > saldo_disponivel:
+                    messages.error(
+                        request, 
+                        f'⚠️ Saldo insuficiente!\n'
+                        f'📊 Total de Pagamentos: Kz {saldo_info["total_pagamentos"]:,.2f}\n'
+                        f'💸 Total de Despesas Pagas: Kz {saldo_info["total_despesas_pagas"]:,.2f}\n'
+                        f'💰 Saldo Disponível: Kz {saldo_disponivel:,.2f}\n'
+                        f'📝 Despesa atual: Kz {valor:,.2f}\n'
+                        f'❌ Déficit de: Kz {valor - saldo_disponivel:,.2f}'
+                    )
+                    return redirect('financa:despesas')
             
-            despesa.save()
-            messages.success(request, 'Despesa registrada com sucesso!')
+            # Usar transação para garantir consistência
+            with transaction.atomic():
+                # Criar despesa
+                despesa = Despesa(
+                    escola=escola_usuario,
+                    descricao=descricao,
+                    valor=valor,
+                    categoria=categoria,
+                    data_despesa=data_despesa,
+                    registro_por=responsavel,
+                    observacoes=observacoes,
+                    status=status,
+                    ano_lectivo=ano_lectivo
+                )
+                
+                # Processar arquivo se existir
+                if 'comprovante' in request.FILES:
+                    despesa.comprovante = request.FILES['comprovante']
+                
+                despesa.save()
+            
+            # Mostrar mensagem com novo saldo se for pago
+            if status == 'pago':
+                novo_saldo = calcular_saldo_disponivel(escola_usuario, ano_lectivo)['saldo_disponivel']
+                messages.success(
+                    request, 
+                    f'✅ Despesa registrada como PAGA com sucesso!\n'
+                    f'💵 Valor: Kz {valor:,.2f}\n'
+                    f'💰 Novo saldo disponível: Kz {novo_saldo:,.2f}'
+                )
+            else:
+                messages.success(request, '✅ Despesa registrada como PENDENTE com sucesso!')
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': True, 'message': 'Despesa registrada!'})
@@ -1695,6 +1975,7 @@ def adicionar_despesa(request):
             return redirect('financa:despesas')
             
         except Exception as e:
+            print(f"Erro ao registrar despesa: {e}")
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'message': str(e)})
             messages.error(request, f'Erro ao registrar despesa: {str(e)}')
@@ -1705,6 +1986,13 @@ def adicionar_despesa(request):
 @login_required
 def gerar_folha_salario(request):
     """View para gerar folha de salário"""
+    escola_id_sessao = request.session.get('escola_atual_id')
+    
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        messages.error(request, 'Escola inválida.') 
+
     if request.method == 'POST':
         try:
             # Recebe dados do formulário
@@ -1719,11 +2007,11 @@ def gerar_folha_salario(request):
                 })
             
             # Busca ano letivo
-            ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+            ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
             ano = datetime.now().year  # Ano atual
             
             # Busca valor de desconto ativo
-            desconto_obj = DescontoFalta.objects.first()
+            desconto_obj = DescontoFalta.objects.filter(escola=escola_usuario).first()
             if not desconto_obj:
                 return JsonResponse({
                     'success': False,
@@ -1733,7 +2021,7 @@ def gerar_folha_salario(request):
             valor_desconto = desconto_obj.valor_desconto
             
             # Busca todos os funcionários
-            funcionarios = Funcionario.objects.all()
+            funcionarios = Funcionario.objects.filter(escolas=escola_usuario)
             
             # Calcula para cada funcionário
             folha_detalhada = []
@@ -1744,6 +2032,7 @@ def gerar_folha_salario(request):
             for funcionario in funcionarios:
                 # Calcula faltas do mês
                 faltas = FaltaFuncionario.objects.filter(
+                    escola=escola_usuario,
                     funcionario=funcionario,
                     mes=mes,
                     ano_lectivo=ano_lectivo
@@ -1769,8 +2058,8 @@ def gerar_folha_salario(request):
                     'valor_desconto': valor_desconto,
                     'desconto_faltas': desconto_faltas,
                     'salario_liquido': salario_liquido,
-                    "director_geral": Funcionario.objects.filter(funcao__icontains='diretor_geral').first(),
-                    "director_admin": Funcionario.objects.filter(funcao__icontains='diretor_admin').first(),
+                    "director_geral": Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='diretor_geral').first(),
+                    "director_admin": Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='diretor_admin').first(),
                 })
                 
                 # Acumula totais
@@ -1793,6 +2082,7 @@ def gerar_folha_salario(request):
                 'valor_desconto': valor_desconto,
                 'data_geracao': datetime.now(),
                 'usuario': request.user,
+                'escola': escola_usuario
             })
             
             return JsonResponse({
@@ -1814,30 +2104,73 @@ def gerar_folha_salario(request):
 @login_required
 def editar_despesa(request, id):
     despesa = get_object_or_404(Despesa, id=id)
+    escola_usuario = despesa.escola
     
     if request.method == 'POST':
         try:
-            # Atualizar dados básicos
-            despesa.descricao = request.POST.get('descricao')
-            despesa.valor = request.POST.get('valor')
-            despesa.categoria = request.POST.get('categoria')
-            despesa.data_despesa = request.POST.get('data_despesa')
-            despesa.responsavel = request.POST.get('responsavel')
-            despesa.status = request.POST.get('status')
-            despesa.observacoes = request.POST.get('observacoes', '')
+            novo_valor = Decimal(str(request.POST.get('valor')).replace(',', '.'))
+            novo_status = request.POST.get('status')
+            valor_antigo = despesa.valor
+            status_antigo = despesa.status
             
-            # Processar novo comprovante se enviado
-            if 'comprovante' in request.FILES:
-                # Opcional: deletar arquivo antigo se existir
-                if despesa.comprovante:
-                    despesa.comprovante.delete(save=False)
-                despesa.comprovante = request.FILES['comprovante']
+            # Verificar se está alterando para 'pago'
+            if novo_status == 'pago' and status_antigo != 'pago':
+                # Calcular saldo disponível
+                saldo_info = calcular_saldo_disponivel(escola_usuario, despesa.ano_lectivo)
+                saldo_disponivel = saldo_info['saldo_disponivel']
+                
+                # Verificar se tem saldo suficiente
+                if novo_valor > saldo_disponivel:
+                    messages.error(
+                        request, 
+                        f'⚠️ Saldo insuficiente para pagar esta despesa!\n'
+                        f'💰 Saldo disponível: Kz {saldo_disponivel:,.2f}\n'
+                        f'📝 Valor da despesa: Kz {novo_valor:,.2f}\n'
+                        f'❌ Faltam: Kz {novo_valor - saldo_disponivel:,.2f}'
+                    )
+                    return redirect('financa:despesas')
             
-            # Manter quem editou (opcional, pode criar um novo campo para isso)
-            # despesa.atualizado_por = request.user
-            despesa.save()
+            # Se estava pago e vai continuar pago, mas mudou o valor
+            elif novo_status == 'pago' and status_antigo == 'pago' and novo_valor != valor_antigo:
+                # Calcular a diferença
+                diferenca = novo_valor - valor_antigo
+                if diferenca > 0:
+                    saldo_info = calcular_saldo_disponivel(escola_usuario, despesa.ano_lectivo)
+                    saldo_disponivel = saldo_info['saldo_disponivel']
+                    
+                    if diferenca > saldo_disponivel:
+                        messages.error(
+                            request,
+                            f'⚠️ Aumento de Kz {diferenca:,.2f} excede o saldo disponível!\n'
+                            f'💰 Saldo disponível: Kz {saldo_disponivel:,.2f}'
+                        )
+                        return redirect('financa:despesas')
             
-            messages.success(request, 'Despesa atualizada com sucesso!')
+            with transaction.atomic():
+                # Atualizar dados básicos
+                despesa.descricao = request.POST.get('descricao')
+                despesa.valor = novo_valor
+                despesa.categoria = request.POST.get('categoria')
+                despesa.data_despesa = request.POST.get('data_despesa')
+                despesa.registro_por = request.POST.get('responsavel')
+                despesa.status = novo_status
+                despesa.observacoes = request.POST.get('observacoes', '')
+                
+                # Processar novo comprovante se enviado
+                if 'comprovante' in request.FILES:
+                    if despesa.comprovante:
+                        despesa.comprovante.delete(save=False)
+                    despesa.comprovante = request.FILES['comprovante']
+                
+                despesa.save()
+            
+            # Mensagem de sucesso com novo saldo
+            novo_saldo = calcular_saldo_disponivel(escola_usuario, despesa.ano_lectivo)['saldo_disponivel']
+            messages.success(
+                request,
+                f'✅ Despesa atualizada com sucesso!\n'
+                f'💰 Saldo disponível atual: Kz {novo_saldo:,.2f}'
+            )
             
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': True, 'message': 'Despesa atualizada!'})
@@ -1845,12 +2178,13 @@ def editar_despesa(request, id):
             return redirect('financa:despesas')
             
         except Exception as e:
+            print(f"Erro ao atualizar despesa: {e}")
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'message': str(e)})
             messages.error(request, f'Erro ao atualizar despesa: {str(e)}')
             return redirect('financa:despesas')
     
-    # Para GET, retornar dados em JSON (se for requisição AJAX)
+    # Para GET, retornar dados em JSON
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         data = {
             'id': despesa.id,
@@ -1880,26 +2214,26 @@ def excluir_despesa(request, id):
     
     return redirect('financa:despesas')
 
-def atualizar_estado_aluno(aluno: "Aluno"):
+def atualizar_estado_aluno(aluno: "Aluno", escola_usuario):
     """Atualiza o estado (Adimplente/Inadimplente) do aluno com base nos pagamentos de propina."""
-    
+
     try:
         hoje = now().date()
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto').last()
+        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
         
         if not ano_lectivo:
             logger.warning(f"Não há ano letivo aberto para atualizar estado do aluno {aluno.id}")
             return
 
         # Buscar TODOS os tipos de propina
-        tipos_propina = Emolumentos.objects.filter(nome__icontains="propina")
+        tipos_propina = Emolumentos.objects.filter(nome__icontains="propina", escola=escola_usuario)
         
         if not tipos_propina.exists():
             logger.error("Nenhum serviço de propina encontrado no sistema")
             return
 
         # Obtém todos os meses cadastrados ordenados
-        meses = MesesPagar.objects.all()
+        meses = MesesPagar.objects.filter(escola=escola_usuario)
         if hasattr(MesesPagar, "ordem"):
             meses = meses.order_by("ordem")
         else:
@@ -1943,6 +2277,7 @@ def atualizar_estado_aluno(aluno: "Aluno"):
         for propina in tipos_propina:
             # Verifica pagamento do mês atual para este tipo de propina
             pagou_mes_atual = Pagamento.objects.filter(
+                escola=escola_usuario,
                 aluno=aluno,
                 tipoServico=propina,
                 ano_lectivo=ano_lectivo,
@@ -1950,7 +2285,7 @@ def atualizar_estado_aluno(aluno: "Aluno"):
             ).exists()
 
             # Verifica multa específica para este tipo de propina
-            multa = Multa.objects.filter(emolumento=propina, aplicar_multa=True).first()
+            multa = Multa.objects.filter(emolumento=propina, aplicar_multa=True, escola=escola_usuario).first()
             
             if pagou_mes_atual:
                 tem_propina_paga = True
@@ -1970,6 +2305,7 @@ def atualizar_estado_aluno(aluno: "Aluno"):
 
         # Atualiza ou cria reconfirmação
         reconf, created = Reconfirmacao.objects.get_or_create(
+            escola=escola_usuario,
             aluno=aluno,
             ano_letivo=ano_lectivo,
             defaults={"estado": estado}

@@ -33,10 +33,11 @@
       SIGEsc
     </div>
     <div class="user-info">
-      <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
-        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
-        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
-      </svg>
+      <img id="preview-imagem" 
+        src="{{ escola.logotipo.url }}" 
+        alt="Logotipo da escola"   
+        class="img-thumbnail rounded-circle"
+        style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Conta do Professor</strong></div>
       <small>{{usuario.username}}</small>
     </div>
@@ -68,9 +69,9 @@
 
     <div class="container mt-4">
       {% if texto %}
-         <h3 class="page-title w-100"><i class="fas fa-chart-bar me-2"></i>Pauta de Exame</h3>
+         <h3 class="page-title w-100"><i class="fas fa-chart-bar me-2"></i>Pauta de Exame - {{ escola.nome }}</h3>
       {% else %}
-        <h3 class="page-title w-100"><i class="fas fa-chart-bar me-2"></i>PAUTA DO {{ trimestre }}º TRIMESTRE</h3>
+        <h3 class="page-title w-100"><i class="fas fa-chart-bar me-2"></i>PAUTA DO {{ trimestre }}º TRIMESTRE - {{ escola.nome }}</h3>
       {% endif %}
       <a href="{% url 'documentos:pautas_coord_trimestre_print' trimestre %}" class="btn btn-success" target="_blank">Imprimir Pauta</a>
       <div class="container mt-4">
@@ -88,49 +89,89 @@
           </form>
         </div>
 
-        {% for grupo, pauta_alunos in turmas_agrupadas.items %}
+        {% for grupo, pauta in turmas_agrupadas.items %}
           <div class="card my-3">
-            <div class="card-header text-secondary">
-              <h5 class="mb-0">| {{ grupo }}</h5>
-            </div>
-            <div class="card-body">
-              <table class="table table-bordered">  
-                <thead>
-                  <tr>
-                    <th class="text-dark">Ord.</th>
-                    <th class="text-dark">Nome</th>
-                    {% with primeira_linha=pauta_alunos.0 %}
-                      {% for disciplina in primeira_linha.disciplinas %}
-                        <th class="text-dark">{{ disciplina.nome }}</th>
-                      {% endfor %}
-                    {% endwith %}
-                    <th class="text-dark">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for linha in pauta_alunos %}
-                  <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ linha.aluno }}</td>
-                    {% for disciplina in linha.disciplinas %}
-                      <td>{{ disciplina.valor|default:"--" }}</td>
-                    {% endfor %}
-                    <td>
-                      {% if linha.estado == 'Aprovado' %}
-                        <span class="badge bg-success">Aprovado</span>
-                      {% elif linha.estado == 'Reprovado' %}
-                        <span class="badge bg-danger">Reprovado</span>
-                      {% else %}
-                        <span class="badge bg-warning">Pendente</span>
-                      {% endif %}
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
+
+              <div class="card-header text-secondary">
+                  <h5 class="mb-0">| {{ grupo }}</h5>
+              </div>
+
+              <div class="card-body">
+
+                  <table class="table table-bordered">
+
+                      <thead>
+                          <tr>
+
+                              <th class="text-dark">
+                                  ORD.
+                              </th>
+
+                              <th class="text-dark">
+                                  NOME
+                              </th>
+
+                              {% for disciplina in pauta.disciplinas %}
+                                  <th class="text-dark">
+                                      {{ disciplina.nome }}
+                                  </th>
+                              {% endfor %}
+
+                              <th class="text-dark">
+                                  ESTADO
+                              </th>
+
+                          </tr>
+                      </thead>
+
+                      <tbody>
+
+                          {% for linha in pauta.alunos %}
+                          <tr>
+
+                              <td>
+                                  {{ forloop.counter }}
+                              </td>
+
+                              <td>
+                                  {{ linha.aluno }}
+                              </td>
+
+                              {% for nota in linha.notas %}
+                                  <td>
+                                      {{ nota.valor|floatformat:0 }}
+                                  </td>
+                              {% endfor %}
+
+                              <td>
+
+                                  {% if linha.estado == 'Aprovado' %}
+                                      <span class="badge bg-success p-2">
+                                        <i class="fas fa-check-circle me-1"></i> Aprovado
+                                      </span>
+                                  {% elif linha.estado == 'Reprovado' %}
+                                      <span class="badge bg-danger p-2">
+                                        <i class="fas fa-times-circle me-1"></i> Reprovado
+                                      </span>
+                                  {% else %}
+                                      <span class="badge bg-warning text-dark p-2">
+                                        <i class="fas fa-clock me-1"></i> Pendente
+                                      </span>
+                                  {% endif %}
+
+                              </td>
+
+                          </tr>
+                          {% endfor %}
+
+                      </tbody>
+
+                  </table>
+
+              </div>
+
           </div>
-        {% endfor %}
+          {% endfor %}
       </div>
     </div>
     <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
