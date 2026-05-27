@@ -18,7 +18,7 @@ class Usuario(AbstractUser):
         ('encarregado', 'Encarregado de Educação'),
         ('aluno', 'Aluno'), 
     ]
-    escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
+    escola = models.ForeignKey(Escola, on_delete=models.CASCADE, null=True, blank=True)
     perfil = models.CharField(max_length=20, choices=PERFIS)
     telefone = models.CharField(max_length=15, blank=True, null=True)
     foto = models.ImageField(upload_to='usuarios/fotos/', blank=True, null=True)
