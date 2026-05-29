@@ -37,13 +37,15 @@ def login_view(request):
 
         user = authenticate(request, username=username, password=password)
 
+        perfis_sem_escola = ['admin_central']
+
         if user is not None:
             # Perfis que NÃO passam pela seleção de escola (acesso direto)
             # Removido 'professor' da lista abaixo
             perfis_acesso_direto = ['aluno']  # ← professor removido
             
             if user.perfil in perfis_acesso_direto:
-                # Comportamento antigo - acesso direto
+                # acesso direto
                 login(request, user)
                 
                 perfil = user.perfil
@@ -61,7 +63,15 @@ def login_view(request):
                     return redirect('estudante:aluno_home')
                 else:
                     messages.error(request, 'Perfil de usuário não reconhecido.')
+
+            
+            if user.perfil in perfis_sem_escola:
+                login(request, user)
+
+                if user.perfil == 'admin_central':
+                    return redirect('escola:dashboard')         
             else:
+                    
                 # Para outros perfis (incluindo professor agora), verificar escolas vinculadas
                 # Buscar escolas através do funcionário
                 escolas_usuario = []
