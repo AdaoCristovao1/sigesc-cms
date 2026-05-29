@@ -645,7 +645,7 @@ def cursos(request):
         return redirect('core:selecionar_escola')
     
     cursos = Curso.objects.filter(escola=escola_usuario).order_by('nome')
-    perfil = request.user.perfil   
+    perfil = request.user.perfil    
     usuario = request.user
      
     if perfil == 'diretor_admin':
@@ -713,6 +713,7 @@ def criar_curso(request):
         Curso.objects.create(
             escola=escola_usuario,
             nome=request.POST['nome'],
+            tipo=request.POST['tipo'],
         )
     return redirect('administracao:cursos')
 

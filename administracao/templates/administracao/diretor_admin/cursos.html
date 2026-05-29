@@ -98,26 +98,71 @@
         </div>
 
         <!-- Formulário de criação -->
-        <form method="POST" id="formCriar" style="display:none;" action="{% url 'administracao:criar_curso' %}">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="nome" class="form-label">Nome do Curso</label>
-            <input type="text" class="form-control" name="nome" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <button type="button" class="btn btn-secondary" onclick="ocultarFormularios()">Cancelar</button>
+        <form method="POST" id="formCriar" style="display:none;" action="{% url 'core:criar_curso' %}">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="nome" class="form-label">Nome do Curso</label>
+                <input type="text" class="form-control" name="nome" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="tipo" class="form-label">Tipo de Curso</label>
+                <select class="form-select" name="tipo">
+                    <option value="">Selecione</option>
+                    <option value="Curso Técnico">Curso Técnico</option>
+                    <option value="Curso Pré-Universitário">Curso Pré-Universitário</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Salvar</button>
+            <button type="button" class="btn btn-secondary" onclick="ocultarFormularios()">
+                Cancelar
+            </button>
         </form>
 
+
         <!-- Formulário de edição -->
-        <form method="POST" id="formEditar" style="display:none;" action="{% url 'administracao:atualizar_curso' %}">
-        {% csrf_token %}
-        <input type="hidden" name="id" id="edit_id">
-        <div class="mb-3">
-            <label class="form-label">Nome do Curso</label>
-            <input type="text" class="form-control" name="nome" id="edit_nome" required>
-        </div>
-        <button type="submit" class="btn btn-warning text-light">Atualizar</button>
-        <button type="button" class="btn btn-secondary text-light" onclick="ocultarFormularios()">Cancelar</button>
+        <form method="POST" id="formEditar" style="display:none;" action="{% url 'core:atualizar_curso' %}">
+            {% csrf_token %}
+
+            <input type="hidden" name="id" id="edit_id">
+
+            <div class="mb-3">
+                <label class="form-label">Nome do Curso</label>
+                <input type="text"
+                      class="form-control"
+                      name="nome"
+                      id="edit_nome"
+                      required>
+            </div>
+
+            <div class="mb-3">
+                <label for="edit_tipo" class="form-label">Tipo de Curso</label>
+
+                <select class="form-select"
+                        name="tipo"
+                        id="edit_tipo"
+                        required>
+
+                    <option value="">Selecione</option>
+                    <option value="Curso Técnico">Curso Técnico</option>
+                    <option value="Curso Pré-Universitário">
+                        Curso Pré-Universitário (PUNIV)
+                    </option>
+
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-warning text-light">
+                Atualizar
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary text-light"
+                    onclick="ocultarFormularios()">
+                Cancelar
+            </button>
         </form>
 
         <hr>
@@ -134,7 +179,7 @@
         <tbody>
             {% for curso in cursos %}
             <tr>
-            <td>{{ forloop.counter }}</td>
+            <td>{{ forloop.counter }}</td> 
             <td>{{ curso.nome }}</td>
             <td>
                 <button class="btn btn-sm btn-warning" onclick="editarClasse('{{ curso.id }}', '{{ curso.nome }}')">
@@ -193,6 +238,7 @@
       document.getElementById('formEditar').style.display = 'block';
       document.getElementById('edit_id').value = id;
       document.getElementById('edit_nome').value = nome;
+      document.getElementById('edit_tipo').value = tipo;
 
     }
 
@@ -206,7 +252,7 @@
 
         // Define dinamicamente a URL do formulário com o ID do curso
         const form = document.getElementById('deleteForm');
-        form.action = `/administracao/cursos/eliminar/${cursoId}/`;
+         form.action = `/administracao/cursos/eliminar/${cursoId}/`;
 
         // Abre a modal
         const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
