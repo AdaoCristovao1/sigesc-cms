@@ -546,7 +546,10 @@
       {{ turmas_json|safe }}
     </script>
 
-  <script>
+  <script> 
+     function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("active");
+      }
   // Dados das turmas para preenchimento automático
       const turmasData = JSON.parse(document.getElementById('turmas-json').textContent);
       

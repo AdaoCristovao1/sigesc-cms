@@ -88,15 +88,17 @@
         </div>
 
         <!-- Código de Barras -->
-        <div class="col-3 d-flex justify-content-end">
-        <img src="data:image/svg+xml;base64,{{ barcode }}" alt="Código de Barras" style="width: 250px; height: 70px;">
+       <div class="col-3 d-flex justify-content-end barcode-container">
+            <img src="data:image/svg+xml;base64,{{ barcode }}"
+                alt="Código de Barras"
+                style="position: relative; width: 250px; height: 70px; right: -120px;">
         </div>
     </div>
 
     <div class="row">
         <div class="col text-truncate">
             <p class="mb-1">{{ aluno.nome_completo }}</p>
-            <p class="mb-1"><strong>Nº Mecanográfico:</strong> {{ aluno.numero_mecanografico }}</p>
+            <p class="mb-1"><strong>Nº Mec.:</strong> {{ aluno.numero_mecanografico }}</p>
             <p class="mb-1"><strong>BI:</strong> {{ aluno.bi }}</p>
         </div>
         <div class="col text-truncate">
@@ -104,7 +106,7 @@
             <p class="mb-1"><strong>Classe:</strong> {{ aluno.classe.numero }}ª Classe</p>
             <p class="mb-1"><strong>Curso:</strong> {{ aluno.curso.nome }}</p>
         </div>
-        <div class="col text-truncate">
+        <div class="col text-truncate" style="position: relative; right: -100px;">
             <p class="mb-1"><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
             <p class="mb-1"><strong>Turno:</strong> {{ aluno.turno }}</p>
             <p class="mb-1"><strong>Sala:</strong> {{ aluno.sala.nome }}</p>
@@ -117,7 +119,8 @@
 
     <div class="assinatura d-flex justify-content-between mt-2">
         <div>
-            <div class="linha">Assinatura do Encarregado</div>
+            <div class="linha">Assinatura do Estudante</div>
+            <p class="text-center"><small>{{ aluno.nome_completo }}</small></p>
         </div>
         <div>
             <div class="linha">Assinatura do Funcionário</div>
@@ -146,15 +149,17 @@
         </div>
 
         <!-- Código de Barras -->
-        <div class="col-3 d-flex justify-content-end">
-        <img src="data:image/svg+xml;base64,{{ barcode }}" alt="Código de Barras" style="width: 250px; height: 70px;">
+        <div class="col-3 d-flex justify-content-end barcode-container">
+            <img src="data:image/svg+xml;base64,{{ barcode }}"
+                alt="Código de Barras"
+                style="position: relative; width: 250px; height: 70px; right: -120px;">
         </div>
     </div>
 
     <div class="row">
         <div class="col text-truncate">
             <p class="mb-1">{{ aluno.nome_completo }}</p>
-            <p class="mb-1"><strong>Nº Mecanográfico:</strong> {{ aluno.numero_mecanografico }}</p>
+            <p class="mb-1"><strong>Nº Mec.:</strong> {{ aluno.numero_mecanografico }}</p>
             <p class="mb-1"><strong>BI:</strong> {{ aluno.bi }}</p>
         </div>
         <div class="col text-truncate">
@@ -162,7 +167,7 @@
             <p class="mb-1"><strong>Classe:</strong> {{ aluno.classe.numero }}ª Classe</p>
             <p class="mb-1"><strong>Curso:</strong> {{ aluno.curso.nome }}</p>
         </div>
-        <div class="col text-truncate">
+        <div class="col text-truncate" style="position: relative; right: -100px;">
             <p class="mb-1"><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
             <p class="mb-1"><strong>Turno:</strong> {{ aluno.turno }}</p>
             <p class="mb-1"><strong>Sala:</strong> {{ aluno.sala.nome }}</p>
@@ -175,10 +180,12 @@
 
     <div class="assinatura d-flex justify-content-between mt-2">
         <div>
-            <div class="linha">Assinatura do Encarregado</div>
+            <div class="linha">Assinatura do Estudante</div>
+            <p class="text-center"><small>{{ aluno.nome_completo  }}</small></p>
         </div>
         <div>
             <div class="linha">Assinatura do Funcionário</div>
+            <p class="text-center"><small>{{ atendido_por.get_full_name }}</small></p>
         </div>
     </div>
 
