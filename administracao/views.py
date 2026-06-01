@@ -1146,6 +1146,12 @@ def matriculas_view(request):
   
 @login_required
 def comprovativo_matricula(request, aluno_id):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
     aluno = get_object_or_404(Aluno, id=aluno_id)
     data_hoje = datetime.now()
     # Número do recibo (sequência de pagamentos)
@@ -1166,9 +1172,7 @@ def comprovativo_matricula(request, aluno_id):
 
     # transformar em Base64 para embutir no HTML
     barcode_base64 = base64.b64encode(barcode_svg.encode("utf-8")).decode("utf-8")
-
-    
-    perfil = request.user.perfil 
+    perfil = request.user.perfil
     usuario = request.user   
      
     if perfil == 'diretor_admin':
@@ -1178,6 +1182,7 @@ def comprovativo_matricula(request, aluno_id):
             'atendido_por': request.user,
             'usuario':usuario,
             "barcode": barcode_base64,
+            'escola': escola_usuario,
         })
     elif perfil == 'secretario_admin':
         return render(request, 'administracao/secretario_admin/comprovativo_matricula.html', {
@@ -1186,6 +1191,7 @@ def comprovativo_matricula(request, aluno_id):
             'atendido_por': request.user,
             'usuario':usuario,
             "barcode": barcode_base64,
+            'escola': escola_usuario,
         })
     elif perfil == 'coordenador_turno':
         return render(request, 'administracao/coordenador_turno/comprovativo_matricula.html', {
@@ -1194,6 +1200,7 @@ def comprovativo_matricula(request, aluno_id):
             'atendido_por': request.user,
             'usuario':usuario,
             "barcode": barcode_base64,
+            'escola': escola_usuario,
         })
     else:
         return HttpResponse(

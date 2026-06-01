@@ -2829,7 +2829,7 @@ def comprovativo_matricula(request, aluno_id):
             "barcode": barcode_base64,
             'escola': escola_usuario,
         })
-    elif perfil == 'secretario_geral':
+    elif perfil == 'secretario_geral': 
         return render(request, 'core/secretario_geral/comprovativo_matricula.html', {
             'aluno': aluno,
             'data': data_hoje,
