@@ -26,6 +26,7 @@ urlpatterns = [
     path('horario-completo/pdf/', views.gerar_horario_completo, name='gerar_horario_completo'),
     path('relatorio-pedagogico/', views.relatorio_pedagogico, name='relatorio_pedagogico'),
     path('relatorio-pedagogico/impressao/', views.relatorio_pedagogico, name='relatorio_pedagogico_impressao'),
+    path('matriculas/comprovativo/<int:aluno_id>/', views.comprovativo_matricula, name='comprovativo_matricula'),
     
     # Opcional: Gerar PDF
     path('relatorio-pedagogico/pdf/', views.relatorio_pedagogico_pdf, name='relatorio_pedagogico_pdf'),

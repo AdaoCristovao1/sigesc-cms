@@ -196,15 +196,15 @@ td {
 }
 
 /* Classes para diferentes categorias */
-.disciplina-fg {
+.disciplina-cultural {
   border-left: 4px solid #28a745;
 }
 
-.disciplina-fe {
-  border-left: 4px solid #ffc107;
+.disciplina-cientifica {
+  border-left: 4px solid #007bff;
 }
 
-.disciplina-op {
+.disciplina-tecnica {
   border-left: 4px solid #dc3545;
 }
 
@@ -232,10 +232,38 @@ td {
   padding: 20px;
   font-style: italic;
 }
+
+/* Botão de debug fixo */
+.btn-debug-fixo {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  transition: all 0.3s;
+}
+
+.btn-debug-fixo:hover {
+  background: #c82333;
+  transform: scale(1.05);
+  color: white;
+}
 </style>
 </head>
 
 <body>
+
+<!-- BOTÃO DEBUG FIXO -->
+<!--<button class="btn-debug-fixo no-print" id="btnDebugInfo" title="Clique para ver informações de debug">
+   InfoDebug
+</button> -->
 
 <div class="no-print mb-3">
   <button class="btn btn-primary" onclick="window.print()">Imprimir Certificado</button>
@@ -266,7 +294,7 @@ td {
    concluiu no ano lectivo {{ ano_conclusao }},
    o curso do II CICLO DO ENSINO SECUNDÁRIO TÉCNICO,
    na especialidade de <strong>{{ aluno.curso }}</strong>,
-   conforme o disposto da alínea f) do artigo 109º da LBSEE17/16, de 7 de Outubro, com a Média Final de <strong>{{ media_geral|floatformat:0 }}</strong> valores, obtida nas seguintes classificações por disciplinas:
+   conforme o disposto da alínea f) do artigo 109º da LBSEE17/16, de 7 de Outubro, com a Média Final de <strong id="mediaFinalDisplay">{{ media_geral|floatformat:0 }}</strong> valores, obtida nas seguintes classificações por disciplinas:
 </p>
 
 <table id="tabelaDisciplinas">
@@ -285,6 +313,7 @@ td {
   <tbody id="tabelaBody">
     <tr><td colspan="100%" style="text-align:center;">Carregando dados...</td></tr>
   </tbody>
+  <tfoot id="tabelaFoot"></tfoot>
 </table>
 
 <p class="texto-certificado">
@@ -339,20 +368,15 @@ td {
         {% for disciplina in todas_disciplinas %}
         {
             "nome": "{{ disciplina.nome|escapejs }}",
-            "media": " {{ disciplina.media_geral|floatformat:0 }}",
-            "media_geral": " {{ disciplina.media_final|floatformat:0 }}",
-            "extenso": "{{ disciplina.media_extenso|escapejs }}",
+            "media": "{{ disciplina.media_final|floatformat:0 }}",
             "notas": [
                 {% for dados_coluna in disciplina.notas_ordenadas %}
-                        {% if dados_coluna %}
-                            {% if dados_coluna.media %}
-                                {{ dados_coluna.media|floatformat:0 }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        {% else %}
-                            -
-                        {% endif %}
+                    {% if dados_coluna and dados_coluna.media is not None %}
+                        {{ dados_coluna.media|floatformat:0 }}
+                    {% else %}
+                        null
+                    {% endif %}
+                    {% if not forloop.last %},{% endif %}
                 {% endfor %}
             ]
         }{% if not forloop.last %},{% endif %}
@@ -361,10 +385,11 @@ td {
     "cabecalhos": [
         {% for cab in cabecalhos %}
         {
-            "texto": "{{ cab.texto }}"
+            "texto": "{{ cab.texto|escapejs }}"
         }{% if not forloop.last %},{% endif %}
         {% endfor %}
-    ]
+    ],
+    "media_geral": "{{ media_geral|floatformat:0 }}"
 }
 </script>
 
@@ -383,9 +408,73 @@ function logDebug(message, data = null, level = 'info') {
     }
 }
 
+// ========== FUNÇÃO PARA CONVERTER NÚMERO PARA EXTENSO ==========
+function numeroParaExtenso(numero) {
+    if (numero === null || numero === undefined || isNaN(numero)) {
+        return 'Não informado';
+    }
+    
+    // Arredondar para inteiro mais próximo
+    const numArredondado = Math.round(parseFloat(numero));
+    
+    const unidades = ['', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove'];
+    const especiais = ['dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezasseis', 'dezassete', 'dezoito', 'dezanove'];
+    const dezenas = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+    const centenas = ['', 'cem', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+    
+    if (numArredondado === 0) return 'zero';
+    if (numArredondado < 0) return 'menos ' + numeroParaExtenso(Math.abs(numArredondado));
+    if (numArredondado > 999) return 'mais de novecentos e noventa e nove';
+    
+    let extenso = '';
+    
+    // Centenas
+    const centena = Math.floor(numArredondado / 100);
+    const restoCentena = numArredondado % 100;
+    
+    if (centena > 0) {
+        if (centena === 1 && restoCentena === 0) {
+            extenso = 'cem';
+        } else {
+            extenso = centenas[centena];
+        }
+        if (restoCentena > 0) {
+            extenso += ' e ';
+        }
+    }
+    
+    // Dezenas e unidades
+    if (restoCentena > 0) {
+        if (restoCentena >= 10 && restoCentena <= 19) {
+            extenso += especiais[restoCentena - 10];
+        } else {
+            const dezena = Math.floor(restoCentena / 10);
+            const unidade = restoCentena % 10;
+            if (dezena > 0) {
+                extenso += dezenas[dezena];
+                if (unidade > 0) {
+                    extenso += ' e ' + unidades[unidade];
+                }
+            } else {
+                extenso += unidades[unidade];
+            }
+        }
+    }
+    
+    // Adicionar "valores" se for maior que 1
+    if (numArredondado !== 1) {
+        extenso += ' valores';
+    } else {
+        extenso += ' valor';
+    }
+    
+    return extenso;
+}
+
 // ========== DADOS ==========
 let disciplinasOriginais = [];
 let cabecalhos = [];
+let mediaGeralCurso = null;
 let categorias = {
     "Componente Sócio-Cultural": [],
     "Componente Científica": [],
@@ -403,16 +492,24 @@ try {
     const dadosBackend = JSON.parse(dadosElement.textContent);
     disciplinasOriginais = dadosBackend.disciplinas;
     cabecalhos = dadosBackend.cabecalhos;
+    mediaGeralCurso = dadosBackend.media_geral || null;
     
-    logDebug(`Carregadas ${disciplinasOriginais.length} disciplinas`);
+    logDebug(`✅ Carregadas ${disciplinasOriginais.length} disciplinas`);
+    logDebug(`📊 Média Geral do Curso: ${mediaGeralCurso}`);
+    logDebug('📋 Cabeçalhos:', cabecalhos);
     
-    // Inicializar todas as disciplinas na FORMAÇÃO GERAL por padrão
+    // Inicializar todas as disciplinas na Componente Sócio-Cultural por padrão
     disciplinasOriginais.forEach(disciplina => {
+        // Calcular o extenso para cada disciplina
+        const mediaNum = parseFloat(disciplina.media);
+        disciplina.extenso = numeroParaExtenso(mediaNum);
         categorias["Componente Sócio-Cultural"].push({...disciplina});
     });
     
+    logDebug('📁 Categorias inicializadas:', categorias);
+    
 } catch (error) {
-    logDebug('Erro ao carregar dados!', error, 'error');
+    logDebug('❌ Erro ao carregar dados!', error, 'error');
 }
 
 // Função para obter todas as disciplinas em ordem (respeitando categorias)
@@ -426,18 +523,22 @@ function obterTodasDisciplinasOrdenadas() {
 
 // Renderizar tabela principal
 function renderizarTabela() {
-    // Obter média geral do curso (vinda do backend)
-    const mediaGeralCurso = '{{ media_geral|floatformat:0 }}';
-    const mediaExtensoCurso = '{{ media_extenso|escapejs  }}';
-    logDebug('Renderizando tabela...');
+    logDebug('🔄 Renderizando tabela...');
     const tbody = document.getElementById('tabelaBody');
-    if (!tbody) return;
+    if (!tbody) {
+        logDebug('❌ Elemento tabelaBody não encontrado!', null, 'error');
+        return;
+    }
     
+    // Limpar tbody
     tbody.innerHTML = '';
+    
     const todasDisciplinas = obterTodasDisciplinasOrdenadas();
     
+    logDebug(`📊 Total de disciplinas para renderizar: ${todasDisciplinas.length}`);
+    
     if (todasDisciplinas.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center;">Nenhuma disciplina encontrada</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="100%" style="text-align:center;padding:20px;">Nenhuma disciplina encontrada</td></tr>';
         return;
     }
     
@@ -458,13 +559,14 @@ function renderizarTabela() {
         if (disciplinaCategoria !== categoriaAtual) {
             categoriaAtual = disciplinaCategoria;
             const rowCategoria = document.createElement('tr');
-            rowCategoria.style.backgroundColor = '#f0f0f0';
+            rowCategoria.style.backgroundColor = '#e8e8e8';
             const tdCategoria = document.createElement('td');
             tdCategoria.colSpan = cabecalhos.length + 3;
-            tdCategoria.textContent = categoriaAtual;
+            tdCategoria.textContent = categoriaAtual || 'Sem Categoria';
             tdCategoria.style.fontWeight = 'bold';
             tdCategoria.style.textAlign = 'left';
             tdCategoria.style.padding = '8px';
+            tdCategoria.style.fontSize = '12px';
             rowCategoria.appendChild(tdCategoria);
             tbody.appendChild(rowCategoria);
         }
@@ -477,17 +579,25 @@ function renderizarTabela() {
         tdNome.textContent = disciplina.nome;
         tdNome.style.textAlign = 'left';
         tdNome.style.fontWeight = 'bold';
+        tdNome.style.padding = '5px 8px';
         row.appendChild(tdNome);
         
         // Notas
-        if (disciplina.notas) {
+        if (disciplina.notas && Array.isArray(disciplina.notas)) {
             disciplina.notas.forEach(nota => {
                 const tdNota = document.createElement('td');
-                if (nota && nota !== 'null') {
+                if (nota !== null && nota !== 'null' && nota !== undefined && nota !== '-') {
                     tdNota.innerHTML = `<strong>${nota}</strong>`;
                 } else {
                     tdNota.textContent = '-';
                 }
+                row.appendChild(tdNota);
+            });
+        } else {
+            logDebug(`⚠️ Disciplina ${disciplina.nome} não tem notas ou não é array`, 'warn');
+            cabecalhos.forEach(() => {
+                const tdNota = document.createElement('td');
+                tdNota.textContent = '-';
                 row.appendChild(tdNota);
             });
         }
@@ -497,58 +607,68 @@ function renderizarTabela() {
         tdMedia.innerHTML = `<strong>${disciplina.media || 'N/A'}</strong>`;
         row.appendChild(tdMedia);
         
-        // Extenso
+        // Extenso - GERADO PELO JS
         const tdExtenso = document.createElement('td');
-        tdExtenso.textContent = disciplina.extenso || 'Não informado';
+        const mediaNum = parseFloat(disciplina.media);
+        tdExtenso.textContent = numeroParaExtenso(mediaNum);
         tdExtenso.classList.add('valor-extenso');
         row.appendChild(tdExtenso);
-
+        
         tbody.appendChild(row);
-
-        // Adicionar linha de média final no tfoot
-        // Verificar se tfoot já existe, senão criar
-        let tfoot = document.querySelector('#tabelaDisciplinas tfoot');
-        if (!tfoot) {
-            tfoot = document.createElement('tfoot');
-            document.getElementById('tabelaDisciplinas').appendChild(tfoot);
-        } else {
-            tfoot.innerHTML = ''; // Limpar conteúdo existente
-        }
+    });
+    
+    // ========== ADICIONAR RODAPÉ COM MÉDIA GERAL ==========
+    const tfoot = document.getElementById('tabelaFoot');
+    if (tfoot) {
+        tfoot.innerHTML = '';
         
         const rowMediaFinal = document.createElement('tr');
-        rowMediaFinal.style.backgroundColor = '#f0f0f0';
+        rowMediaFinal.style.backgroundColor = '#d4d4d4';
         rowMediaFinal.style.fontWeight = 'bold';
         
         // Primeira célula: "Média Final do Curso"
         const tdLabel = document.createElement('td');
-        tdLabel.textContent = 'Média Final do Curso';
+        tdLabel.textContent = 'MÉDIA FINAL DO CURSO';
         tdLabel.style.textAlign = 'left';
         tdLabel.style.fontWeight = 'bold';
+        tdLabel.style.padding = '8px';
+        tdLabel.style.fontSize = '12px';
         rowMediaFinal.appendChild(tdLabel);
         
-        // Células vazias para os períodos (quantidade = número de cabeçalhos)
+        // Células vazias para os períodos
         for (let i = 0; i < cabecalhos.length; i++) {
             const tdVazio = document.createElement('td');
             tdVazio.textContent = '';
+            tdVazio.style.backgroundColor = '#d4d4d4';
             rowMediaFinal.appendChild(tdVazio);
         }
-
+        
         // Célula da média (usando a média geral do curso)
         const tdMediaFinal = document.createElement('td');
         tdMediaFinal.innerHTML = `<strong>${mediaGeralCurso || 'N/A'}</strong>`;
+        tdMediaFinal.style.backgroundColor = '#d4d4d4';
+        tdMediaFinal.style.fontSize = '13px';
         rowMediaFinal.appendChild(tdMediaFinal);
-
-        // Célula do extenso
-        const tdExtensoFinal = document.createElement('td');
-        tdExtensoFinal.textContent =  disciplina.extenso || 'Não informado';
-        tdExtensoFinal.classList.add('valor-extenso');
-        rowMediaFinal.appendChild(tdExtensoFinal);
-
-        tfoot.appendChild(rowMediaFinal);
         
-    });
+        // Célula do extenso - GERADO PELO JS
+        const tdExtensoFinal = document.createElement('td');
+        const mediaGeralNum = parseFloat(mediaGeralCurso);
+        tdExtensoFinal.textContent = numeroParaExtenso(mediaGeralNum);
+        tdExtensoFinal.classList.add('valor-extenso');
+        tdExtensoFinal.style.backgroundColor = '#d4d4d4';
+        tdExtensoFinal.style.fontSize = '11px';
+        rowMediaFinal.appendChild(tdExtensoFinal);
+        
+        tfoot.appendChild(rowMediaFinal);
+    }
     
-    logDebug(`Tabela renderizada com ${todasDisciplinas.length} disciplinas em ${ordemCategorias.length} categorias`);
+    // Atualizar a média final no texto do certificado
+    const mediaDisplay = document.getElementById('mediaFinalDisplay');
+    if (mediaDisplay) {
+        mediaDisplay.textContent = mediaGeralCurso || 'N/A';
+    }
+    
+    logDebug(`✅ Tabela renderizada com ${todasDisciplinas.length} disciplinas em ${ordemCategorias.length} categorias`);
 }
 
 // Renderizar modal de organização
@@ -577,12 +697,17 @@ function renderizarModalOrganizacao() {
         // Adicionar disciplinas
         categorias[categoria].forEach((disciplina, idx) => {
             const divItem = document.createElement('div');
-            divItem.className = `disciplina-item disciplina-${categoria === 'Componente Sócio-Cultural' ? 'fg' : (categoria === 'Componente Científica' ? 'fe' : 'op')}`;
+            let classeCategoria = '';
+            if (categoria === 'Componente Sócio-Cultural') classeCategoria = 'disciplina-cultural';
+            else if (categoria === 'Componente Científica') classeCategoria = 'disciplina-cientifica';
+            else if (categoria === 'Componente Técnica, Tecnológica e Prática') classeCategoria = 'disciplina-tecnica';
+            
+            divItem.className = `disciplina-item ${classeCategoria}`;
             divItem.setAttribute('data-nome', disciplina.nome);
             divItem.setAttribute('data-categoria-origem', categoria);
             divItem.innerHTML = `
                 <i class="fas fa-grip-vertical"></i> ${disciplina.nome}
-                <small class="badge-categoria badge badge-secondary">${categoria.substring(0, 2)}</small>
+                <small class="badge-categoria badge badge-secondary">${categoria.substring(0, 3)}</small>
             `;
             listaDisciplinas.appendChild(divItem);
         });
@@ -601,26 +726,24 @@ function renderizarModalOrganizacao() {
         const botoesDiv = document.createElement('div');
         botoesDiv.className = 'text-center';
         
-        if (categoria !== 'OPÇÃO') {
+        const indexAtual = ordemCategorias.indexOf(categoria);
+        
+        if (indexAtual < ordemCategorias.length - 1) {
             const btnMoverProximo = document.createElement('button');
             btnMoverProximo.className = 'btn btn-sm btn-outline-primary btn-mover-todos';
-            const proximaCategoria = ordemCategorias[ordemCategorias.indexOf(categoria) + 1];
-            if (proximaCategoria) {
-                btnMoverProximo.innerHTML = `<i class="fas fa-arrow-right"></i> Mover todos para ${proximaCategoria}`;
-                btnMoverProximo.onclick = () => moverTodasDisciplinas(categoria, proximaCategoria);
-                botoesDiv.appendChild(btnMoverProximo);
-            }
+            const proximaCategoria = ordemCategorias[indexAtual + 1];
+            btnMoverProximo.innerHTML = `<i class="fas fa-arrow-right"></i> Mover todos para ${proximaCategoria}`;
+            btnMoverProximo.onclick = () => moverTodasDisciplinas(categoria, proximaCategoria);
+            botoesDiv.appendChild(btnMoverProximo);
         }
         
-        if (categoria !== 'Componente Sócio-Cultural') {
+        if (indexAtual > 0) {
             const btnMoverAnterior = document.createElement('button');
             btnMoverAnterior.className = 'btn btn-sm btn-outline-secondary btn-mover-todos ml-2';
-            const anteriorCategoria = ordemCategorias[ordemCategorias.indexOf(categoria) - 1];
-            if (anteriorCategoria) {
-                btnMoverAnterior.innerHTML = `<i class="fas fa-arrow-left"></i> Mover todos para ${anteriorCategoria}`;
-                btnMoverAnterior.onclick = () => moverTodasDisciplinas(categoria, anteriorCategoria);
-                botoesDiv.appendChild(btnMoverAnterior);
-            }
+            const anteriorCategoria = ordemCategorias[indexAtual - 1];
+            btnMoverAnterior.innerHTML = `<i class="fas fa-arrow-left"></i> Mover todos para ${anteriorCategoria}`;
+            btnMoverAnterior.onclick = () => moverTodasDisciplinas(categoria, anteriorCategoria);
+            botoesDiv.appendChild(btnMoverAnterior);
         }
         
         divCategoria.appendChild(botoesDiv);
@@ -640,14 +763,14 @@ function renderizarModalOrganizacao() {
 
 // Função para mover todas disciplinas de uma categoria para outra
 function moverTodasDisciplinas(categoriaOrigem, categoriaDestino) {
-    logDebug(`Movendo todas disciplinas de ${categoriaOrigem} para ${categoriaDestino}`);
+    logDebug(`🔄 Movendo todas disciplinas de ${categoriaOrigem} para ${categoriaDestino}`);
     
     const disciplinasParaMover = [...categorias[categoriaOrigem]];
     categorias[categoriaDestino].push(...disciplinasParaMover);
     categorias[categoriaOrigem] = [];
     
     renderizarModalOrganizacao();
-    logDebug(`Movidas ${disciplinasParaMover.length} disciplinas`);
+    logDebug(`✅ Movidas ${disciplinasParaMover.length} disciplinas`);
 }
 
 // Inicializar SortableJS
@@ -667,7 +790,7 @@ function inicializarSortable() {
                 pull: true,
                 revertClone: false,
                 put: function(to, from, drag) {
-                    return true; // Permitir mover entre qualquer categoria
+                    return true;
                 }
             },
             animation: 300,
@@ -683,18 +806,16 @@ function inicializarSortable() {
                 const categoriaDestino = evt.to.getAttribute('data-categoria');
                 
                 if (categoriaOrigem !== categoriaDestino) {
-                    logDebug(`Movendo disciplina "${nomeDisciplina}" de ${categoriaOrigem} para ${categoriaDestino}`);
+                    logDebug(`🔄 Movendo disciplina "${nomeDisciplina}" de ${categoriaOrigem} para ${categoriaDestino}`);
                     
-                    // Encontrar e mover a disciplina
                     const disciplinaIndex = categorias[categoriaOrigem].findIndex(d => d.nome === nomeDisciplina);
                     if (disciplinaIndex !== -1) {
                         const disciplinaMovida = categorias[categoriaOrigem][disciplinaIndex];
                         categorias[categoriaOrigem].splice(disciplinaIndex, 1);
                         categorias[categoriaDestino].push(disciplinaMovida);
-                        logDebug(`Disciplina movida com sucesso!`);
+                        logDebug(`✅ Disciplina movida com sucesso!`);
                     }
                 } else {
-                    // Reordenar dentro da mesma categoria
                     const novaOrdem = [];
                     const items = evt.to.children;
                     for (let i = 0; i < items.length; i++) {
@@ -706,11 +827,10 @@ function inicializarSortable() {
                     }
                     if (novaOrdem.length === categorias[categoriaOrigem].length) {
                         categorias[categoriaOrigem] = novaOrdem;
-                        logDebug(`Reordenadas disciplinas em ${categoriaOrigem}`);
+                        logDebug(`✅ Reordenadas disciplinas em ${categoriaOrigem}`);
                     }
                 }
                 
-                // Atualizar estatísticas
                 atualizarEstatisticas();
             }
         });
@@ -726,7 +846,6 @@ function atualizarEstatisticas() {
             titulo.textContent = `${categorias[categoria].length} disciplinas`;
         }
         
-        // Atualizar mensagem vazia
         const lista = document.querySelector(`.disciplinas-lista[data-categoria="${categoria}"]`);
         if (lista && categorias[categoria].length === 0) {
             if (!lista.querySelector('.empty-message')) {
@@ -744,48 +863,73 @@ function atualizarEstatisticas() {
 
 // Confirmar organização
 function confirmarOrganizacao() {
-    logDebug('Confirmando organização das disciplinas');
+    logDebug('✅ Confirmando organização das disciplinas');
     renderizarTabela();
     $('#modalOrganizacao').modal('hide');
 }
 
-// Botão de debug
+// ========== FUNÇÃO DEBUG INFO ==========
 function mostrarInfoDebug() {
     console.clear();
-    logDebug('========== INFO DEBUG ==========');
-    logDebug('Categorias:', categorias);
-    logDebug('Total disciplinas:', obterTodasDisciplinasOrdenadas().length);
-    logDebug('FORMAÇÃO GERAL:', categorias["FORMAÇÃO GERAL"].length);
-    logDebug('FORMAÇÃO ESPECÍFICA:', categorias["FORMAÇÃO ESPECÍFICA"].length);
-    logDebug('OPÇÃO:', categorias["OPÇÃO"].length);
+    console.log('='.repeat(60));
+    console.log('🐛 INFO DEBUG - CERTIFICADO TÉCNICO-PROFISSIONAL');
+    console.log('='.repeat(60));
     
-    alert(`Debug Info:\n` +
-          `Total: ${obterTodasDisciplinasOrdenadas().length}\n` +
-          `FG: ${categorias["FORMAÇÃO GERAL"].length}\n` +
-          `FE: ${categorias["FORMAÇÃO ESPECÍFICA"].length}\n` +
-          `OP: ${categorias["OPÇÃO"].length}\n\n` +
-          `Ver console (F12) para detalhes`);
+    const total = obterTodasDisciplinasOrdenadas().length;
+    const sc = categorias["Componente Sócio-Cultural"].length;
+    const cc = categorias["Componente Científica"].length;
+    const tp = categorias["Componente Técnica, Tecnológica e Prática"].length;
+    
+    console.log(`📊 ESTATÍSTICAS:`);
+    console.log(`   Total de disciplinas: ${total}`);
+    console.log(`   Componente Sócio-Cultural: ${sc}`);
+    console.log(`   Componente Científica: ${cc}`);
+    console.log(`   Componente Técnica, Tecnológica e Prática: ${tp}`);
+    console.log(`   Média Geral do Curso: ${mediaGeralCurso} -> ${numeroParaExtenso(mediaGeralCurso)}`);
+    console.log('');
+    
+    console.log('📋 DETALHES POR CATEGORIA:');
+    for (let cat of ordemCategorias) {
+        console.log(`   ${cat} (${categorias[cat].length}):`);
+        categorias[cat].forEach((d, i) => {
+            console.log(`      ${i+1}. ${d.nome} - Média: ${d.media} -> ${numeroParaExtenso(d.media)}`);
+        });
+        console.log('');
+    }
+    
+    console.log('📌 DADOS BRUTOS:');
+    console.log('   Categorias:', categorias);
+    console.log('   Cabeçalhos:', cabecalhos);
+    console.log('='.repeat(60));
+    
+    alert(
+        `🐛 INFO DEBUG\n\n` +
+        `📊 Total de Disciplinas: ${total}\n` +
+        `📚 Componente Sócio-Cultural: ${sc}\n` +
+        `📖 Componente Científica: ${cc}\n` +
+        `📕 Componente Técnica, Tecnológica e Prática: ${tp}\n` +
+        `🎯 Média Geral: ${mediaGeralCurso} -> ${numeroParaExtenso(mediaGeralCurso)}\n\n` +
+        `🔍 Ver console (F12) para detalhes completos!`
+    );
 }
 
-// Inicialização
+// ========== INICIALIZAÇÃO ==========
 function init() {
-    logDebug('Inicializando sistema...');
+    logDebug('🚀 Inicializando sistema...');
     renderizarTabela();
     
-    // Configurar eventos
     const btnConfirmar = document.getElementById('btnConfirmarOrganizacao');
     if (btnConfirmar) btnConfirmar.addEventListener('click', confirmarOrganizacao);
     
     const btnDebug = document.getElementById('btnDebugInfo');
     if (btnDebug) btnDebug.addEventListener('click', mostrarInfoDebug);
     
-    // Recarregar modal ao abrir
     $('#modalOrganizacao').on('show.bs.modal', function() {
-        logDebug('Abrindo modal de organização');
+        logDebug('📂 Abrindo modal de organização');
         renderizarModalOrganizacao();
     });
     
-    logDebug('Sistema inicializado com sucesso!');
+    logDebug('✅ Sistema inicializado com sucesso!');
 }
 
 // Executar inicialização

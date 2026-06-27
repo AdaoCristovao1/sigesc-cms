@@ -29,6 +29,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncMonth
 import calendar
+from django.db import IntegrityError
 
 @login_required
 def dashboard(request):
@@ -537,10 +538,11 @@ def matriculas_view(request):
         messages.error(request, 'Escola não encontrada.')
         return redirect('core:selecionar_escola')
     
-    turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(escola=escola_usuario)
+    ano_letivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
+    
+    turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(ano_letivo=ano_letivo, escola=escola_usuario)
     classes = Classe.objects.filter(escola=escola_usuario)
     cursos = Curso.objects.filter(escola=escola_usuario)
-    ano_letivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
 
     turmas_json = json.dumps([
     {
@@ -630,7 +632,7 @@ def matriculas_view(request):
         except Exception as e:
             messages.error(request, f"Erro ao matricular aluno: {str(e)}")
 
-        return redirect('pedagogico:comprovativo_matricula', aluno.id)
+        return redirect('documentos:comprovativo_matricula', aluno.id)
     
     perfil = request.user.perfil
     usuario = request.user
@@ -701,113 +703,15 @@ def matriculas_view(request):
         )
 
 @login_required
-def comprovativo_matricula(request, aluno_id):
+def reconfirmacao(request):
     escola_id_sessao = request.session.get('escola_atual_id')
     try:
         escola_usuario = Escola.objects.get(id=escola_id_sessao)
     except Escola.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Escola inválida.'})
     
-    aluno = get_object_or_404(Aluno, id=aluno_id)
-    data_hoje = datetime.now()
-    # Número do recibo (sequência de pagamentos)
-    recibo_numero = 0
-
-    # Gerar código de barras
-    barcode_value = str(aluno.numero_mecanografico)
-    drawing = createBarcodeDrawing(
-        'Code128',
-        value=barcode_value,
-        barHeight=40,
-        barWidth=2.5,
-        humanReadable=True
-    )
-
-    # Exportar para formato SVG em memória
-    barcode_svg = drawing.asString('svg')
-
-    # transformar em Base64 para embutir no HTML
-    barcode_base64 = base64.b64encode(barcode_svg.encode("utf-8")).decode("utf-8")
-    perfil = request.user.perfil
-    usuario = request.user 
-
-    if perfil == 'diretor_pedagogico':
-        return render(request, 'pedagogico/diretor_pedagogico/comprovativo_matricula.html', {
-            'aluno': aluno,
-            'data': data_hoje,
-            'atendido_por': request.user,
-            'usuario':usuario,
-            "barcode": barcode_base64,
-            'escola': escola_usuario,
-        })
-    elif perfil == 'secretario_ped':
-        return render(request, 'pedagogico/secretario_ped/comprovativo_matricula.html', {
-            'aluno': aluno,
-            'data': data_hoje,
-            'atendido_por': request.user,
-            'usuario':usuario,
-            "barcode": barcode_base64,
-            'escola': escola_usuario,
-        })
-    else:
-        return HttpResponse(
-            """
-            <html>
-                <head>
-                    <title>Erro 401 - Não Autorizado</title>
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            background-color: #f8f9fa;
-                            display: flex;
-                            justify-content: center;
-                            align-items: center;
-                            height: 100vh;
-                            margin: 0;
-                        }
-                        .error-box {
-                            text-align: center;
-                            padding: 40px;
-                            border: 2px solid #dc3545;
-                            border-radius: 12px;
-                            background-color: #fff;
-                            box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-                        }
-                        h1 {
-                            color: #dc3545;
-                            font-size: 48px;
-                            margin-bottom: 10px;
-                        }
-                        p {
-                            font-size: 20px;
-                            color: #333;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="error-box">
-                        <h1>401</h1>
-                        <p><strong>Perfil não autorizado</strong></p>
-                        <p>Você não tem permissão para acessar esta página.</p>
-                    </div>
-                </body>
-            </html>
-            """,
-            status=401
-        )
-
-@login_required
-def reconfirmacao(request):
-    escola_id_sessao = request.session.get('escola_atual_id')
-    
-    try:
-        escola_usuario = Escola.objects.get(id=escola_id_sessao)
-    except Escola.DoesNotExist:
-        messages.error(request, 'Escola não encontrada.')
-        return redirect('core:selecionar_escola')
-    
-    ano_letivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Fechado').last()
-    ano_aberto = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
+    ano_letivo = AnoLectivo.objects.filter(estado='Fechado', escola=escola_usuario).last()
+    ano_aberto = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
 
     if request.method == 'GET':
         query = request.GET.get('q', '')
@@ -815,9 +719,9 @@ def reconfirmacao(request):
         # Base query
         reconfirmacoes = Reconfirmacao.objects.select_related(
             'aluno', 'turma', 'sala', 'classe', 'curso' 
-        ).filter(escola=escola_usuario, ano_letivo=ano_letivo)
+        ).filter(ano_letivo=ano_letivo, escola=escola_usuario)
 
-        turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(escola=escola_usuario, ano_letivo=ano_aberto)
+        turmas = Turma.objects.select_related('classe', 'curso', 'sala').filter(ano_letivo=ano_aberto, escola=escola_usuario)
         turmas_json = json.dumps([
             {
                 'id': turma.id,
@@ -920,6 +824,41 @@ def reconfirmacao(request):
         aluno_id = request.POST.get('aluno_id')
         aluno = get_object_or_404(Aluno, id=aluno_id)
         
+        # Verificar se o ano letivo aberto existe
+        if not ano_aberto:
+            messages.error(request, 'Não há ano letivo aberto para realizar a reconfirmação.')
+            return redirect('pedagogico:reconfirmacao')
+        
+        # ========== CORREÇÃO PRINCIPAL ==========
+        # Verificar se já existe reconfirmação para este aluno no ANO ABERTO (não no fechado)
+        reconfirmacao_existente = Reconfirmacao.objects.filter(
+            escola=escola_usuario,
+            aluno=aluno,
+            ano_letivo=ano_aberto,  # CORRIGIDO: usar ano_aberto em vez de ano_letivo
+        ).exists()  # Usar exists() é mais eficiente
+        
+        if reconfirmacao_existente:
+            messages.warning(
+                request, 
+                f'O aluno {aluno.nome_completo} já foi reconfirmado para o ano letivo {ano_aberto}.'
+            )
+            return redirect('pedagogico:reconfirmacao')
+        # ========================================
+        
+        # Validar se o aluno já está em outra turma no mesmo ano letivo
+        reconfirmacao_turma_diferente = Reconfirmacao.objects.filter(
+            escola=escola_usuario,
+            aluno=aluno,
+            ano_letivo=ano_aberto
+        ).exclude(turma_id=request.POST.get('turma')).exists()
+        
+        if reconfirmacao_turma_diferente:
+            messages.error(
+                request,
+                f'O aluno {aluno.nome_completo} já está reconfirmado em outra turma neste ano letivo.'
+            )
+            return redirect('pedagogico:reconfirmacao')
+        
         # Obter dados do formulário
         nome_completo = request.POST.get('nome_completo')
         bi = request.POST.get('bi')
@@ -929,23 +868,6 @@ def reconfirmacao(request):
         curso_id = request.POST.get('curso')
         sala_id = request.POST.get('sala')
         turno = request.POST.get('turno')
-        
-        # Obter ano letivo atual
-        ano_aberto = AnoLectivo.objects.filter(estado='Aberto').first()
-        if not ano_aberto:
-            messages.error(request, 'Não há ano letivo aberto para realizar a reconfirmação.')
-            return redirect('pedagogico:reconfirmacao')
-        
-        # Verificar se já existe reconfirmação ativa para este aluno no ano letivo
-        reconfirmacao_existente = Reconfirmacao.objects.filter(
-            aluno=aluno,
-            ano_letivo=ano_letivo,
-            estado='Adimplente'
-        ).first()
-        
-        if reconfirmacao_existente:
-            messages.warning(request, f'Este aluno já foi reconfirmado para o ano letivo {ano_letivo}.')
-            return redirect('pedagogico:reconfirmacao')
         
         # Atualizar dados do aluno
         aluno.nome_completo = nome_completo
@@ -959,24 +881,40 @@ def reconfirmacao(request):
         curso = get_object_or_404(Curso, id=curso_id) if curso_id else None
         sala = get_object_or_404(Sala, id=sala_id) if sala_id else None
         
-        # Criar nova reconfirmação
-        nova_reconfirmacao = Reconfirmacao.objects.create(
-            aluno=aluno,
+        # Verificar capacidade da turma (opcional, mas recomendado)
+        alunos_na_turma = Reconfirmacao.objects.filter(
+            escola=escola_usuario,
             ano_letivo=ano_aberto,
-            estado='Adimplente',
-            estadoClasse='Pendente',
-            turma=turma,
-            sala=sala,
-            classe=classe,
-            curso=curso,
-            turno=turno
-        )
+            turma=turma
+        ).count()
         
-        messages.success(request, 'Reconfirmação realizada com sucesso!')
+        # Criar nova reconfirmação com tratamento de exceções
+        try:
+            nova_reconfirmacao = Reconfirmacao.objects.create(
+                escola=escola_usuario,
+                aluno=aluno,
+                ano_letivo=ano_aberto,
+                estado='Adimplente',
+                estadoClasse='Pendente',
+                turma=turma,
+                sala=sala,
+                classe=classe,
+                curso=curso,
+                turno=turno
+            )
+            
+            messages.success(
+                request, 
+                f'Reconfirmação realizada com sucesso para {aluno.nome_completo} em {turma.nome}.'
+            )
+            
+            # Redirecionar para o comprovativo
+            return redirect('documentos:comprovativo_matricula', aluno_id=aluno.id)
+            
+        except IntegrityError:
+            messages.error(request, 'Erro ao salvar reconfirmação. Verifique os dados e tente novamente.')
+            return redirect('pedagogico:reconfirmacao')
         
-        # Redirecionar para o comprovativo
-        return redirect('pedagogico:comprovativo_matricula', aluno_id=aluno.id)
-
 @login_required
 def turmas_e_salas(request):
     escola_id_sessao = request.session.get('escola_atual_id')
@@ -1319,132 +1257,161 @@ def alunos(request):
 @login_required
 def aluno_detalhes(request, id):
     escola_id_sessao = request.session.get('escola_atual_id')
-    
     try:
         escola_usuario = Escola.objects.get(id=escola_id_sessao)
     except Escola.DoesNotExist:
-        messages.error(request, 'Escola não encontrada.')
-        return redirect('core:selecionar_escola')
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
     
     aluno = get_object_or_404(Aluno, pk=id)
     atualizar_estado_aluno(aluno, escola_usuario)
-    
-    ultima_reconfirmacao = Reconfirmacao.objects.filter(escola=escola_usuario, aluno=aluno).order_by('-ano_letivo').last()
-    
-    notas = Nota.objects.filter(escola=escola_usuario, aluno=aluno).select_related('disciplina', 'classe')
-    
-    medias = {}
+
+    ano_aberto = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
+
     disciplinas = Disciplina.objects.filter(escola=escola_usuario)
     disc = Disciplina.objects.filter(escola=escola_usuario)
+    
+    ultima_reconfirmacao = Reconfirmacao.objects.filter(ano_letivo=ano_aberto, escola=escola_usuario, aluno=aluno).last()
+    
+    # Buscar todos os anos letivos que têm notas para este aluno
+    anos_letivos_com_notas = AnoLectivo.objects.filter(
+        nota__aluno=aluno,
+        nota__escola=escola_usuario
+    ).distinct().order_by('-ano')
+    
+    # Estrutura para agrupar notas por ano letivo
+    dados_por_ano_letivo = {}
+    
+    for ano_letivo in anos_letivos_com_notas:
+        notas = Nota.objects.filter(
+            escola=escola_usuario, 
+            aluno=aluno,
+            ano_lectivo=ano_letivo
+        ).select_related('disciplina', 'classe')
+        
+        medias = {}
+        
+        for nota in notas.order_by('classe__numero', 'disciplina__nome', 'trimestre'):
+            ano = nota.classe.numero
+            nome_disciplina = nota.disciplina.nome
+            trimestre = nota.trimestre
+            valor = nota.valor 
+            nota_id = nota.id 
 
-    for nota in notas.order_by('classe__numero', 'disciplina__nome', 'trimestre'):
-        ano = nota.classe.numero
-        nome_disciplina = nota.disciplina.nome
-        trimestre = nota.trimestre
-        valor = nota.valor
-        nota_id = nota.id 
+            # Inicialização da estrutura
+            if ano not in medias:
+                medias[ano] = {}
+            if nome_disciplina not in medias[ano]:
+                medias[ano][nome_disciplina] = {
+                    'notas': {},
+                    'media': '--',
+                    'nota_ids': {}
+                }
 
-        # Inicialização da estrutura
-        if ano not in medias:
-            medias[ano] = {}
-        if nome_disciplina not in medias[ano]:
-            medias[ano][nome_disciplina] = {
-                'notas': {},
-                'media': '--',
-                'nota_ids': {}
-            }
+            # Guardar nota
+            medias[ano][nome_disciplina]['notas'][trimestre] = valor
+            medias[ano][nome_disciplina]['nota_ids'][trimestre] = nota_id
 
-        # Guardar nota
-        medias[ano][nome_disciplina]['notas'][trimestre] = valor
-        medias[ano][nome_disciplina]['nota_ids'][trimestre] = nota_id
+        # Calcular média
+        for ano, disciplinas_dict in medias.items():
+            for nome, dados in disciplinas_dict.items():
+                notas_dict = dados['notas']
+                t1 = notas_dict.get(1)
+                t2 = notas_dict.get(2)
+                t3 = notas_dict.get(3) 
+                t4 = notas_dict.get(4)
 
-    # Calcular média
-    for ano, disciplinas_do_ano  in medias.items():
-        for nome, dados in disciplinas_do_ano.items():
-            notas_dict = dados['notas']
-            t1 = notas_dict.get(1)
-            t2 = notas_dict.get(2)
-            t3 = notas_dict.get(3)
-            t4 = notas_dict.get(4)
-
-            if t1 is not None and t2 is not None and t3 is not None and t4 is not None:
-                media = ((t1 + t2 + t3) / 3 * Decimal('0.4')) + (t4 * Decimal('0.6'))
-                media = Decimal(media).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
-                medias[ano][nome]['media'] = float(media)
+                if t1 is not None and t2 is not None and t3 is not None and t4 is not None:
+                    media = ((t1 + t2 + t3) / 3 * Decimal('0.4')) + (t4 * Decimal('0.6'))
+                    media = Decimal(media).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+                    medias[ano][nome]['media'] = float(media)
+                elif t1 is not None and t2 is not None and t3 is not None:
+                    media = ((t1 + t2) / 2 * Decimal('0.4')) + (t3 * Decimal('0.6'))
+                    media = Decimal(media).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+                    medias[ano][nome]['media'] = float(media)
+        
+        # Adicionar à estrutura principal
+        dados_por_ano_letivo[ano_letivo] = {
+            'medias': medias,
+            'disciplinas': Disciplina.objects.filter(escola=escola_usuario)
+        }
 
     perfil = request.user.perfil
     usuario = request.user
+    
+    context = {
+        'aluno': aluno,
+        'ultima_reconfirmacao': ultima_reconfirmacao,
+        'dados_por_ano_letivo': dados_por_ano_letivo,
+        'usuario': usuario,
+        "escola": escola_usuario,
+        'ano_aberto': ano_aberto,
+        'disciplinas': disciplinas,
+        'disc': disc,
+    }
 
     if perfil == 'diretor_pedagogico':
-        return render(request, 'pedagogico/diretor_pedagogico/aluno-detalhe.html', {
-            'aluno': aluno,
-            'ultima_reconfirmacao': ultima_reconfirmacao,
-            'medias': medias,
-            'disciplinas': disciplinas,
-            'disc':disc,
-            'usuario':usuario,
-            'escola': escola_usuario
-        })
+        return render(request, 'pedagogico/diretor_pedagogico/aluno-detalhe.html', context)
     elif perfil == 'secretario_ped':
-        return render(request, 'pedagogico/secretario_ped/aluno-detalhe.html', {
-            'aluno': aluno,
-            'ultima_reconfirmacao': ultima_reconfirmacao,
-            'medias': medias,
-            'disciplinas': disciplinas,
-            'disc':disc,
-            'usuario':usuario,
-            'escola': escola_usuario
-        })
+        return render(request, 'pedagogico/secretario_ped/aluno-detalhe.html', context)
     elif perfil == 'diretor_geral':
-        return render(request, 'core/aluno-detalhe.html', {
-            'aluno': aluno,
-            'ultima_reconfirmacao': ultima_reconfirmacao,
-            'medias': medias,
-            'disciplinas': disciplinas,
-            'disc':disc,
-            'usuario':usuario,
-            'escola': escola_usuario
-        })
+        return render(request, 'core/aluno-detalhe.html', context)
     elif perfil == 'secretario_geral':
-        return render(request, 'core/secretario_geral/aluno-detalhe.html', {
-            'aluno': aluno,
-            'ultima_reconfirmacao': ultima_reconfirmacao,
-            'medias': medias,
-            'disciplinas': disciplinas,
-            'disc':disc,
-            'usuario':usuario,
-            'escola': escola_usuario
-        })
+        return render(request, 'core/secretario_geral/aluno-detalhe.html', context)
     elif perfil == 'professor':
-        disciplinas_vinculadas = []
-        
+        # Buscar disciplinas vinculadas ao professor
         professor = getattr(request.user, 'funcionario', None)
+        disciplinas_vinculadas = []
+        nomes_disciplinas_vinculadas = set()
+        
         if professor:
             disciplinas_vinculadas = ProfessorVinculo.objects.filter(
                 escola=escola_usuario,
                 professor=professor
-            ).select_related('disciplina', 'turma') 
+            ).select_related('disciplina', 'turma')
+            
+            nomes_disciplinas_vinculadas = set(
+                vinculo.disciplina.nome for vinculo in disciplinas_vinculadas
+            )
 
-        nomes_disciplinas_vinculadas = set(
-            vinculo.disciplina.nome for vinculo in disciplinas_vinculadas
+        # Filtrar disciplinas para mostrar apenas as que o professor leciona
+        disciplinas_filtradas = Disciplina.objects.filter(
+            escola=escola_usuario,
+            nome__in=nomes_disciplinas_vinculadas
         )
 
-        # Filtra o dicionário de disciplinas para conter só as do professor
-        disciplinas_filtradas = [
-            d for d in disciplinas
-            if d.nome in nomes_disciplinas_vinculadas
-        ]
-
-        usuario = request.user
+        # FILTRAR dados_por_ano_letivo para mostrar apenas as disciplinas do professor
+        dados_por_ano_letivo_filtrado = {}
         
+        for ano_letivo, dados in dados_por_ano_letivo.items():
+            medias_filtradas = {}
+            
+            for ano, disciplinas_dict in dados['medias'].items():
+                # Filtrar apenas as disciplinas que o professor leciona
+                disciplinas_filtradas_dict = {}
+                for nome_disciplina, info in disciplinas_dict.items():
+                    if nome_disciplina in nomes_disciplinas_vinculadas:
+                        disciplinas_filtradas_dict[nome_disciplina] = info
+                
+                # Só adiciona o ano se houver disciplinas filtradas
+                if disciplinas_filtradas_dict:
+                    medias_filtradas[ano] = disciplinas_filtradas_dict
+            
+            # Só adiciona o ano letivo se houver dados
+            if medias_filtradas:
+                dados_por_ano_letivo_filtrado[ano_letivo] = {
+                    'medias': medias_filtradas,
+                    'disciplinas': disciplinas_filtradas
+                }
+
         return render(request, 'pedagogico/professor/aluno-detalhe.html', {
             'aluno': aluno,
             'ultima_reconfirmacao': ultima_reconfirmacao,
-            'medias': medias,
-            'disciplinas': disciplinas_filtradas, 
+            'dados_por_ano_letivo': dados_por_ano_letivo_filtrado,  # Dados filtrados
+            'disciplinas': disciplinas_filtradas,
             'disciplinas_vinculadas': disciplinas_vinculadas,
-            'usuario':usuario,
-            'escola': escola_usuario
+            'usuario': usuario,
+            'escola': escola_usuario,
+            'ano_aberto': ano_aberto,
         })
     else:
         return HttpResponse(
@@ -1599,7 +1566,8 @@ def pautas_trimestre(request, trimestre):
         notas_aluno = Nota.objects.filter(
             escola=escola_usuario,
             aluno=aluno,
-            trimestre=trimestre
+            trimestre=trimestre,
+            ano_lectivo=ano_letivo
         ).select_related('disciplina')
         
         linha = {
@@ -1641,7 +1609,7 @@ def pautas_trimestre(request, trimestre):
                     linha['disciplinas'][disciplina.id] = {
                         'nome': disciplina.nome,
                         'valor': None
-                    }
+                    } 
                     tem_todas_notas = False
         
         if not tem_todas_notas:
@@ -1700,6 +1668,24 @@ def pautas_trimestre(request, trimestre):
             'texto': texto,
             'usuario': usuario,
             'escola': escola_usuario
+        })
+    elif perfil == 'diretor_geral':
+        return render(request, 'core/pautas_trimestre.html', {
+            'turmas_agrupadas': turmas_agrupadas,
+            'search_query': query,
+            'trimestre': trimestre,
+            'texto': texto,
+            'usuario': usuario,
+            'escola': escola_usuario,
+        })
+    elif perfil == 'secretario_geral':
+        return render(request, 'core/secretario_geral/pautas_trimestre.html', {
+            'turmas_agrupadas': turmas_agrupadas,
+            'search_query': query,
+            'trimestre': trimestre,
+            'texto': texto,
+            'usuario': usuario,
+            'escola': escola_usuario,
         })
     elif perfil == 'professor':
         usuario = request.user
@@ -1787,7 +1773,7 @@ def pautas_trimestre(request, trimestre):
                 
                 # Verificar aprovação/reprovação
                 if valor_nota is not None:
-                    if classe_numero < 7 and valor_nota < 5:
+                    if classe_numero < 7 and valor_nota < 4.5:
                         linha['estado'] = 'Reprovado'
                     elif classe_numero >= 7 and valor_nota < 10:
                         linha['estado'] = 'Reprovado'
@@ -1930,7 +1916,7 @@ def pautas_final(request):
         classe_numero = r.classe.numero
         
         # Buscar todas as notas do aluno para calcular média final
-        notas_aluno = Nota.objects.filter(escola=escola_usuario, aluno=aluno).select_related('disciplina')
+        notas_aluno = Nota.objects.filter(escola=escola_usuario, aluno=aluno, ano_lectivo=ano_letivo).select_related('disciplina')
         
         linha = {
             'aluno': aluno.nome_completo,
@@ -1967,7 +1953,7 @@ def pautas_final(request):
                     nota_final = round(nota_final, 1)
                     
                     # Verificar aprovação
-                    if classe_numero < 7 and nota_final < 5:
+                    if classe_numero < 7 and nota_final < 4.5:
                         linha['estado'] = 'Reprovado'
                     elif classe_numero >= 7 and nota_final < 10:
                         linha['estado'] = 'Reprovado'
@@ -1977,7 +1963,7 @@ def pautas_final(request):
                     nota_final = round(nota_final, 1)
                     
                     # Verificar aprovação
-                    if classe_numero < 7 and nota_final < 5:
+                    if classe_numero < 7 and nota_final < 4.5:
                         linha['estado'] = 'Reprovado'
                     elif classe_numero >= 7 and nota_final < 10:
                         linha['estado'] = 'Reprovado'
@@ -2071,6 +2057,18 @@ def pautas_final(request):
             'usuario': usuario,
             'escola': escola_usuario
         })
+    elif perfil == 'diretor_geral':
+        return render(request, 'core/pautas_finais.html', {
+            'turmas_agrupadas': turmas_final,
+            'usuario': usuario, 
+            'escola':escola_usuario
+        })
+    elif perfil == 'secretario_geral':
+        return render(request, 'core/secretario_geral/pautas_finais.html', {
+            'turmas_agrupadas': turmas_final,
+            'usuario': usuario,
+            'escola':escola_usuario
+        })
     else:
         return HttpResponse(
             """
@@ -2135,13 +2133,36 @@ def lancar_nota(request):
             ano_letivo_id = ano_letivo_id.id
  
         trimestre = request.POST.get('trimestre')
-        valor = request.POST.get('valor')
+        
+        # Obter a quantidade de notas
+        quantidade_notas = request.POST.get('quantidade_notas')
+        
+        # Coletar todas as notas
+        notas = []
+        for i in range(1, int(quantidade_notas) + 1):
+            nota_valor = request.POST.get(f'nota_{i}')
+            if nota_valor and nota_valor.strip():
+                try:
+                    notas.append(float(nota_valor))
+                except ValueError:
+                    messages.error(request, f'Nota {i} inválida. Use números.')
+                    return redirect(request.META.get('HTTP_REFERER'))
+        
+        if not notas:
+            messages.error(request, 'É necessário inserir pelo menos uma nota.')
+            return redirect(request.META.get('HTTP_REFERER'))
+        
+        # Calcular a média (T = soma de todas as notas / quantidade de notas)
+        media = sum(notas) / len(notas)
+        # Arredondar para 2 casas decimais
+        media = round(media, 2)
 
-        if not all([aluno_id, disciplina_id, classe_id, ano_letivo_id, trimestre, valor]):
+        if not all([aluno_id, disciplina_id, classe_id, ano_letivo_id, trimestre]):
             messages.error(request, 'Todos os campos são obrigatórios.')
             return redirect(request.META.get('HTTP_REFERER'))
 
         try:
+            # Verificar se já existe nota para este trimestre
             nota_existente = Nota.objects.filter(
                 escola=escola_usuario,
                 ano_lectivo=ano_letivo_id,
@@ -2154,6 +2175,7 @@ def lancar_nota(request):
             if nota_existente:
                 messages.warning(request, 'Nota já foi lançada para este aluno nesta disciplina e trimestre.')
             else:
+                # Salvar a nota com a média calculada
                 Nota.objects.create(
                     escola=escola_usuario,
                     aluno_id=aluno_id,
@@ -2161,9 +2183,12 @@ def lancar_nota(request):
                     classe_id=classe_id,
                     ano_lectivo_id=ano_letivo_id,
                     trimestre=trimestre,
-                    valor=valor
+                    valor=media,
                 )
-                messages.success(request, 'Nota lançada com sucesso.')
+                messages.success(
+                    request, 
+                    f'Nota lançada com sucesso! Média: {media:.2f} (baseada em {len(notas)} nota(s))'
+                )
         except Exception as e:
             messages.error(request, f'Erro ao lançar nota: {e}')
 
@@ -3103,10 +3128,10 @@ def relatorio_pedagogico(request):
         quantidade_alunos=Count('aluno')
     ).order_by('-quantidade_alunos')
     
-    total_alunos_ano = Aluno.objects.filter(escola=escola_usuario, turma__ano_letivo=ano_lectivo).count()
+    total_alunos_ano = Reconfirmacao.objects.filter(escola=escola_usuario, turma__ano_letivo=ano_lectivo).count()    
     
-   # Alunos por classe
-    alunos_por_classe = []
+   # Alunos por classe 
+    alunos_por_classe = [] 
     classes = Classe.objects.filter(escola=escola_usuario).order_by('numero')
 
     # Preparar dados para os gráficos
@@ -3114,7 +3139,7 @@ def relatorio_pedagogico(request):
     dados_classes = []   # Para o gráfico (quantidades)
 
     for classe in classes:
-        quantidade = Aluno.objects.filter(
+        quantidade = Reconfirmacao.objects.filter(
             escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turma__classe=classe
@@ -3131,7 +3156,7 @@ def relatorio_pedagogico(request):
             })
             
             # Adicionar aos dados do gráfico
-            labels_classes.append(f"{classe.numero}ª")  # Formato: "10ª", "11ª", etc.
+            labels_classes.append(f"{classe.numero}ª")
             dados_classes.append(quantidade)
 
     # Se não houver dados, criar listas vazias
@@ -3142,7 +3167,7 @@ def relatorio_pedagogico(request):
     # Alunos por turno
     alunos_por_turno = []
     for turno in ['Manhã', 'Tarde', 'Noite']:
-        quantidade = Aluno.objects.filter(
+        quantidade = Reconfirmacao.objects.filter(
             escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turno=turno
@@ -3158,7 +3183,7 @@ def relatorio_pedagogico(request):
     alunos_por_curso = []
     cursos = Curso.objects.filter(escola=escola_usuario)
     for curso in cursos:
-        quantidade = Aluno.objects.filter(
+        quantidade = Reconfirmacao.objects.filter(
             escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             curso=curso
@@ -3182,7 +3207,7 @@ def relatorio_pedagogico(request):
             escola=escola_usuario,
             disciplina=disciplina,
             ano_lectivo__ano=ano_lectivo,
-            trimestre__in=[1, 2, 3]  # Apenas trimestres, não exame
+            trimestre__in=[1, 2, 3, 4]  # Apenas trimestres, não exame
         )
         
         if notas.exists():
@@ -3317,7 +3342,7 @@ def relatorio_pedagogico(request):
     matriculas_evolucao = []
     
     for ano in anos_evolucao:
-        quantidade = Aluno.objects.filter(escola=escola_usuario, turma__ano_letivo=ano).count()
+        quantidade = Reconfirmacao.objects.filter(escola=escola_usuario, turma__ano_letivo=ano).count()
         matriculas_evolucao.append(quantidade)
     
     # Dados para gráfico de distribuição por classe
@@ -3346,9 +3371,15 @@ def relatorio_pedagogico(request):
     ).order_by('-id')[:10]
     
     # Últimos alunos matriculados
-    ultimos_alunos = Aluno.objects.filter(escola=escola_usuario).select_related(
-        'turma', 'classe', 'curso'
-    ).order_by('-id')[:10]
+    ultimos_alunos = Reconfirmacao.objects.filter(
+    escola=escola_usuario, ano_letivo=ano_lectivo
+    ).select_related(
+        'aluno',
+        'turma',
+        'classe',
+        'curso',
+        'sala'
+    ).order_by('-data', '-id')[:10]
     
     # Últimas monografias submetidas
     ultimas_monografias = Monografia.objects.filter(escola=escola_usuario).order_by('-data_submissao')[:5]

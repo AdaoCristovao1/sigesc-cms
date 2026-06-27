@@ -147,6 +147,22 @@
     <h4>{{ escola.nome }}</h4>
     <div style="background-color: #5a5b5c; color: white; padding: 5px; font-weight: bold;">
       BOLETIM DE NOTAS
+      {% if trimestre_selecionado %}
+      <div class="alert alert-info mb-3" style="border-radius: 8px;">
+          <strong>Período Selecionado:</strong> 
+          {% if trimestre_selecionado == '1' %}
+              <span class="badge bg-primary">1º Trimestre</span>
+          {% elif trimestre_selecionado == '2' %}
+              <span class="badge bg-success">2º Trimestre</span>
+          {% elif trimestre_selecionado == '3' %}
+              <span class="badge bg-warning text-dark">3º Trimestre</span>
+          {% endif %}
+      </div>
+      {% elif trimestre_selecionado == 'todos' %}
+      <div class="alert alert-secondary mb-3" style="border-radius: 8px;">
+          <strong>Período:</strong> <span class="badge bg-secondary">Todos os Trimestres</span>
+      </div>
+      {% endif %}
     </div>
   </div>
 

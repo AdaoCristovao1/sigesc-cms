@@ -73,6 +73,7 @@
 
     <button class="btn btn-primary btn-imprimir" onclick="window.print()">🖨️ Imprimir</button>
 
+    <!-- Primeira via -->
     <div class="row align-items-center mb-4">
         <!-- Logo -->
         <div class="col-2 d-flex justify-content-start">
@@ -85,6 +86,9 @@
         <div class="col-6 d-flex flex-column justify-content-center">
         <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
         <h6 class="mt-1">Comprovativo de Matrícula</h6>
+        {% if ano_letivo %}
+            <small class="text-muted">Ano Letivo: {{ ano_letivo }}</small>
+        {% endif %}
         </div>
 
         <!-- Código de Barras -->
@@ -97,19 +101,49 @@
 
     <div class="row">
         <div class="col text-truncate">
-            <p class="mb-1">{{ aluno.nome_completo }}</p>
+            <p class="mb-1"><strong>Nome:</strong> {{ aluno.nome_completo }}</p>
             <p class="mb-1"><strong>Nº Mec.:</strong> {{ aluno.numero_mecanografico }}</p>
             <p class="mb-1"><strong>BI:</strong> {{ aluno.bi }}</p>
         </div>
         <div class="col text-truncate">
             <p class="mb-1"><strong>Gênero:</strong> {{ aluno.get_genero_display }}</p>
-            <p class="mb-1"><strong>Classe:</strong> {{ aluno.classe.numero }}ª Classe</p>
-            <p class="mb-1"><strong>Curso:</strong> {{ aluno.curso.nome }}</p>
+            <p class="mb-1"><strong>Classe:</strong> 
+                {% if classe %}
+                    {{ classe.numero }}ª Classe
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Curso:</strong> 
+                {% if curso %}
+                    {{ curso.nome }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
         </div>
         <div class="col text-truncate" style="position: relative; right: -100px;">
-            <p class="mb-1"><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
-            <p class="mb-1"><strong>Turno:</strong> {{ aluno.turno }}</p>
-            <p class="mb-1"><strong>Sala:</strong> {{ aluno.sala.nome }}</p>
+            <p class="mb-1"><strong>Turma:</strong> 
+                {% if turma %}
+                    {{ turma.nome }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Turno:</strong> 
+                {% if turno %}
+                    {{ turno }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Sala:</strong> 
+                {% if sala %}
+                    {{ sala.nome }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
         </div>
     </div>
     
@@ -133,8 +167,11 @@
             {{ escola.provincia }} - {{ escola.municipio }} - {{ escola.endereco }} -Tel: {{ escola.contacto }}
         </p>
     </div>
+    
     <hr>
-     <div class="row align-items-center mb-4">
+    
+    <!-- Segunda via -->
+    <div class="row align-items-center mb-4">
         <!-- Logo -->
         <div class="col-2 d-flex justify-content-start">
         {% if escola.logotipo %}
@@ -146,6 +183,9 @@
         <div class="col-6 d-flex flex-column justify-content-center">
         <h6 class="mb-0"><strong>{{ escola.nome }}</strong></h6>
         <h6 class="mt-1">Comprovativo de Matrícula</h6>
+        {% if ano_letivo %}
+            <small class="text-muted">Ano Letivo: {{ ano_letivo }}</small>
+        {% endif %}
         </div>
 
         <!-- Código de Barras -->
@@ -158,19 +198,49 @@
 
     <div class="row">
         <div class="col text-truncate">
-            <p class="mb-1">{{ aluno.nome_completo }}</p>
+            <p class="mb-1"><strong>Nome:</strong> {{ aluno.nome_completo }}</p>
             <p class="mb-1"><strong>Nº Mec.:</strong> {{ aluno.numero_mecanografico }}</p>
             <p class="mb-1"><strong>BI:</strong> {{ aluno.bi }}</p>
         </div>
         <div class="col text-truncate">
             <p class="mb-1"><strong>Gênero:</strong> {{ aluno.get_genero_display }}</p>
-            <p class="mb-1"><strong>Classe:</strong> {{ aluno.classe.numero }}ª Classe</p>
-            <p class="mb-1"><strong>Curso:</strong> {{ aluno.curso.nome }}</p>
+            <p class="mb-1"><strong>Classe:</strong> 
+                {% if classe %}
+                    {{ classe.numero }}ª Classe
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Curso:</strong> 
+                {% if curso %}
+                    {{ curso.nome }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
         </div>
         <div class="col text-truncate" style="position: relative; right: -100px;">
-            <p class="mb-1"><strong>Turma:</strong> {{ aluno.turma.nome }}</p>
-            <p class="mb-1"><strong>Turno:</strong> {{ aluno.turno }}</p>
-            <p class="mb-1"><strong>Sala:</strong> {{ aluno.sala.nome }}</p>
+            <p class="mb-1"><strong>Turma:</strong> 
+                {% if turma %}
+                    {{ turma.nome }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Turno:</strong> 
+                {% if turno %}
+                    {{ turno }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
+            <p class="mb-1"><strong>Sala:</strong> 
+                {% if sala %}
+                    {{ sala.nome }}
+                {% else %}
+                    ---
+                {% endif %}
+            </p>
         </div>
     </div>
     
@@ -181,7 +251,7 @@
     <div class="assinatura d-flex justify-content-between mt-2">
         <div>
             <div class="linha">Assinatura do Estudante</div>
-            <p class="text-center"><small>{{ aluno.nome_completo  }}</small></p>
+            <p class="text-center"><small>{{ aluno.nome_completo }}</small></p>
         </div>
         <div>
             <div class="linha">Assinatura do Funcionário</div>

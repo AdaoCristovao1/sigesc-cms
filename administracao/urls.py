@@ -24,12 +24,11 @@ urlpatterns = [
     path('turmas/editar/', views.editar_turma, name='editar_turma'),
     path('turmas/excluir/<int:turma_id>/', views.eliminar_turma, name='excluir_turma'),
     path('matriculas/', views.matriculas_view, name='matriculas'),
-    path('matriculas/comprovativo/<int:aluno_id>/', views.comprovativo_matricula, name='comprovativo_matricula'),
     path('alunos-lista/', views.alunos_view, name='alunos_lista'),
     path('alunos/editar/<int:aluno_id>/', views.editar_aluno, name='editar_aluno'),
     path('alunos/deletar/<int:aluno_id>/', views.deletar_aluno, name='deletar_aluno'), 
     path('aluno/<int:id>/', views.aluno_detalhes, name='aluno_detalhes'),
     path('aluno/<int:id>/upload-foto/', views.upload_foto_aluno, name='upload_foto_aluno'), 
     path("ano-lectivo/", views.ano_lectivo, name='ano_lectivo'),
-    path('reconfirmacao/', views.reconfirmacao, name='reconfirmacao'),
+    path('reconfirmacao/', views.reconfirmacao, name='reconfirmacao'), 
 ] 

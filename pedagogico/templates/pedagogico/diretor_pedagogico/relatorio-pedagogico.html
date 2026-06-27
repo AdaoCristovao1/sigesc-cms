@@ -58,7 +58,7 @@
       <img id="preview-imagem" 
         src="{{ escola.logotipo.url }}" 
         alt="Logotipo da escola"   
-        class="img-thumbnail rounded-circle"
+        class="img-thumbnail rounded-circle" 
         style="width: 80px; height: 80px; object-fit: cover;">
       <div><strong>Director Pedagógico</strong></div>
       <small>{{ usuario.username }}</small>
@@ -607,18 +607,18 @@
             </div>
             <div class="card-body p-0">
               <div class="list-group list-group-flush">
-                {% for aluno in ultimos_alunos %}
+                {% for reconfirmacao  in ultimos_alunos %}
                 <div class="list-group-item">
                   <div class="d-flex justify-content-between align-items-center">
                     <div>
-                      <strong>{{ aluno.nome_completo|truncatechars:25 }}</strong>
+                      <strong>{{ reconfirmacao.aluno.nome_completo|truncatechars:25 }}</strong>
                       <br>
                       <small class="text-muted">
-                        {{ aluno.turma.nome }} - {{ aluno.curso.nome }}
+                        {{ reconfirmacao.aluno.turma.nome }} - {{ reconfirmacao.aluno.curso.nome }}
                       </small>
                     </div>
                     <div>
-                      <span class="badge bg-info">Nº {{ aluno.numero_mecanografico }}</span>
+                      <span class="badge bg-info">Nº {{ reconfirmacao.aluno.numero_mecanografico }}</span>
                     </div>
                   </div>
                 </div>

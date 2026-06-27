@@ -575,10 +575,10 @@
           </tr>
         </thead>
         <tbody>
-          {% for aluno in ultimos_alunos %}
+          {% for reconfirmacao  in ultimos_alunos %}
           <tr>
-            <td>{{ aluno.nome|truncatechars:15 }}</td>
-            <td>{{ aluno.turma.codigo|default:aluno.turma.nome|truncatechars:10 }}</td>
+            <td>{{ reconfirmacao.aluno.nome_completo|truncatechars:25 }}</td>
+            <td>{{ reconfirmacao.aluno.turma.nome }} - {{ reconfirmacao.aluno.curso.nome }}</td>
           </tr>
           {% empty %}
           <tr><td colspan="2" class="text-center">-</td></tr>

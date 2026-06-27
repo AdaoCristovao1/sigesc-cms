@@ -20,6 +20,73 @@
     .sidebar{
       overflow-y: auto;
     }
+    /* Estilos modernos adicionais */
+    .form-floating > .form-control,
+    .form-floating > .form-select {
+        border-radius: 12px;
+        border: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+    
+    .form-floating > .form-control:focus,
+    .form-floating > .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-floating > label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .card {
+        border-radius: 12px;
+        transition: transform 0.2s ease;
+    }
+    
+    .card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .modal-content {
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    
+    .btn {
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4) !important;
+    }
+    
+    .btn-outline-secondary:hover {
+        transform: translateY(-2px);
+    }
+    
+    hr {
+        opacity: 0.5;
+    }
+    
+    /* Animações suaves */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .modal.fade .modal-dialog {
+        animation: fadeInUp 0.3s ease-out;
+    }
   </style>
 </head>
 <body>
@@ -115,7 +182,7 @@
       {% endif %}
       {% for grupo, alunos in turmas_agrupadas.items %}
       <div class="card my-3">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header bg-secondary text-white">
           <h5 class="mb-0">{{ grupo }}</h5>
         </div>
         <div class="card-body">
@@ -126,6 +193,7 @@
                 <th class="text-dark">Nome Completo</th>
                 <th class="text-dark">Nº Mecanográfico</th>
                 <th class="text-dark">Gênero</th>
+                <th class="text-dark">Estado</th>
                 <th class="text-dark">Ação</th>
               </tr>
             </thead>
@@ -137,7 +205,36 @@
                 <td>{{ aluno.numero_mecanografico }}</td>
                 <td>{{ aluno.get_genero_display }}</td>
                 <td>
-                  <a href="{% url 'pedagogico:aluno_detalhes' aluno.id %}" class="btn btn-primary">
+                  {% if aluno.reconfirmacao_set.last.estadoClasse == 'Aprovado' %} 
+                      <span class="badge bg-success">
+                          {{ aluno.reconfirmacao_set.last.estadoClasse }}
+                      </span>
+                  {% elif aluno.reconfirmacao_set.last.estadoClasse == 'Reprovado' %}
+                      <span class="badge bg-danger">
+                          {{ aluno.reconfirmacao_set.last.estadoClasse }}
+                      </span>
+                  {% else %}
+                      <span class="badge bg-warning text-dark">
+                          {{ aluno.reconfirmacao_set.last.estadoClasse }}
+                      </span>
+                  {% endif %}
+
+                  {% if aluno.reconfirmacao_set.last.estado == 'Adimplente' %}
+                      <span class="badge bg-success">
+                          {{ aluno.reconfirmacao_set.last.estado }}
+                      </span>
+                  {% elif aluno.reconfirmacao_set.last.estado == 'Inadimplente' %}
+                      <span class="badge bg-danger">
+                          {{ aluno.reconfirmacao_set.last.estado }}
+                      </span>
+                  {% else %}
+                      <span class="badge bg-warning text-dark">
+                          {{ aluno.reconfirmacao_set.last.estado }}
+                      </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'core:aluno_detalhes' aluno.id %}" class="btn btn-primary">
                     <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
                       <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
                       <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
@@ -165,67 +262,200 @@
       </div>
 
       <!-- Modal de Edição de Aluno -->
-    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <form method="POST" action="" id="formEdit" class="modal-content">
-        {% csrf_token %}
-        <input type="hidden" name="aluno_id" id="editAlunoId">
-        <div class="modal-header">
-            <h5 class="modal-title">Reconfirmar Aluno</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <form method="POST" action="" id="formEdit" class="modal-content border-0 shadow-lg">
+    {% csrf_token %}
+    <input type="hidden" name="aluno_id" id="editAlunoId">
+    
+    <!-- Header com gradiente moderno -->
+    <div class="modal-header border-0" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h5 class="modal-title text-white">
+            <i class="bi bi-pencil-square me-2"></i>
+            Reconfirmar Aluno
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    
+    <div class="modal-body p-4">
+        <!-- AVISO DE REPROVAÇÃO -->
+        <div id="reprovadoWarning" class="alert alert-warning border-0 shadow-sm" style="display: none; border-left: 5px solid #ffc107 !important;">
+            <div class="d-flex align-items-start">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
+                <div>
+                    <strong>Aluno Reprovado!</strong>
+                    <p class="mb-0" id="reprovadoInfo"></p>
+                    <small class="text-muted">Os dados da última reconfirmação e notas serão apagados ao salvar.</small>
+                </div>
+            </div>
         </div>
-        <div class="modal-body row">
+        
+        <div class="row g-4">
+            <!-- Dados da última reconfirmação (apenas se reprovado) -->
+            <div id="ultimaReconfirmacaoInfo" class="col-12" style="display: none;">
+                <div class="card bg-light border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <h6 class="text-primary mb-3">
+                            <i class="bi bi-clock-history me-2"></i>
+                            Dados da Última Reconfirmação (Ano Letivo Anterior)
+                        </h6>
+                        <div class="row g-2">
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Classe</small>
+                                <span class="fw-semibold" id="ultimaClasse">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Turma</small>
+                                <span class="fw-semibold" id="ultimaTurma">-</span>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Estado</small>
+                                <span class="badge bg-danger" id="ultimoEstado">Reprovado</span>
+                            </div>
+                            <div class="col-md-3">
+                                <small class="text-muted d-block">Ano Letivo</small>
+                                <span class="fw-semibold" id="ultimoAnoLetivo">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Campos do formulário -->
             <div class="col-md-6">
-            <label class="form-label">Nome completo</label>
-            <input type="text" name="nome_completo" id="editNome" class="form-control" required>
+                <!-- Nome completo -->
+                <div class="form-floating mb-3">
+                    <input type="text" 
+                           name="nome_completo" 
+                           id="editNome" 
+                           class="form-control form-control-lg" 
+                           placeholder="Nome completo"
+                           required>
+                    <label for="editNome">
+                        <i class="bi bi-person me-1"></i>
+                        Nome completo
+                    </label>
+                </div>
 
-            <label class="form-label mt-3">BI</label>
-            <input type="text" name="bi" id="editBI" class="form-control" maxlength="14" required>
+                <!-- BI -->
+                <div class="form-floating mb-3">
+                    <input type="text" 
+                           name="bi" 
+                           id="editBI" 
+                           class="form-control form-control-lg" 
+                           placeholder="BI" 
+                           maxlength="14" 
+                           required>
+                    <label for="editBI">
+                        <i class="bi bi-card-list me-1"></i>
+                        BI / Documento
+                    </label>
+                </div>
 
-            <label class="form-label mt-3">Gênero</label>
-            <select name="genero" id="editGenero" class="form-select" required>
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-            </select>
+                <!-- Gênero -->
+                <div class="form-floating">
+                    <select name="genero" id="editGenero" class="form-select form-select-lg" required>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                    </select>
+                    <label for="editGenero">
+                        <i class="bi bi-gender-ambiguous me-1"></i>
+                        Gênero
+                    </label>
+                </div>
             </div>
 
             <div class="col-md-6">
-            <label class="form-label">Classe</label>
-            <select name="classe" id="editClasse" class="form-select" required>
-                <option value="">Selecione</option>
-                {% for classe in classes %}
-                <option value="{{ classe.id }}">{{ classe.numero }} ª Classe</option>
-                {% endfor %}
-            </select>
+                <!-- Classe -->
+                <div class="form-floating mb-3">
+                    <select name="classe" id="editClasse" class="form-select form-select-lg" required>
+                        <option value="">Selecione a classe</option>
+                        {% for classe in classes %}
+                        <option value="{{ classe.id }}">{{ classe.numero }}ª Classe</option>
+                        {% endfor %}
+                    </select>
+                    <label for="editClasse">
+                        <i class="bi bi-book me-1"></i>
+                        Classe
+                    </label>
+                </div>
 
-            <label class="form-label mt-3">Turma</label>
-            <select name="turma" id="editTurma" class="form-select" required>
-                <option value="">Selecione</option>
-                {% for turma in turmas %}
-                <option value="{{ turma.id }}">{{ turma.nome }}</option>
-                {% endfor %}
-            </select>
+                <!-- Turma -->
+                <div class="form-floating mb-3">
+                    <select name="turma" id="editTurma" class="form-select form-select-lg" required>
+                        <option value="">Selecione a turma</option>
+                        {% for turma in turmas %}
+                        <option value="{{ turma.id }}">{{ turma.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="editTurma">
+                        <i class="bi bi-people me-1"></i>
+                        Turma
+                    </label>
+                </div>
+            </div>
 
-            <input type="hidden" name="curso" id="editCursoId">
-            <label class="form-label mt-3">Curso</label>
-            <input type="text" id="editCursoNome" class="form-control" readonly>
+            <!-- Informações adicionais com cards modernos -->
+            <div class="col-12">
+                <hr class="my-2">
+                <h6 class="text-muted mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Informações complementares
+                </h6>
+            </div>
 
-            <input type="hidden" name="sala" id="editSalaId">
-            <label class="form-label mt-3">Sala</label>
-            <input type="text" id="editSalaNome" class="form-control" readonly>
+            <div class="col-md-4">
+                <div class="card bg-light border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <input type="hidden" name="curso" id="editCursoId">
+                        <label class="text-muted small mb-1">
+                            <i class="bi bi-mortarboard me-1"></i>Curso
+                        </label>
+                        <input type="text" id="editCursoNome" class="form-control-plaintext fw-semibold" readonly>
+                    </div>
+                </div>
+            </div>
 
-            <input type="hidden" name="turno" id="editTurnoVal">
-            <label class="form-label mt-3">Turno</label>
-            <input type="text" id="editTurnoNome" class="form-control" readonly>
+            <div class="col-md-4">
+                <div class="card bg-light border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <input type="hidden" name="sala" id="editSalaId">
+                        <label class="text-muted small mb-1">
+                            <i class="bi bi-door-closed me-1"></i>Sala
+                        </label>
+                        <input type="text" id="editSalaNome" class="form-control-plaintext fw-semibold" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card bg-light border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <input type="hidden" name="turno" id="editTurnoVal">
+                        <label class="text-muted small mb-1">
+                            <i class="bi bi-clock me-1"></i>Turno
+                        </label>
+                        <input type="text" id="editTurnoNome" class="form-control-plaintext fw-semibold" readonly>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-        </div>
-        </form>
     </div>
+    
+    <!-- Footer com botões modernos -->
+    <div class="modal-footer border-0 bg-light p-3">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>
+            Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary px-4 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+            <i class="bi bi-save me-1"></i>
+            Salvar Alterações
+        </button>
     </div>
+    </form>
+</div>
+</div>
 
     {% endfor %}
                 
@@ -257,6 +487,21 @@
 
 <script>
 const turmasData = JSON.parse(document.getElementById('turmas-json').textContent);
+
+// Dicionário com as últimas reconfirmações
+const ultimasReconfirmacoes = {
+    {% for aluno_id, reconf in ultimas_reconfirmacoes.items %}
+    {{ aluno_id }}: {
+        id: {{ reconf.id }},
+        classe: "{{ reconf.classe.numero }}ª Classe",
+        turma: "{{ reconf.turma.nome }}",
+        estado: "{{ reconf.estadoClasse }}",
+        ano_letivo: "{{ reconf.ano_letivo.ano }}",
+        classe_id: {{ reconf.classe.id }},
+        turma_id: {{ reconf.turma.id }}
+    },
+    {% endfor %}
+};
 
 const selClasse = document.getElementById('editClasse');
 const selTurma = document.getElementById('editTurma');
@@ -312,28 +557,67 @@ function abrirModalEdicao(aluno) {
   document.getElementById('editBI').value = aluno.bi;
   document.getElementById('editGenero').value = aluno.genero;
 
-  document.getElementById('editClasse').value = aluno.classe_id;
-  const changeEvent = new Event('change');
-  selClasse.dispatchEvent(changeEvent);
+  // Verificar se o aluno está reprovado e tem dados da última reconfirmação
+  const ultimaReconf = ultimasReconfirmacoes[aluno.id];
+  const warningDiv = document.getElementById('reprovadoWarning');
+  const infoDiv = document.getElementById('ultimaReconfirmacaoInfo');
+  
+  if (ultimaReconf && ultimaReconf.estado === 'Reprovado') {
+    // Mostrar aviso e informações
+    warningDiv.style.display = 'block';
+    infoDiv.style.display = 'block';
+    
+    document.getElementById('reprovadoInfo').textContent = 
+        `Este aluno foi REPROVADO no ano letivo ${ultimaReconf.ano_letivo} na turma ${ultimaReconf.turma}. Ao reconfirmar, os dados desta turma e as notas serão apagados.`;
+    
+    document.getElementById('ultimaClasse').textContent = ultimaReconf.classe;
+    document.getElementById('ultimaTurma').textContent = ultimaReconf.turma;
+    document.getElementById('ultimoAnoLetivo').textContent = ultimaReconf.ano_letivo;
+    
+    // Pré-selecionar a classe da última reconfirmação
+    document.getElementById('editClasse').value = ultimaReconf.classe_id;
+    const changeEvent = new Event('change');
+    selClasse.dispatchEvent(changeEvent);
+    
+    // Pré-selecionar a turma da última reconfirmação
+    setTimeout(() => {
+        document.getElementById('editTurma').value = ultimaReconf.turma_id;
+        document.getElementById('editTurma').dispatchEvent(new Event('change'));
+    }, 300);
+    
+  } else {
+    // Ocultar avisos
+    warningDiv.style.display = 'none';
+    infoDiv.style.display = 'none';
+    
+    // Se não estiver reprovado, usar a classe atual do aluno
+    if (aluno.classe_id) {
+        document.getElementById('editClasse').value = aluno.classe_id;
+        const changeEvent = new Event('change');
+        selClasse.dispatchEvent(changeEvent);
+        
+        setTimeout(() => {
+            if (aluno.turma_id) {
+                document.getElementById('editTurma').value = aluno.turma_id;
+                document.getElementById('editTurma').dispatchEvent(new Event('change'));
+            }
+        }, 300);
+    }
+  }
 
-  // CORREÇÃO AQUI: Usar a URL nomeada correta
-  document.getElementById('formEdit').action = `/pedagogico/reconfirmacao/`;
-
-  setTimeout(() => {
-    document.getElementById('editTurma').value = aluno.turma_id;
-    document.getElementById('editTurma').dispatchEvent(new Event('change'));
-  }, 300);
+  document.getElementById('formEdit').action = `/administracao/reconfirmacao/`;
 }
+
 function abrirModalExclusao(alunoId, nomeAluno) {
   document.getElementById('delAlunoId').value = alunoId;
   document.getElementById('delAlunoNome').textContent = nomeAluno;
-  document.getElementById('formDelete').action = `/pedagogico/alunos/deletar/${alunoId}/`;
+  document.getElementById('formDelete').action = `/core/alunos/deletar/${alunoId}/`;
 }
+
 function toggleSidebar() {
   document.getElementById("sidebar").classList.toggle("active");
 }
 </script>
-
   <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

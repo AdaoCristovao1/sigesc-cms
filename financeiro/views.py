@@ -1764,7 +1764,16 @@ def despesas(request):
     try:
         escola_usuario = Escola.objects.get(id=escola_id_sessao)
     except Escola.DoesNotExist:
-        messages.error(request, 'Escola inválida.') 
+        messages.error(request, 'Escola inválida.')
+
+    ano_lectivo_obj = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
+            
+    if not ano_lectivo_obj:
+        messages.error(request, 'Nenhum ano letivo aberto encontrado!')
+        return redirect('financa:despesas')
+            
+    # Usar o ID do ano letivo como string ou o ano
+    ano_lectivo = str(ano_lectivo_obj.ano) if hasattr(ano_lectivo_obj, 'ano') else str(ano_lectivo_obj.id)
 
     usuario = request.user
     
@@ -1774,7 +1783,7 @@ def despesas(request):
     mes = request.GET.get('mes')
     ano = request.GET.get('ano')
     
-    despesas_lista = Despesa.objects.filter(escola=escola_usuario)
+    despesas_lista = Despesa.objects.filter(escola=escola_usuario, ano_lectivo=ano_lectivo)
     
     # Aplicar filtros
     if categoria:
@@ -1799,7 +1808,7 @@ def despesas(request):
             categorias_stats[categoria_nome] = total_cat
     
     ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
-    desconto_ativo = DescontoFalta.objects.filter(escola=escola_usuario).first()
+    desconto_ativo = DescontoFalta.objects.filter(escola=escola_usuario).first() 
     
     context = {
         "usuario": usuario,
@@ -2215,35 +2224,58 @@ def excluir_despesa(request, id):
     return redirect('financa:despesas')
 
 def atualizar_estado_aluno(aluno: "Aluno", escola_usuario):
-    """Atualiza o estado (Adimplente/Inadimplente) do aluno com base nos pagamentos de propina."""
-
+    """Atualiza o estado (Adimplente/Inadimplente) do aluno na reconfirmação existente."""
+    
+    from django.db import transaction
+    from datetime import date
+    import calendar
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Validações iniciais rápidas
+    hoje = date.today()
+    
     try:
-        hoje = now().date()
-        ano_lectivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
+        # Busca o ano letivo aberto
+        ano_lectivo = AnoLectivo.objects.filter(
+            estado='Aberto', 
+            escola=escola_usuario
+        ).only('ano').last()
         
         if not ano_lectivo:
             logger.warning(f"Não há ano letivo aberto para atualizar estado do aluno {aluno.id}")
             return
-
-        # Buscar TODOS os tipos de propina
-        tipos_propina = Emolumentos.objects.filter(nome__icontains="propina", escola=escola_usuario)
         
-        if not tipos_propina.exists():
-            logger.error("Nenhum serviço de propina encontrado no sistema")
+        # Busca a turma do aluno
+        turma_aluno = aluno.turma if hasattr(aluno, 'turma') else None
+        
+        if not turma_aluno:
+            logger.warning(f"Aluno {aluno.id} não possui turma associada. Não é possível atualizar estado.")
+            return
+            
+        # Busca sala, classe, curso e turno da turma
+        sala_aluno = turma_aluno.sala if turma_aluno.sala else None
+        classe_aluno = turma_aluno.classe if turma_aluno.classe else None
+        curso_aluno = turma_aluno.curso if turma_aluno.curso else None
+        turno_aluno = turma_aluno.turno if turma_aluno.turno else None
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar dados básicos do aluno {aluno.id}: {str(e)}")
+        return
+    
+    try:
+        # Buscar TIPO de propina
+        tipos_propina_ids = Emolumentos.objects.filter(
+            nome__icontains="propina", 
+            escola=escola_usuario
+        ).values_list('id', flat=True)
+        
+        if not tipos_propina_ids:
+            logger.error(f"Nenhum serviço de propina encontrado para escola {escola_usuario.id}")
             return
 
-        # Obtém todos os meses cadastrados ordenados
-        meses = MesesPagar.objects.filter(escola=escola_usuario)
-        if hasattr(MesesPagar, "ordem"):
-            meses = meses.order_by("ordem")
-        else:
-            meses = meses.order_by("id")
-
-        if not meses.exists():
-            logger.warning("Não há meses cadastrados no sistema")
-            return
-
-        # Mapeamento de meses em português para inglês
+        # Mapeamento de meses
         meses_portugues_ingles = {
             'janeiro': 'january', 'fevereiro': 'february', 'março': 'march',
             'abril': 'april', 'maio': 'may', 'junho': 'june',
@@ -2251,70 +2283,81 @@ def atualizar_estado_aluno(aluno: "Aluno", escola_usuario):
             'outubro': 'october', 'novembro': 'november', 'dezembro': 'december'
         }
 
-        # Encontra o mês atual
-        nome_mes_hoje_ingles = calendar.month_name[hoje.month].lower()
+        # Busca o mês atual
+        nome_mes_hoje = calendar.month_name[hoje.month].lower()
         mes_atual = None
         
+        meses = MesesPagar.objects.filter(escola=escola_usuario)
+        if hasattr(MesesPagar, "ordem"):
+            meses = meses.order_by("ordem")
+        
         for mes in meses:
-            # Converte o nome do mês cadastrado para inglês para comparação
             mes_nome_lower = mes.nome.lower()
             if mes_nome_lower in meses_portugues_ingles:
                 mes_nome_ingles = meses_portugues_ingles[mes_nome_lower]
-                # Compara os primeiros 3 caracteres
-                if mes_nome_ingles[:3] == nome_mes_hoje_ingles[:3]:
+                if mes_nome_ingles[:3] == nome_mes_hoje[:3]:
                     mes_atual = mes
                     break
 
-        # Se o mês atual não está cadastrado, não prosseguir
         if not mes_atual:
-            logger.info(f"Mês atual ({calendar.month_name[hoje.month]}) não está cadastrado no sistema")
+            logger.info(f"Mês atual ({calendar.month_name[hoje.month]}) não está cadastrado")
             return
 
-        # Verificar se o aluno tem PELO MENOS UM tipo de propina pago
-        tem_propina_paga = False
-        tem_propina_em_atraso = False
-        
-        for propina in tipos_propina:
-            # Verifica pagamento do mês atual para este tipo de propina
-            pagou_mes_atual = Pagamento.objects.filter(
-                escola=escola_usuario,
-                aluno=aluno,
-                tipoServico=propina,
-                ano_lectivo=ano_lectivo,
-                mes=mes_atual
-            ).exists()
-
-            # Verifica multa específica para este tipo de propina
-            multa = Multa.objects.filter(emolumento=propina, aplicar_multa=True, escola=escola_usuario).first()
-            
-            if pagou_mes_atual:
-                tem_propina_paga = True
-            elif multa and hoje.day > multa.data_aplicacao:
-                tem_propina_em_atraso = True
-
-        # Determina o estado com base na NOVA lógica
-        if tem_propina_paga:
-            # Se tem pelo menos uma propina paga, é adimplente
-            estado = "Adimplente"
-        elif tem_propina_em_atraso:
-            # Se não tem nenhuma paga mas tem pelo menos uma em atraso, é inadimplente
-            estado = "Inadimplente"
-        else:
-            # Se não tem paga mas ainda está dentro do prazo, é adimplente
-            estado = "Adimplente"
-
-        # Atualiza ou cria reconfirmação
-        reconf, created = Reconfirmacao.objects.get_or_create(
+        # --- LÓGICA DE VERIFICAÇÃO ---
+        # Verificar pagamentos do mês atual
+        pagamentos_mes_atual = Pagamento.objects.filter(
             escola=escola_usuario,
             aluno=aluno,
-            ano_letivo=ano_lectivo,
-            defaults={"estado": estado}
-        )
+            tipoServico_id__in=tipos_propina_ids,
+            ano_lectivo=ano_lectivo,
+            mes=mes_atual
+        ).exists()
 
-        if not created and reconf.estado != estado:
-            reconf.estado = estado
-            reconf.save()
-            logger.info(f"Estado do aluno {aluno.id} atualizado para {estado}")
+        # Verifica multas apenas se necessário
+        tem_multa_em_atraso = False
+        if not pagamentos_mes_atual:
+            multas = Multa.objects.filter(
+                emolumento_id__in=tipos_propina_ids,
+                aplicar_multa=True,
+                escola=escola_usuario,
+                data_aplicacao__lt=hoje.day
+            ).exists()
             
+            if multas:
+                tem_multa_em_atraso = True
+
+        # Determina o estado
+        if pagamentos_mes_atual:
+            estado = "Adimplente"
+        elif tem_multa_em_atraso:
+            estado = "Inadimplente"
+        else:
+            estado = "Adimplente"
+
+        # --- ATUALIZAÇÃO DA RECONFIRMAÇÃO EXISTENTE ---
+        # Busca a reconfirmação existente
+        try:
+            reconf = Reconfirmacao.objects.get(
+                escola=escola_usuario,
+                aluno=aluno,
+                ano_letivo=ano_lectivo.ano
+            )
+            
+            # Atualiza os campos necessários
+            with transaction.atomic():
+                reconf.estado = estado
+                reconf.turma = turma_aluno
+                reconf.sala = sala_aluno
+                reconf.classe = classe_aluno
+                reconf.curso = curso_aluno
+                reconf.turno = turno_aluno
+                # Não altera estadoClasse, mantém o valor existente
+                reconf.save(update_fields=['estado', 'turma', 'sala', 'classe', 'curso', 'turno'])
+                
+                logger.info(f"Reconfirmação do aluno {aluno.id} atualizada para estado {estado}")
+                
+        except Reconfirmacao.DoesNotExist:
+            pass
+
     except Exception as e:
         logger.error(f"Erro ao atualizar estado do aluno {aluno.id}: {str(e)}")

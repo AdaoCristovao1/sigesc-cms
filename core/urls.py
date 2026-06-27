@@ -3,6 +3,7 @@ from . import views
 
 app_name = 'core'
 
+
 urlpatterns = [
     path('', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
@@ -46,16 +47,12 @@ urlpatterns = [
     path('disciplinas/<int:id>/editar/', views.editar_disciplina, name='editar_disciplina'),
     path('disciplinas/<int:id>/eliminar/', views.deletar_disciplina, name='deletar_disciplina'),
     path('matriculas/', views.matriculas_view, name='matriculas'),
-    path('matriculas/comprovativo/<int:aluno_id>/', views.comprovativo_matricula, name='comprovativo_matricula'),
     path('pautas/', views.pautas, name='pautas'), 
-    path('pautas/<int:trimestre>/', views.pautas_trimestre, name='pautas_trimestre'),
-    path('pautas/final/', views.pautas_final, name='pautas_finais'),
     path('coordenacoes/', views.coordenacoes, name='coordenacoes'),
     path('coordenacoes/criar/', views.criar_coordenacao, name='criar_coordenacao'),
     path('coordenacoes/editar/<int:pk>/', views.editar_coordenacao, name='editar_coordenacao'),
     path('coordenacoes/eliminar/<int:pk>/', views.eliminar_coordenacao, name='eliminar_coordenacao'),
     path("alterar-senha/", views.alterar_senha, name="alterar_senha"),
     path("ano-lectivo/", views.ano_lectivo, name='ano_lectivo'),
-    path('reconfirmacao/', views.reconfirmacao, name='reconfirmacao'),
 ] 
  

@@ -1,9 +1,10 @@
+<!-- index.html -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Login | SIGEsc</title>
+  <title>Login | SIGEsc - Sistema Integrado de Gestão Escolar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- Bootstrap 5 CDN -->
@@ -12,84 +13,891 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{% static 'imgs/favicon-32x32.png' %}">
   <link rel="icon" type="image/png" sizes="16x16" href="{% static 'imgs/favicon-16x16.png' %}">
   <link rel="manifest" href="{% static 'imgs/site.webmanifest' %}">
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 
   <style>
+    :root {
+      --primary-blue: #1a3a5c;
+      --secondary-blue: #2c5f8a;
+      --light-blue: #4a8bb7;
+      --soft-gray: #f0f4f8;
+      --text-dark: #1e2a3a;
+      --text-gray: #5a6a7a;
+      --shadow-color: rgba(26, 58, 92, 0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.62)),
-      url("{% static 'imgs/DM_Alunos_na_escola-2.webp' %}") no-repeat center center fixed;
-      background-size: cover;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--soft-gray);
+      position: relative;
+      overflow-x: hidden;
     }
 
-    .login-container {
+    /* Background with overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        linear-gradient(135deg, 
+          rgba(26, 58, 92, 0.75) 0%,
+          rgba(63, 73, 82, 0.45) 50%,
+          rgba(26, 58, 92, 0.80) 100%
+        ),
+        url("{% static 'imgs/DM_Alunos_na_escola-2.webp' %}") no-repeat center center fixed;
+      background-size: cover;
+      z-index: 0;
+    }
+
+    /* Animated overlay pattern */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(255,255,255,0.03) 0%, transparent 50%);
+      z-index: 1;
+      pointer-events: none;
+      animation: pulseOverlay 8s ease-in-out infinite;
+    }
+
+    @keyframes pulseOverlay {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .main-container {
       flex: 1;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
     }
 
-    .login-box {
-      background: #fff;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    /* Glassmorphism Card - Clean & Professional */
+    .glass-card {
+      background: rgba(248, 254, 254, 0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 28px;
+      box-shadow: 
+        0 30px 80px rgba(0, 0, 0, 0.25),
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+      padding: 45px;
+      max-width: 1200px;
       width: 100%;
-      max-width: 400px;
+      transform: translateY(0);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: slideUp 0.8s ease-out both;
     }
 
-    footer {
-      padding: 20px 0;
+    .glass-card:hover {
+      transform: translateY(-6px);
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Header Section */
+    .login-header {
+      text-align: center;
+      margin-bottom: 35px;
+      padding-bottom: 25px;
+      border-bottom: 2px solid rgba(26, 58, 92, 0.08);
+    }
+
+    .login-header .logo-wrapper {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+      padding: 16px 18px;
+      border-radius: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 30px rgba(26, 58, 92, 0.25);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .login-header .logo-wrapper i {
+      font-size: 34px;
+      color: white;
+    }
+
+    .login-header h1 {
+      font-weight: 700;
+      font-size: 30px;
+      color: var(--primary-blue);
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .login-header .subtitle {
+      color: var(--text-gray);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .login-header .subtitle i {
+      color: var(--light-blue);
+      margin: 0 4px;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 35px;
+    }
+
+    .stat-card {
+      background: var(--soft-gray);
+      border-radius: 16px;
+      padding: 18px 16px;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 1px solid rgba(26, 58, 92, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.03), transparent);
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px) scale(1.02);
+      box-shadow: 0 12px 30px var(--shadow-color);
+      background: white;
+    }
+
+    .stat-card:hover::before {
+      opacity: 1;
+    }
+
+    .stat-card .stat-icon {
+      font-size: 22px;
+      margin-bottom: 6px;
+      display: block;
+      color: var(--secondary-blue);
+      transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover .stat-icon {
+      transform: scale(1.1);
+    }
+
+    .stat-card .stat-number {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      line-height: 1.2;
+      transition: color 0.3s ease;
+    }
+
+    .stat-card:hover .stat-number {
+      color: var(--secondary-blue);
+    }
+
+    .stat-card .stat-label {
+      font-size: 11px;
+      color: var(--text-gray);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* Special stat cards with subtle gradients */
+    .stat-card.primary {
+      background: linear-gradient(135deg, rgba(26, 58, 92, 0.08), rgba(44, 95, 138, 0.05));
+    }
+
+    .stat-card.success {
+      background: linear-gradient(135deg, rgba(40, 167, 69, 0.08), rgba(40, 167, 69, 0.03));
+    }
+
+    .stat-card.info {
+      background: linear-gradient(135deg, rgba(23, 162, 184, 0.08), rgba(23, 162, 184, 0.03));
+    }
+
+    .stat-card.warning {
+      background: linear-gradient(135deg, rgba(255, 193, 7, 0.08), rgba(255, 193, 7, 0.03));
+    }
+
+    /* Two Column Layout */
+    .login-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    /* Left Side - Stats Details */
+    .stats-details {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .stats-details .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: 0.2px;
+    }
+
+    .stats-details .section-title i {
+      color: var(--secondary-blue);
+      font-size: 18px;
+      width: 24px;
+    }
+
+    .province-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .province-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: var(--soft-gray);
+      border-radius: 10px;
+      font-size: 13px;
+      transition: all 0.3s ease;
+      border: 1px solid transparent;
+    }
+
+    .province-item:hover {
+      background: white;
+      border-color: rgba(26, 58, 92, 0.1);
+      transform: translateX(4px);
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+
+    .province-item .province-name {
+      font-weight: 500;
+      color: var(--text-dark);
+    }
+
+    .province-item .province-count {
+      background: var(--secondary-blue);
+      color: white;
+      padding: 2px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: transform 0.3s ease;
+    }
+
+    .province-item:hover .province-count {
+      transform: scale(1.1);
+    }
+
+    .recent-schools {
+      background: var(--soft-gray);
+      border-radius: 14px;
+      padding: 14px 18px;
+    }
+
+    .recent-schools .school-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(26, 58, 92, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    .recent-schools .school-item:last-child {
+      border-bottom: none;
+    }
+
+    .recent-schools .school-item:hover {
+      padding-left: 8px;
+    }
+
+    .recent-schools .school-item i {
+      color: var(--secondary-blue);
+      font-size: 14px;
+      width: 18px;
+      transition: transform 0.3s ease;
+    }
+
+    .recent-schools .school-item:hover i {
+      transform: scale(1.2);
+    }
+
+    .recent-schools .school-item span {
+      font-size: 13px;
+      color: var(--text-dark);
+    }
+
+    .recent-schools .school-item .school-date {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-gray);
+    }
+
+    /* Right Side - Login Form */
+    .login-form-wrapper {
+      background: white;
+      border-radius: 20px;
+      padding: 35px;
+      box-shadow: 0 4px 24px rgba(26, 58, 92, 0.06);
+      border: 1px solid rgba(26, 58, 92, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    .login-form-wrapper:hover {
+      box-shadow: 0 8px 40px rgba(26, 58, 92, 0.08);
+    }
+
+    .login-form-wrapper .form-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary-blue);
+      margin-bottom: 4px;
+    }
+
+    .login-form-wrapper .form-title i {
+      color: var(--secondary-blue);
+      margin-right: 10px;
+    }
+
+    .login-form-wrapper .form-subtitle {
+      color: var(--text-gray);
+      font-size: 14px;
+      margin-bottom: 28px;
+    }
+
+    .form-floating {
+      margin-bottom: 18px;
+    }
+
+    .form-floating input {
+      border-radius: 14px;
+      border: 2px solid #e8edf3;
+      padding: 12px 18px;
+      height: 60px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      background: var(--soft-gray);
+    }
+
+    .form-floating input:focus {
+      border-color: var(--secondary-blue);
+      box-shadow: 0 0 0 4px rgba(44, 95, 138, 0.08);
+      background: white;
+      transform: scale(1.01);
+    }
+
+    .form-floating input:hover {
+      border-color: var(--light-blue);
+    }
+
+    .form-floating label {
+      padding: 12px 18px;
+      color: var(--text-gray);
+      font-weight: 500;
+    }
+
+    .form-floating label i {
+      margin-right: 8px;
+      color: var(--light-blue);
+    }
+
+    .btn-login {
+      background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      font-weight: 600;
+      font-size: 16px;
+      color: white;
+      width: 100%;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.3px;
+      margin-top: 6px;
+    }
+
+    .btn-login::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(26, 58, 92, 0.3);
+      color: white;
+    }
+
+    .btn-login:hover::before {
+      left: 100%;
+    }
+
+    .btn-login:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-login i {
+      margin-right: 10px;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 13px;
+      color: var(--text-gray);
+    }
+
+    .login-footer .badge-version {
+      background: var(--soft-gray);
+      padding: 4px 14px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-gray);
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .login-footer .badge-version:hover {
+      background: var(--secondary-blue);
+      color: white;
+    }
+
+    .login-footer .divider {
+      margin: 0 8px;
+      color: #d0d8e0;
+    }
+
+    /* Alert Custom */
+    .alert-custom {
+      border-radius: 14px;
+      border: none;
+      padding: 14px 18px;
+      margin-bottom: 22px;
+      background: rgba(220, 53, 69, 0.06);
+      color: #842029;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid #dc3545;
+    }
+
+    .alert-custom i {
+      font-size: 20px;
+      color: #dc3545;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+      .login-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      .stats-details {
+        order: 2;
+      }
+
+      .login-form-wrapper {
+        order: 1;
+      }
+
+      .glass-card {
+        padding: 30px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .glass-card {
+        padding: 24px;
+        border-radius: 20px;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .stat-card {
+        padding: 14px 12px;
+      }
+
+      .stat-card .stat-number {
+        font-size: 22px;
+      }
+
+      .province-list {
+        grid-template-columns: 1fr;
+      }
+
+      .login-header h1 {
+        font-size: 24px;
+      }
+
+      .login-form-wrapper {
+        padding: 24px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .glass-card {
+        padding: 18px;
+        border-radius: 16px;
+      }
+
+      .login-header .logo-wrapper {
+        padding: 12px 14px;
+      }
+
+      .login-header .logo-wrapper i {
+        font-size: 26px;
+      }
+
+      .login-form-wrapper .form-title {
+        font-size: 19px;
+      }
+
+      .form-floating input {
+        height: 54px;
+        font-size: 14px;
+      }
+    }
+
+    /* Animation Classes */
+    .animate-on-scroll {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.8s ease forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+    .delay-6 { animation-delay: 0.6s; }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Subtle floating dots background */
+    .floating-dots {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .dot {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      animation: floatDot linear infinite;
+    }
+
+    @keyframes floatDot {
+      0% {
+        transform: translateY(100vh) scale(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+        transform: translateY(90vh) scale(1);
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-10vh) scale(0);
+        opacity: 0;
+      }
+    }
+
+    /* Scrollbar style */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--soft-gray);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--secondary-blue);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-blue);
     }
   </style>
 </head>
 <body>
 
-  <!-- Header fixo -->
-  <header class="text-white py-4 text-center shadow color-header">
-    <div class="container">
-       <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-mortarboard-fill" viewBox="0 0 16 16">
-        <path d="M8.211 2.047a.5.5 0 0 0-.422 0l-7.5 3.5a.5.5 0 0 0 .025.917l7.5 3a.5.5 0 0 0 .372 0L14 7.14V13a1 1 0 0 0-1 1v2h3v-2a1 1 0 0 0-1-1V6.739l.686-.275a.5.5 0 0 0 .025-.917l-7.5-3.5Z"/>
-        <path d="M4.176 9.032a.5.5 0 0 0-.656.327l-.5 1.7a.5.5 0 0 0 .294.605l4.5 1.8a.5.5 0 0 0 .372 0l4.5-1.8a.5.5 0 0 0 .294-.605l-.5-1.7a.5.5 0 0 0-.656-.327L8 10.466 4.176 9.032Z"/>
-      </svg>
-      <h1 class="h3 mb-1">Sistema Integrado de Gestão Escolar</h1>
-      <p class="mb-0 small">Complexo Escolar Veredas Encantadas</p>
-    </div>  
-  </header> 
+  <!-- Floating Dots Background -->
+  <div class="floating-dots" id="floatingDots"></div>
 
-  <!-- Área do formulário -->
-  <div class="login-container container">
-    <div class="login-box">
-      <img src="{% static 'imgs/SIGesc.jpg' %}" alt="" style="width: 60px; height: 60px;">
-      <h3 class="text-center mb-4">SIGEsc - Acesso</h3>
-
-      {% if messages %}
-        {% for message in messages %}
-          <div class="alert alert-danger">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-
-      <form method="POST" action="">
-        {% csrf_token %}
-        <div class="mb-3">
-          <label for="username" class="form-label">Usuário</label>
-          <input type="text" name="username" class="form-control" required autofocus>
+  <div class="main-container">
+    <div class="glass-card">
+      
+      <!-- Header -->
+      <div class="login-header animate-on-scroll delay-1">
+        <div class="logo-wrapper">
+          <i class="fas fa-graduation-cap"></i>
         </div>
-        <div class="mb-3">
-          <label for="password" class="form-label">Senha</label>
-          <input type="password" name="password" class="form-control" required>
+        <h1>SIGEsc</h1>
+        <p class="subtitle">
+          <i class="fas fa-chevron-right"></i>
+          Sistema Integrado de Gestão Escolar
+          <i class="fas fa-chevron-left"></i>
+        </p>
+        <p class="subtitle" style="font-size: 12px; color: var(--secondary-blue); font-weight: 600; margin-top: 4px;">
+            <img src="{% static 'imgs/bandeira.png' %}" alt="Bandeira de Angola"
+                style="width:18px; height:auto; vertical-align:middle; margin-right:5px;">
+            República de Angola
+        </p>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid animate-on-scroll delay-2">
+        <div class="stat-card primary">
+          <span class="stat-icon"><i class="fas fa-school"></i></span>
+          <div class="stat-number">{{ total_escolas|default:0 }}</div>
+          <div class="stat-label">Escolas</div>
         </div>
-        <button type="submit" class="btn btn-primary w-100">Entrar</button>
-      </form>
+        <div class="stat-card success">
+          <span class="stat-icon"><i class="fas fa-user-graduate"></i></span>
+          <div class="stat-number">{{ total_alunos|default:0 }}</div>
+          <div class="stat-label">Alunos</div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="login-content">
+        
+        <!-- Left: Stats Details -->
+        <div class="stats-details animate-on-scroll delay-3">
+          
+          <!-- Provinces -->
+          <div>
+            <div class="section-title">
+              <i class="fas fa-map-marked-alt"></i>
+              Escolas por Província
+            </div>
+            <div class="province-list">
+              {% for provincia in escolas_por_provincia %}
+                <div class="province-item">
+                  <span class="province-name">{{ provincia.provincia|default:"Não informada" }}</span>
+                  <span class="province-count">{{ provincia.total }}</span>
+                </div>
+              {% empty %}
+                <div class="province-item">
+                  <span class="province-name">Nenhuma escola cadastrada</span>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Additional Info -->
+          <div style="background: var(--soft-gray); border-radius: 14px; padding: 18px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+              <div style="text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: var(--primary-blue);">
+                  {{ total_usuarios|default:0 }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">
+                  <i class="fas fa-users-cog"></i> Usuários
+                </div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: var(--primary-blue);">
+                  {{ alunos_por_turno|length|default:0 }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">
+                  <i class="fas fa-clock"></i> Turnos
+                </div>
+              </div>
+              <div style="text-align: center;">
+                <div style="font-size: 22px; font-weight: 700; color: var(--primary-blue);">
+                  {{ escolas_por_provincia|length|default:0 }}
+                </div>
+                <div style="font-size: 11px; color: var(--text-gray); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;">
+                  <i class="fas fa-map-pin"></i> Províncias
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Login Form -->
+        <div class="login-form-wrapper animate-on-scroll delay-4">
+          <div class="form-title">
+            <i class="fas fa-lock"></i>
+            Acesso ao Sistema
+          </div>
+          <p class="form-subtitle">Insira suas credenciais para continuar</p>
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert-custom animate__animated animate__shakeX">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="POST" action="" autocomplete="off">
+            {% csrf_token %}
+            
+            <div class="form-floating">
+              <input type="text" name="username" class="form-control" id="username" placeholder="Usuário" required autofocus>
+              <label for="username">
+                <i class="fas fa-user"></i>Usuário
+              </label>
+            </div>
+
+            <div class="form-floating">
+              <input type="password" name="password" class="form-control" id="password" placeholder="Senha" required>
+              <label for="password">
+                <i class="fas fa-key"></i>Senha
+              </label>
+            </div>
+
+            <button type="submit" class="btn-login">
+              <i class="fas fa-sign-in-alt"></i>
+              Entrar no Sistema
+            </button>
+          </form>
+
+          <div class="login-footer">
+            <span class="badge-version">
+              <i class="fas fa-code-branch"></i> v2.1.0
+            </span>
+            <span class="divider">|</span>
+            <span><i class="fas fa-copyright"></i> Crimasoft</span>
+            <br>
+            <span style="font-size: 11px; color: #b0bec5; margin-top: 8px; display: block;">
+              {% now "Y" %} - Todos os direitos reservados
+            </span>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
-  <!-- Rodapé -->
-  <footer class="text-center text-white bg-dark mt-auto">
-    <p class="mb-0 py-3 small">&copy; {% now "Y" %} SIGEsc v2.1.0 Crimasoft - Todos os direitos reservados</p>
-  </footer>
+  <!-- Bootstrap JS -->
+  <script src="{% static 'bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Generate floating dots
+      const dotsContainer = document.getElementById('floatingDots');
+      const dotCount = 30;
+      
+      for (let i = 0; i < dotCount; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        dot.style.left = Math.random() * 100 + '%';
+        dot.style.width = (Math.random() * 3 + 2) + 'px';
+        dot.style.height = dot.style.width;
+        dot.style.animationDuration = (Math.random() * 25 + 20) + 's';
+        dot.style.animationDelay = (Math.random() * 15) + 's';
+        dot.style.opacity = Math.random() * 0.3 + 0.1;
+        dotsContainer.appendChild(dot);
+      }
+
+      // Trigger animations for elements already visible
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }
+        });
+      }, { threshold: 0.1 });
+
+      document.querySelectorAll('.animate-on-scroll').forEach(el => {
+        observer.observe(el);
+      });
+    });
+  </script>
 
 </body>
 </html>

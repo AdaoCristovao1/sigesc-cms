@@ -285,6 +285,73 @@ def pauta_trimestre_print(request, epoca):
             'escola': escola_usuario,
         })
     
+@login_required
+def comprovativo_matricula(request, aluno_id):
+    escola_id_sessao = request.session.get('escola_atual_id')
+    try:
+        escola_usuario = Escola.objects.get(id=escola_id_sessao)
+    except Escola.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Escola inválida.'})
+    
+    aluno = get_object_or_404(Aluno, id=aluno_id)
+    
+    # Buscar a última reconfirmação do aluno
+    ultima_reconfirmacao = Reconfirmacao.objects.filter(
+        escola=escola_usuario,
+        aluno=aluno
+    ).order_by('-id').first()
+    
+    # Se não houver reconfirmação, usar os dados do aluno como fallback
+    if ultima_reconfirmacao:
+        # Usar dados da reconfirmação
+        classe = ultima_reconfirmacao.classe
+        turma = ultima_reconfirmacao.turma
+        curso = ultima_reconfirmacao.curso
+        sala = ultima_reconfirmacao.sala
+        turno = ultima_reconfirmacao.turno
+        ano_letivo = ultima_reconfirmacao.ano_letivo
+    else:
+        # Fallback: usar dados do aluno
+        classe = aluno.classe
+        turma = aluno.turma
+        curso = aluno.curso
+        sala = aluno.sala
+        turno = aluno.turno
+        ano_letivo = None
+    
+    data_hoje = datetime.now()
+    
+    # Gerar código de barras
+    barcode_value = str(aluno.numero_mecanografico)
+    drawing = createBarcodeDrawing(
+        'Code128',
+        value=barcode_value,
+        barHeight=40,
+        barWidth=2.5,
+        humanReadable=True
+    )
+
+    # Exportar para formato SVG em memória
+    barcode_svg = drawing.asString('svg')
+
+    # Transformar em Base64 para embutir no HTML
+    barcode_base64 = base64.b64encode(barcode_svg.encode("utf-8")).decode("utf-8")
+
+    return render(request, 'documentos/comprovativo_matricula.html', {
+        'aluno': aluno,
+        'classe': classe,
+        'turma': turma,
+        'curso': curso,
+        'sala': sala,
+        'turno': turno,
+        'ano_letivo': ano_letivo,
+        'data': data_hoje,
+        'atendido_por': request.user,
+        'usuario': request.user,
+        'barcode': barcode_base64,
+        'escola': escola_usuario,
+    })
+    
 def pauta_coordenacao(request, trimestre):
     query = request.GET.get('q', '')
     ano_letivo = AnoLectivo.objects.filter(estado='Aberto').last()
@@ -481,7 +548,7 @@ def pauta_coordenacao(request, trimestre):
             </html>
             """,
             status=401
-        )
+        ) 
  
 def boletim_aluno(request, aluno_id, classe_id=None): 
     escola_id_sessao = request.session.get('escola_atual_id')
@@ -494,7 +561,7 @@ def boletim_aluno(request, aluno_id, classe_id=None):
     aluno = get_object_or_404(Aluno, id=aluno_id)
     
     # Se classe_id foi passado, usa ele, senão usa a classe do aluno
-    if classe_id:
+    if classe_id: 
         classe = get_object_or_404(Classe, id=classe_id)
     else:
         classe = aluno.classe
@@ -503,24 +570,18 @@ def boletim_aluno(request, aluno_id, classe_id=None):
     diretor = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains="diretor_geral").first()
     
     # Buscar o ano letivo aberto
-    ano_letivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
-    
-    # Dados adicionais do formulário (se houver)
-    dados = {
-        'nome_pai': request.POST.get('nome_pai') if request.method == 'POST' else None,
-        'nome_mae': request.POST.get('nome_mae') if request.method == 'POST' else None,
-        'naturalidade': request.POST.get('naturalidade') if request.method == 'POST' else None,
-        'municipio': request.POST.get('municipio') if request.method == 'POST' else None,
-        'provincia': request.POST.get('provincia') if request.method == 'POST' else None,
-        'data_nascimento': request.POST.get('data_nascimento') if request.method == 'POST' else None,
-        'bi': request.POST.get('bi') if request.method == 'POST' else None,
-    }
+    ano_letivo = AnoLectivo.objects.filter(
+        escola=escola_usuario,
+        estado='Aberto' 
+    ).last()
+
     
     # Buscar notas do aluno para a classe específica
     notas = Nota.objects.filter(
         escola=escola_usuario,
         aluno=aluno,
-        classe=classe
+        classe=classe,
+        ano_lectivo=9
     ).select_related('disciplina').order_by('disciplina__nome', 'trimestre')
     
     # Estruturar dados do boletim
@@ -546,18 +607,10 @@ def boletim_aluno(request, aluno_id, classe_id=None):
             soma_trimestres = sum(n[t] for t in trimestres_existentes)
             media_trimestres = soma_trimestres / len(trimestres_existentes)
             
-            # Verificar se tem nota de exame (trimestre 4)
-            if 4 in n:
-                # Com exame: (média trimestres * 0.4) + (exame * 0.6)
-                media_final = (media_trimestres * Decimal('0.4')) + (n[4] * Decimal('0.6'))
-                boletim[disciplina_nome]['media'] = float(
-                    Decimal(media_final).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
-                )
-            else:
-                # Sem exame: usa apenas média dos trimestres
-                boletim[disciplina_nome]['media'] = float(
-                    Decimal(media_trimestres).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
-                )
+            # Sem exame: usa apenas média dos trimestres
+            boletim[disciplina_nome]['media'] = float(
+                Decimal(media_trimestres).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)
+            )
             
             # Definir situação da disciplina
             if boletim[disciplina_nome]['media'] >= 5:
@@ -643,8 +696,7 @@ def boletim_aluno(request, aluno_id, classe_id=None):
         'media_geral_total': media_geral_total,
         'situacao_geral': situacao_geral,
         'data_hoje': date.today(),
-        'diretor': diretor,  # Adicionado para o template
-        'dados_aluno': dados,  # Dados adicionais do aluno
+        'diretor': diretor,
         "escola": escola_usuario
     })
 
@@ -663,7 +715,7 @@ def alunos_print(request):
     ano_letivo = ano_letivo  
     reconfirmacoes = Reconfirmacao.objects.select_related(
         'aluno', 'turma', 'sala', 'classe', 'curso'
-    ).filter(ano_letivo=ano_letivo, estado='Adimplente', escola=escola_usuario)
+    ).filter(ano_letivo=ano_letivo, escola=escola_usuario)
 
     if query:
         reconfirmacoes = reconfirmacoes.filter(
@@ -1079,7 +1131,7 @@ def certificado(request, id):
             if d_id not in disciplinas_dict:
                 disciplinas_dict[d_id] = {
                     'nome': nota.disciplina.nome,
-                    'notas_por_ano': {}  # ano_id -> {classe_num: {notas: {1: None, ...}}}
+                    'notas_por_ano': {}
                 }
             
             # Inicializar estrutura para este ano letivo
@@ -1374,28 +1426,25 @@ def relatorio_financeiro_pdf(request):
 
 @login_required
 def relatorio_pedagogico(request):
-    """
-    View para gerar o relatório pedagógico completo
-    Versão para visualização web e impressão
-    """
     escola_id_sessao = request.session.get('escola_atual_id')
     
     try:
         escola_usuario = Escola.objects.get(id=escola_id_sessao)
     except Escola.DoesNotExist:
         messages.error(request, 'Escola inválida.')
-
-    # Obter parâmetros da requisição
+    """
+    View para gerar o relatório pedagógico completo
+    """
+    # Obter ano letivo selecionado (padrão: ano atual)
     ano_lectivo = request.GET.get("ano_lectivo")
     
     # Lista de anos letivos disponíveis
     anos_lectivos = AnoLectivo.objects.filter(escola=escola_usuario).values_list('ano', flat=True)
     if not ano_lectivo:
-        ano_lectivo_obj = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').first()
-        ano_lectivo = ano_lectivo_obj.ano if ano_lectivo_obj else None
+        ano_lectivo = AnoLectivo.objects.filter(escola=escola_usuario, estado='Aberto').last()
     
     # ============ ESTATÍSTICAS GERAIS ============
-    
+     
     # Totais gerais
     total_alunos = Aluno.objects.filter(escola=escola_usuario).count()
     total_professores = Funcionario.objects.filter(escolas=escola_usuario, funcao__icontains='professor').count()
@@ -1420,22 +1469,22 @@ def relatorio_pedagogico(request):
     # ============ DADOS DE MATRÍCULAS ============
     
     # Alunos por turma (para o ano letivo selecionado)
-    alunos_por_turma = Turma.objects.filter(ano_letivo=ano_lectivo).annotate(
+    alunos_por_turma = Turma.objects.filter(escola=escola_usuario, ano_letivo=ano_lectivo).annotate(
         quantidade_alunos=Count('aluno')
     ).order_by('-quantidade_alunos')
     
-    total_alunos_ano = Aluno.objects.filter(escola=escola_usuario, turma__ano_letivo=ano_lectivo).count()
+    total_alunos_ano = Reconfirmacao.objects.filter(escola=escola_usuario, turma__ano_letivo=ano_lectivo).count()    
     
-    # Alunos por classe
-    alunos_por_classe = []
+   # Alunos por classe 
+    alunos_por_classe = [] 
     classes = Classe.objects.filter(escola=escola_usuario).order_by('numero')
 
     # Preparar dados para os gráficos
-    labels_classes = []
-    dados_classes = []
+    labels_classes = []  # Para o gráfico (números das classes)
+    dados_classes = []   # Para o gráfico (quantidades)
 
     for classe in classes:
-        quantidade = Aluno.objects.filter(
+        quantidade = Reconfirmacao.objects.filter(
             escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turma__classe=classe
@@ -1445,19 +1494,25 @@ def relatorio_pedagogico(request):
             percentual = (quantidade / total_alunos_ano * 100) if total_alunos_ano > 0 else 0
             alunos_por_classe.append({
                 'classe': classe,
-                'classe_numero': classe.numero,
+                'classe_numero': classe.numero,  # Adicionar o número separadamente
                 'classe_designacao': classe.designacao,
                 'quantidade': quantidade,
                 'percentual': percentual
             })
             
+            # Adicionar aos dados do gráfico
             labels_classes.append(f"{classe.numero}ª")
             dados_classes.append(quantidade)
 
+    # Se não houver dados, criar listas vazias
+    if not labels_classes:
+        labels_classes = []
+        dados_classes = []
+    
     # Alunos por turno
     alunos_por_turno = []
     for turno in ['Manhã', 'Tarde', 'Noite']:
-        quantidade = Aluno.objects.filter(
+        quantidade = Reconfirmacao.objects.filter(
             escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             turno=turno
@@ -1473,7 +1528,7 @@ def relatorio_pedagogico(request):
     alunos_por_curso = []
     cursos = Curso.objects.filter(escola=escola_usuario)
     for curso in cursos:
-        quantidade = Aluno.objects.filter(
+        quantidade = Reconfirmacao.objects.filter(
             escola=escola_usuario,
             turma__ano_letivo=ano_lectivo,
             curso=curso
@@ -1497,7 +1552,7 @@ def relatorio_pedagogico(request):
             escola=escola_usuario,
             disciplina=disciplina,
             ano_lectivo__ano=ano_lectivo,
-            trimestre__in=[1, 2, 3]
+            trimestre__in=[1, 2, 3, 4]  # Apenas trimestres, não exame
         )
         
         if notas.exists():
@@ -1530,7 +1585,7 @@ def relatorio_pedagogico(request):
         )
         
         if alunos_classe.exists():
-            # Calcular média geral da classe
+            # Calcular média geral da classe (baseado nas notas de todas disciplinas)
             notas_classe = Nota.objects.filter(
                 escola=escola_usuario,
                 aluno__in=alunos_classe,
@@ -1628,14 +1683,11 @@ def relatorio_pedagogico(request):
     # ============ DADOS PARA GRÁFICOS ============
     
     # Dados para gráfico de evolução de matrículas (últimos 5 anos)
-    anos_evolucao = []
+    anos_evolucao = ['2025-2026', '2026-2027', '2027-2028', '2028-2029', '2029-2030']
     matriculas_evolucao = []
     
-    # Obter anos letivos ordenados
-    anos_ordenados = AnoLectivo.objects.filter(escola=escola_usuario).order_by('-ano')[:5]
-    for ano in reversed(anos_ordenados):
-        anos_evolucao.append(ano.ano)
-        quantidade = Aluno.objects.filter(escola=escola_usuario, turma__ano_letivo=ano.ano).count()
+    for ano in anos_evolucao:
+        quantidade = Reconfirmacao.objects.filter(escola=escola_usuario, turma__ano_letivo=ano).count()
         matriculas_evolucao.append(quantidade)
     
     # Dados para gráfico de distribuição por classe
@@ -1664,25 +1716,18 @@ def relatorio_pedagogico(request):
     ).order_by('-id')[:10]
     
     # Últimos alunos matriculados
-    ultimos_alunos = Aluno.objects.filter(escola=escola_usuario).select_related(
-        'turma', 'classe', 'curso'
-    ).order_by('-id')[:10]
+    ultimos_alunos = Reconfirmacao.objects.filter(
+    escola=escola_usuario, ano_letivo=ano_lectivo
+    ).select_related(
+        'aluno',
+        'turma',
+        'classe',
+        'curso',
+        'sala'
+    ).order_by('-data', '-id')[:10]
     
     # Últimas monografias submetidas
     ultimas_monografias = Monografia.objects.filter(escola=escola_usuario).order_by('-data_submissao')[:5]
-    
-    # ============ DIRETORES E COORDENADORES ============
-    # Buscar diretores e coordenadores (ajuste conforme sua estrutura)
-    diretor_pedagogico = Funcionario.objects.filter(
-        escolas=escola_usuario,
-        funcao__icontains='diretor pedagogico'
-    ).first()
-    
-    coordenador = Funcionario.objects.filter(
-        escolas=escola_usuario,
-        funcao__icontains='coordenador'
-    ).first()
-    
     perfil = request.user.perfil
     usuario = request.user
     
@@ -1690,7 +1735,7 @@ def relatorio_pedagogico(request):
         # Filtros
         'ano_lectivo': ano_lectivo,
         'anos_lectivos_disponiveis': anos_lectivos,
-        'usuario': usuario,
+        'usuario':usuario,
         
         # Estatísticas gerais
         'total_alunos': total_alunos,
@@ -1723,7 +1768,6 @@ def relatorio_pedagogico(request):
         'reprovados': reprovados,
         'pendentes': pendentes,
         'taxa_aprovacao_geral': taxa_aprovacao_geral,
-        'total_avaliados': total_avaliados,
         
         # Docentes
         'professores_disciplina': professores_disciplina,
@@ -1753,10 +1797,6 @@ def relatorio_pedagogico(request):
         'ultimas_notas': ultimas_notas,
         'ultimos_alunos': ultimos_alunos,
         'ultimas_monografias': ultimas_monografias,
-        
-        # Diretores e coordenadores
-        'diretor_pedagogico': diretor_pedagogico,
-        'coordenador': coordenador,
         'escola': escola_usuario,
     }
     
@@ -1811,15 +1851,15 @@ def alunos_inadimpletes(request):
     except Escola.DoesNotExist:
         return JsonResponse({'success': False, 'message': 'Escola inválida.'})
     
+    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
+    
     # Filtrar apenas alunos com estado = Inadimplente
-    inadimplentes = Reconfirmacao.objects.filter(estado="Inadimplente", escola=escola_usuario).select_related(
+    inadimplentes = Reconfirmacao.objects.filter(estado="Inadimplente", escola=escola_usuario, ano_letivo=ano_letivo).select_related(
         "aluno", "turma", "classe", "curso", "sala"
     ).order_by("aluno__nome_completo")
 
-    ano_letivo = AnoLectivo.objects.filter(estado='Aberto', escola=escola_usuario).last()
-
     # Diretor (se for fixo ou do request.user)
-    diretor = request.user  # ou um objeto específico
+    diretor = request.user  # ou um objeto específico 
 
     context = {
         "alunos_inadimplentes": inadimplentes,

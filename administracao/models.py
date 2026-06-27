@@ -102,7 +102,7 @@ class Reconfirmacao(models.Model):
     sala = models.ForeignKey(Sala, on_delete=models.SET_NULL, null=True)
     classe = models.ForeignKey(Classe, on_delete=models.SET_NULL, null=True)
     curso = models.ForeignKey(Curso, on_delete=models.SET_NULL, null=True)
-    turno = models.CharField(max_length=10, choices=TURNOS) 
+    turno = models.CharField(max_length=10, choices=TURNOS)  
 
     class Meta:
         indexes = [
@@ -115,8 +115,7 @@ class Reconfirmacao(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.aluno.nome_completo} - {self.ano_letivo}'
-    
+        return f'{self.aluno.nome_completo} - {self.ano_letivo}'   
 
 from django.contrib.auth import get_user_model
 

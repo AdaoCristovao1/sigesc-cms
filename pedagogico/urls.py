@@ -17,7 +17,6 @@ urlpatterns = [
     path('disciplinas-classes/excluir/<int:pk>/', views.excluir_vinculo, name="excluir_vinculo"),
     path('professor/<int:professor_id>/vinculo/', views.vinculo_docente, name='vinculo_professor'),
     path('matriculas/', views.matriculas_view, name='matriculas'),
-    path('matriculas/comprovativo/<int:aluno_id>/', views.comprovativo_matricula, name='comprovativo_matricula'),
     path('turma-salas/', views.turmas_e_salas, name='turmas_e_salas'),
     path('turmas/criar/', views.criar_turma, name='criar_turma'),
     path('turmas/editar/', views.editar_turma, name='editar_turma'),
