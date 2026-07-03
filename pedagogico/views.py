@@ -2184,7 +2184,7 @@ def lancar_nota(request):
                     ano_lectivo_id=ano_letivo_id,
                     trimestre=trimestre,
                     valor=media,
-                )
+                )   
                 messages.success(
                     request, 
                     f'Nota lançada com sucesso! Média: {media:.2f} (baseada em {len(notas)} nota(s))'

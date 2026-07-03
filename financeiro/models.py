@@ -6,7 +6,7 @@ from escola.models import Escola
 
 class TipoPagamento(models.Model):
     escola = models.ForeignKey(Escola, on_delete=models.CASCADE)
-    nome = models.CharField(max_length=100, unique=True)
+    nome = models.CharField(max_length=100)
     def __str__(self):
         return self.nome
 
